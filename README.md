@@ -1,4 +1,4 @@
-# tab
+# hao
 
 Misc tools to 
 
@@ -9,6 +9,6 @@ Misc tools to
 ## install
 
 ```bash
-pip install tab
+pip install hao
 ```
 

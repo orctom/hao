@@ -15,7 +15,7 @@ setup(
     # There are some restrictions on what makes a valid project name
     # specification here:
     # https://packaging.python.org/specifications/core-metadata/#name
-    name='tab',  # Required
+    name='hao',  # Required
 
     # Versions should comply with PEP 440:
     # https://www.python.org/dev/peps/pep-0440/
@@ -56,7 +56,7 @@ setup(
     #
     # This field corresponds to the "Home-Page" metadata field:
     # https://packaging.python.org/specifications/core-metadata/#home-page-optional
-    url='https://github.com/orctom/tab',  # Optional
+    url='https://github.com/orctom/hao',  # Optional
 
     # This should be your name or the name of the organization which owns the
     # project.
@@ -146,7 +146,7 @@ setup(
     include_package_data=True,
 
     project_urls={  # Optional
-        'Source': 'https://github.com/orctom/tab',
+        'Source': 'https://github.com/orctom/hao',
     },
 )
 

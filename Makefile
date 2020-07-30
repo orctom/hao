@@ -2,7 +2,7 @@ clean:
 	rm -rf build dist *.egg-info
 
 uninstall:
-	pip uninstall tab -y
+	pip uninstall hao -y
 
 install:
 	pip install .
