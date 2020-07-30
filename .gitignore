@@ -23,3 +23,5 @@ local*.*
 data/
 notebook/
 lightning_logs/
+dist/
+
