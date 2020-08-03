@@ -7,10 +7,10 @@ from logging.handlers import TimedRotatingFileHandler
 from . import paths, config, envs
 
 LOGGER_FORMAT = config.get('logger.format', "%(asctime)s %(levelname)-7s %(name)s:%(lineno)-4d - %(message)s")
-LOGGER_FILE_ROTATE_WHEN = config.get('logger.file.rotate.when', 'd')
-LOGGER_FILE_ROTATE_COUNT = config.get('logger.file.rotate.count', 3)
+LOGGER_FILE_ROTATE_WHEN = os.environ.get('logger.file.rotate.when', 'd')
+LOGGER_FILE_ROTATE_COUNT = os.environ.get('logger.file.rotate.count', 3)
 
-LOGGING_LEVEL_ROOT = config.get('logging.root', 'WARNING')
+LOGGING_LEVEL_ROOT = config.get('logging.root', 'INFO')
 
 PROJECT_NAME = paths.project_name()
 PROGRAM_NAME = paths.program_name()
@@ -19,6 +19,8 @@ LOGGER_FORMATTER = logging.Formatter(LOGGER_FORMAT)
 
 _stream_handler = None
 _file_handler = None
+
+_loggers = {}
 
 
 def get_stream_handler():
@@ -77,14 +79,26 @@ except ModuleNotFoundError as err:
 
 
 def get_logger(name=None, level=LOGGING_LEVEL_ROOT):
+    global _loggers
     if name is None:
         name = paths.who_called_me()
+
+    for _name in logging.root.manager.loggerDict:
+        if _name not in _loggers:
+            _loggers[_name] = set_logger(_name)
+
+    if name in _loggers:
+        return _loggers.get(name)
+
+    _logger = set_logger(name, level)
+    _loggers[name] = _logger
+    return _logger
+
+
+def set_logger(name, level=None):
     _logger = logging.getLogger(name)
-    _logger.setLevel(get_logging_level(name, level))
-
-    if len(_logger.handlers) > 0:
-        return _logger
-
+    _logger.setLevel(level or get_logging_level(name))
+    _logger.handlers.clear()
     _logger.addHandler(get_stream_handler())
     if os.environ.get('SCRAPY_PROJECT') is None:
         _logger.propagate = False
@@ -94,36 +108,12 @@ def get_logger(name=None, level=LOGGING_LEVEL_ROOT):
     return _logger
 
 
-def get_logging_level(name, default=logging.INFO):
+def get_logging_level(name):
     while True:
         level = LOGGING_LEVELS.get(name)
         if level is not None:
             return level
         end = name.rfind('.')
         if end <= 0:
-            return default
+            return LOGGING_LEVEL_ROOT
         name = name[:end]
-
-
-def update_loggers(_logging_levels=None, all_modules=False):
-    if all_modules:
-        for module in set([item.split('.')[0] for item in sys.modules.keys() if not item.startswith('_')]):
-            update_logger(module, LOGGING_LEVEL_ROOT)
-
-    if _logging_levels is None:
-        _logging_levels = LOGGING_LEVELS
-
-    logging.getLogger().setLevel(logging.INFO)
-    for module, level in _logging_levels.items():
-        update_logger(module, level)
-
-
-def update_logger(module, level):
-    logger = logging.getLogger(module)
-    logger.setLevel(level)
-    for handler in logger.handlers:
-        handler.setLevel(level)
-        handler.setFormatter(LOGGER_FORMATTER)
-
-
-update_loggers()
