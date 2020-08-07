@@ -76,7 +76,7 @@ logger:
 
 Declear your logger
 
-``python
+```python
 import hao
 LOGGER = hao.logs.get_logger(__name__)
 ```
