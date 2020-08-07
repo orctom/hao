@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import argparse
 
-from . import config
+from . import config, logs
+
+LOGGER = logs.get_logger(__name__)
 
 
 class Attr(object):
@@ -20,13 +22,14 @@ attr = Attr
 
 def from_args(_cls=None, prefix=None, adds=None):
     """
-    populate args from: command line / constructor / defaults.
+    populate args from: command line / constructor / config / defaults.
     also supports arg resolving according attributes declared upper
     :param _cls: do not pass in this param
     :param prefix: optional prefix for command line: {prefix}_attribute
     :param adds: optional one or more function to add more args to ArgumentParser()
     :return: the object with value populated
     """
+
     def __init__(self, *args, **kwargs):
         if len(args) > 0 and _cls is not None:
             raise ValueError('@from_args() not allowed arg: "_cls"')
@@ -47,18 +50,31 @@ def from_args(_cls=None, prefix=None, adds=None):
                if not hasattr(self, _attr)}
         }
 
-        if hasattr(self.__class__, '__annotations__'):
-            fields = {**self.__class__.__dict__, **self.__class__.__annotations__}
-        else:
-            fields = self.__class__.__dict__
-        fields = {k: v for k, v in fields.items() if not k.startswith('__') and not k.endswith('__')}
-        for _name, _attr in fields.items():
-            if isinstance(_attr, Attr):
-                arg_name = f'--{self._get_arg_name(_name)}'
-                if 'action' in _attr.kwargs:
-                    parser.add_argument(arg_name, help=_attr.help, **_attr.kwargs)
-                else:
-                    parser.add_argument(arg_name, type=_attr.type, help=_attr.help, **_attr.kwargs)
+        fields, attrs = {}, {}
+        for cls in reversed(self.__class__.__mro__):
+            fields.update({
+                k: v for k, v in cls.__dict__.items()
+                if not k.startswith('__') and not k.endswith('__') and not isinstance(v, (Attr, property)) and not callable(v)
+            })
+            attrs.update({
+                k: v for k, v in cls.__dict__.items()
+                if not k.startswith('__') and not k.endswith('__') and isinstance(v, Attr)
+            })
+
+        for _name, _attr in attrs.items():
+            arg_name = f'--{self._get_arg_name(_name)}'
+            LOGGER.debug(f"[from_args] add argument: {arg_name}")
+
+            if _attr.type is bool:
+                _attr.kwargs["action"] = "store_false" if _attr.default is True else "store_true"
+            if _attr.type is list or issubclass(_attr.type, list):
+                _attr.kwargs['nargs'] = '+'
+                _attr.type = str
+
+            if 'action' in _attr.kwargs:
+                parser.add_argument(arg_name, help=_attr.help, **_attr.kwargs)
+            else:
+                parser.add_argument(arg_name, type=_attr.type, help=_attr.help, **_attr.kwargs)
 
         args, _ = parser.parse_known_args()
         values = {}
@@ -67,21 +83,20 @@ def from_args(_cls=None, prefix=None, adds=None):
             setattr(self, _name, _value)
             values[_name] = _value
 
-        for _name, _attr in fields.items():
-            if callable(_attr):
-                continue
-            if isinstance(_attr, Attr):
-                if 'action' in _attr.kwargs and _name in kwargs:
-                    _value = kwargs.get(_name)
-                else:
-                    _value = getattr(args, self._get_arg_name(_name), None)
-                if _value is None:  # 0 or 2 -> 2
-                    _value = config.get(_attr.key, kwargs.get(_name, _attr.default))
-                if _value is None and _attr.required:
-                    parser.print_usage()
-                    raise ValueError(f'missing arg: --{self._get_arg_name(_name)}')
+        for _name, _value in fields.items():
+            setattr(self, _name, _value)
+            values[_name] = _value
+
+        for _name, _attr in attrs.items():
+            if 'action' in _attr.kwargs and _name in kwargs:
+                _value = kwargs.get(_name)
             else:
-                _value = _attr
+                _value = getattr(args, self._get_arg_name(_name), None)
+            if _value is None:  # 0 or 2 -> 2
+                _value = kwargs.get(_name, config.get(_attr.key, _attr.default))
+            if _value is None and _attr.required:
+                parser.print_usage()
+                raise ValueError(f'missing arg: --{self._get_arg_name(_name)}')
 
             try:
                 if _value is not None and isinstance(_value, str):

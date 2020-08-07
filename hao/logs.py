@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import fnmatch
 import logging
 import os
 import sys
@@ -78,28 +79,29 @@ except ModuleNotFoundError as err:
     config_logger(False)
 
 
-def get_logger(name=None, level=LOGGING_LEVEL_ROOT):
+def get_logger(name=None, level=None):
     global _loggers
     if name is None:
         name = paths.who_called_me()
 
     for _name in logging.root.manager.loggerDict:
         if _name not in _loggers:
-            _loggers[_name] = set_logger(_name)
+            _loggers[_name] = _get_logger(_name)
 
     if name in _loggers:
         return _loggers.get(name)
 
-    _logger = set_logger(name, level)
+    _logger = _get_logger(name, level)
     _loggers[name] = _logger
     return _logger
 
 
-def set_logger(name, level=None):
+def _get_logger(name, level=None):
     _logger = logging.getLogger(name)
     _logger.setLevel(level or get_logging_level(name))
     _logger.handlers.clear()
     _logger.addHandler(get_stream_handler())
+    LOGGING_LEVELS[name] = level
     if os.environ.get('SCRAPY_PROJECT') is None:
         _logger.propagate = False
         if LOGGER_FILE_ENABLED:
@@ -117,3 +119,28 @@ def get_logging_level(name):
         if end <= 0:
             return LOGGING_LEVEL_ROOT
         name = name[:end]
+
+
+def update_logger_levels(logging_levels=None):
+    if logging_levels is None or len(logging_levels) == 0:
+        return
+    for module, level in logging_levels.items():
+        update_logger_level(module, level)
+
+
+def update_logger_level(module: str, level):
+    _logger = _loggers.get(module)
+    if _logger:
+        _logger.setLevel(level)
+        LOGGING_LEVELS[module] = level
+        return
+
+    if '*' in module:
+        for _module, _logger in _loggers.items():
+            fnmatch.fnmatch(_module, module)
+            if not fnmatch.fnmatch(_module, module):
+                continue
+            _logger.setLevel(level)
+            LOGGING_LEVELS[_module] = level
+    else:
+        _loggers[module] = _get_logger(module, level)
