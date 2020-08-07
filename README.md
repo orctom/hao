@@ -84,7 +84,7 @@ LOGGER = hao.logs.get_logger(__name__)
 ### namespaces
 
 ```python
-from spanner.namespaces import from_args, attr
+from hao.namespaces import from_args, attr
 
 @from_args
 #@from_args(adds=Trainer.add_argparse_args)
