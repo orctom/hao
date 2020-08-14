@@ -8,9 +8,9 @@ configurations, logs and others.
 pip install hao
 ```
 
-## features
+## precondition
 
-**Precondition**: The folder contained any of the following files (searched in this very order) will be treated as **project root path**.
+The folder contained any of the following files (searched in this very order) will be treated as **project root path**.
 
 - requirements.txt
 - VERSION
@@ -19,11 +19,25 @@ pip install hao
 - .idea
 - .git
 
-If your project structure does NOT conform to this, it will not work as expected.
+**If your project structure does NOT conform to this, it will not work as expected.**
+
+## features
 
 ### config
 
-It will try to load YAML config file from folder: `${project_root_path}/conf/`, by following order:
+It will try to load YAML config file from `conf` folder
+```
+.                               # project root
+├── conf
+│   ├── config-{env}.yml        # if `export env=abc`, will raise error if not found
+│   ├── config-{hhostname}.yml  # try to load this file, then the default `config.yml`
+│   └── config.yml              # the default config file that should always exist
+├── requirements.txt            # every project should have this file
+├── VERSION                     # spanner.versions.get_version() will try to read this file
+├── .git
+```
+
+In following order:
 
 ```python
 if os.environ.get("env") is not None:

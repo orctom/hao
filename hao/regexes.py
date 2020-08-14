@@ -4,11 +4,11 @@ import typing
 import regex
 
 
-def re_compile(items, prefix='', suffix=''):
+def re_compile(items, prefix='', suffix='', flags=regex.I):
     if items is None or len(items) == 0:
         return None
     pattern = join_items(items, prefix, suffix)
-    return regex.compile(pattern, regex.I)
+    return regex.compile(pattern, flags)
 
 
 def join_items(items, prefix='', suffix=''):

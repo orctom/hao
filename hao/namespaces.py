@@ -16,6 +16,9 @@ class Attr(object):
         self.help = help
         self.kwargs = kwargs
 
+    def __call__(self, *args, **kwargs):
+        pass
+
 
 attr = Attr
 
@@ -105,6 +108,7 @@ def from_args(_cls=None, prefix=None, adds=None):
                 pass
             setattr(self, _name, _value)
             values[_name] = _value
+
         del values
 
     def _get_arg_name(self, _name):

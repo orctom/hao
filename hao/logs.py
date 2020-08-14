@@ -84,16 +84,19 @@ def get_logger(name=None, level=None):
     if name is None:
         name = paths.who_called_me()
 
+    logger = _loggers.get(name)
+    if logger is None:
+        logger = _get_logger(name, level)
+        _loggers[name] = logger
+    elif level is not None:
+        logger.setLevel(level)
+
+    # update other modules that newly imported
     for _name in logging.root.manager.loggerDict:
         if _name not in _loggers:
             _loggers[_name] = _get_logger(_name)
 
-    if name in _loggers:
-        return _loggers.get(name)
-
-    _logger = _get_logger(name, level)
-    _loggers[name] = _logger
-    return _logger
+    return logger
 
 
 def _get_logger(name, level=None):
@@ -101,13 +104,21 @@ def _get_logger(name, level=None):
     _logger.setLevel(level or get_logging_level(name))
     _logger.handlers.clear()
     _logger.addHandler(get_stream_handler())
-    LOGGING_LEVELS[name] = level
+    if level:
+        LOGGING_LEVELS[name] = level
     if os.environ.get('SCRAPY_PROJECT') is None:
         _logger.propagate = False
         if LOGGER_FILE_ENABLED:
             _logger.addHandler(get_file_handler())
 
     return _logger
+
+
+def _update_logger(logger):
+    logger.setLevel(get_logging_level(logger.name))
+    handlers = [handler for handler in logger.handlers if not isinstance(handler, logging.StreamHandler)]
+    logger.handlers = handlers + [get_stream_handler()]
+    return logger
 
 
 def get_logging_level(name):
