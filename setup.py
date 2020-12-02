@@ -8,6 +8,23 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
+
+def load_requirements(file_name='requirements.txt', comment_char='#'):
+    with open(path.join(here, file_name), 'r') as file:
+        lines = [ln.strip() for ln in file.readlines()]
+    reqs = []
+    for ln in lines:
+        # filer all comments
+        if comment_char in ln:
+            ln = ln[:ln.index(comment_char)].strip()
+        # skip directly installed dependencies
+        if ln.startswith('http'):
+            continue
+        if ln:  # if requirement is not empty
+            reqs.append(ln)
+    return reqs
+
+
 # Arguments marked as "Required" below must be included for upload to PyPI.
 # Fields marked as "Optional" may be commented out.
 
@@ -122,13 +139,7 @@ setup(
     #
     # For an analysis of "install_requires" vs pip's requirements files see:
     # https://packaging.python.org/en/latest/requirements.html
-    install_requires=[
-        'importlib_resources',
-        'ruamel.yaml~=0.16.5',
-        'regex',
-        'decorator',
-        'requests',
-    ],
+    install_requires=load_requirements(),
 
     # List additional groups of dependencies here (e.g. development
     # dependencies). Users will be able to install these using the "extras"

@@ -4,17 +4,26 @@ import pkgutil
 
 from . import \
     config, \
-    logs, \
-    envs, \
-    paths, \
-    regexes, \
     decorators, \
-    singleton, \
-    stopwatch, \
-    versions, \
+    dicts, \
+    envs, \
     files, \
+    invoker, \
+    jsons, \
+    lists, \
+    logs, \
+    namespaces, \
+    nations, \
+    networks, \
+    notifier, \
+    paths, \
+    places, \
+    regexes, \
+    singleton, \
     slacks, \
-    namespaces
+    stopwatch, \
+    strings, \
+    versions
 
 
 def import_submodules(package, recursive=False):

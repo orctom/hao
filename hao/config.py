@@ -4,6 +4,7 @@ import os
 import socket
 import sys
 import traceback
+import typing
 
 from ruamel import yaml
 
@@ -11,34 +12,6 @@ from . import paths
 
 ENV = os.environ.get("env")
 HOSTNAME = socket.gethostname()
-
-_config = None
-
-
-def is_production():
-    return ENV == 'prod'
-
-
-def is_not_production():
-    return not is_production()
-
-
-def get_config_dir():
-    config_dir = os.environ.get("CONFIG_DIR")
-    if config_dir is not None:
-        if not os.path.exists(config_dir):
-            print(f'[config] CONFIG_DIR: {config_dir} DOES NOT EXIST, trying from default path')
-        else:
-            return config_dir
-
-    root_path = paths.project_root_path()
-    if root_path is None:
-        root_path = os.getcwd()
-    sys.path.append(root_path)
-    program_path = os.environ.get('_')
-    if program_path:
-        os.environ['program_name'] = os.path.basename(program_path)
-    return os.path.join(root_path, 'conf')
 
 
 class Config(object):
@@ -86,10 +59,11 @@ class Config(object):
             try:
                 conf = yaml.safe_load(stream)
                 print(f"[config] from: {config_file}, loaded")
-                return conf
+                return conf or {}
             except yaml.YAMLError as e:
                 print(f"[config] failed to load from: {config_file}, due to: {e}")
                 traceback.print_exc()
+                return {}
 
     def get(self, name, default_value=None):
         if name is None:
@@ -110,18 +84,47 @@ class Config(object):
             return default_value
         cfg = self.conf
         if cfg is None:
-            return paths.expand(default_value)
+            return paths.get_path(default_value) if default_value else None
         for _key in name.split('.'):
             if isinstance(cfg, str):
-                return paths.expand(default_value)
+                return paths.get_path(default_value) if default_value else None
             cfg = cfg.get(_key)
             if cfg is None:
                 return default_value
-        return paths.expand(cfg)
+        return paths.get_path(cfg)
+
+
+def is_production():
+    return ENV == 'prod'
+
+
+def is_not_production():
+    return not is_production()
+
+
+def get_config_dir():
+    config_dir = os.environ.get("CONFIG_DIR")
+    if config_dir is not None:
+        if not os.path.exists(config_dir):
+            print(f'[config] CONFIG_DIR: {config_dir} DOES NOT EXIST, trying from default path')
+        else:
+            return config_dir
+
+    root_path = paths.project_root_path()
+    if root_path is None:
+        root_path = os.getcwd()
+    sys.path.append(root_path)
+    program_path = os.environ.get('_')
+    if program_path:
+        os.environ['program_name'] = os.path.basename(program_path)
+    return os.path.join(root_path, 'conf')
 
 
 def config_from(config_file_name, config_dir=None):
     return Config(config_file_name, config_dir)
+
+
+_CONFIG: typing.Optional[Config] = None
 
 
 def check_configured(silent=False):
@@ -129,10 +132,10 @@ def check_configured(silent=False):
     def decorator(func):
         @functools.wraps(func)
         def check(*args, **kwargs):
-            global _config
-            if _config is None:
-                _config = Config()
-            if _config is None:
+            global _CONFIG
+            if _CONFIG is None:
+                _CONFIG = Config()
+            if _CONFIG is None:
                 if silent:
                     return args[1] if len(args) == 2 else None
                 else:
@@ -145,9 +148,9 @@ def check_configured(silent=False):
 
 @check_configured(silent=True)
 def get(name, default_value=None):
-    return _config.get(name, default_value)
+    return _CONFIG.get(name, default_value)
 
 
 @check_configured(silent=True)
 def get_path(name, default_value=None):
-    return _config.get_path(name, default_value)
+    return _CONFIG.get_path(name, default_value)

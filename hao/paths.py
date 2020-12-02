@@ -2,9 +2,10 @@
 import inspect
 import os
 import pathlib
-import regex
 import sys
 import types
+
+import regex
 
 FILES_IN_ROOT = ('requirements.txt', 'VERSION', 'conf', 'setup.py', '.idea', '.git')
 _ROOT_PATH = None
@@ -104,6 +105,9 @@ def set_temp_dir(path: str = '~/.temp') -> bool:
 
 
 def get_path(*paths):
+    if paths is None or len(paths) == 0:
+        return ''
+    paths = list(filter(None, paths))
     if len(paths) == 0:
         return ''
     if paths[0][0] in ('/', '~', '$'):

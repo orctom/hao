@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
+
 import asyncio
+import functools
+import signal
 import threading
 import time
+import typing
 
 from decorator import decorator
 
-from . import logs
+from . import logs, exceptions
 from .stopwatch import Stopwatch
 
 LOGGER = logs.get_logger(__name__)
@@ -107,4 +111,61 @@ def synchronized(func, *a, **kw):
         def wrapper(*args, **kwargs):
             with func.__lock__:
                 return func(*args, **kwargs)
+    return wrapper(*a, **kw)
+
+
+@decorator
+def background(func, *a, **kw):
+    try:
+        import contextvars  # Python 3.7+ only.
+    except ImportError:
+        contextvars = None
+
+    if asyncio.iscoroutinefunction(func):
+        async def wrapper(*args, **kwargs):
+            return await func(*args, **kwargs)
+    else:
+        def wrapper(*args, **kwargs):
+            loop = asyncio.get_event_loop()
+            if contextvars is not None:
+                # Ensure we run in the same context
+                context = contextvars.copy_context()
+                f = functools.partial(context.run, func, *args, **kwargs)
+                args = []
+            elif kwargs:
+                # loop.run_in_executor doesn't accept 'kwargs', so bind them in here
+                f = functools.partial(func, **kwargs)
+            else:
+                f = func
+            return loop.run_in_executor(None, f, *args)
+    return wrapper(*a, **kw)
+
+
+@decorator
+def timeout(func: typing.Callable, seconds=5, timeout_exception=TimeoutError, message=None, *a, **kw):
+    """
+    NOT work for windows, signal not supported??!!
+    """
+    def handle(_, __):
+        msg = message or f'{func.__name__}() timed out ({seconds} seconds)'
+        exceptions.throw(timeout_exception, msg)
+
+    if asyncio.iscoroutinefunction(func):
+        async def wrapper(*args, **kwargs):
+            old = signal.signal(signal.SIGALRM, handle)
+            signal.alarm(seconds)
+            try:
+                return await func(*args, **kwargs)
+            finally:
+                signal.signal(signal.SIGALRM, old)
+                signal.alarm(0)
+    else:
+        def wrapper(*args, **kwargs):
+            old = signal.signal(signal.SIGALRM, handle)
+            signal.alarm(seconds)
+            try:
+                return func(*args, **kwargs)
+            finally:
+                signal.signal(signal.SIGALRM, old)
+                signal.alarm(0)
     return wrapper(*a, **kw)

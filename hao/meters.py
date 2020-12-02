@@ -5,7 +5,6 @@ import typing
 
 from . import logs
 
-
 LOGGER = logs.get_logger(__name__)
 
 
@@ -57,6 +56,10 @@ class SimpleMetrics(object):
         self.reset()
         self._reporter.start()
         return self
+
+    def stop(self):
+        if self._reporter.is_alive():
+            self._reporter.stop()
 
     def reset(self):
         self._meters: typing.DefaultDict[str, SimpleCounter] = collections.defaultdict(SimpleCounter)

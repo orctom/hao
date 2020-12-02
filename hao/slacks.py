@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 import json
 import traceback
+import typing
 from datetime import datetime
 
 import requests
 
-from . import logs, versions, config, paths
+from . import logs, versions, config, paths, decorators, jsons
 
 LOGGER = logs.get_logger(__name__)
 
@@ -22,6 +23,7 @@ def _get_token(channel):
         return None
 
 
+@decorators.background
 def notify(message: str, channel='default'):
     token = _get_token(channel)
     if token is None:
@@ -36,11 +38,15 @@ def notify(message: str, channel='default'):
         response = requests.post(url, data=json.dumps(payload), headers=headers)
         LOGGER.info(response.text)
     except Exception as e:
-        LOGGER.error(e)
+        LOGGER.debug(e)
 
 
-def notify_exception(e: Exception, text: str = None, channel='default'):
+def notify_exception(e: Exception, data: typing.Union[str, dict] = None, channel='default'):
     token = _get_token(channel)
+    if isinstance(data, dict):
+        text = jsons.dumps(data)
+    else:
+        text = str(data)
     if token is None:
         LOGGER.debug(f"channel not found: {channel}")
         LOGGER.debug(f'notify_exception...: {text}')

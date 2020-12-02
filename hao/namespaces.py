@@ -74,8 +74,6 @@ def from_args(_cls=None, prefix=None, adds=None):
             arg_name = f'--{self._get_arg_name(_name)}'
             LOGGER.debug(f"[from_args] add argument: {arg_name}")
 
-            if _attr.type is bool:
-                _attr.kwargs["action"] = "store_false" if _attr.default is True else "store_true"
             if _attr.type is list or issubclass(_attr.type, list):
                 _attr.kwargs['nargs'] = '+'
                 _attr.type = str
@@ -103,12 +101,14 @@ def from_args(_cls=None, prefix=None, adds=None):
             values[_name] = _value
 
         for _name, _attr in attrs.items():
-            if 'action' in _attr.kwargs and _name in kwargs:
+            _value = getattr(args, self._get_arg_name(_name), None)
+            if _value is None and _name in kwargs:
                 _value = kwargs.get(_name)
-            else:
-                _value = getattr(args, self._get_arg_name(_name), None)
             if _value is None:  # 0 or 2 -> 2
-                _value = kwargs.get(_name, config.get(_attr.key, _attr.default))
+                if _attr.key:
+                    _value = kwargs.get(_name, config.get(_attr.key.format(**values), _attr.default))
+                else:
+                    _value = _attr.default
             if _value is None and _attr.required:
                 parser.print_usage()
                 raise ValueError(f'missing arg: --{self._get_arg_name(_name)}')

@@ -3,6 +3,8 @@ import typing
 
 import regex
 
+RE_CHINESE = regex.compile(u'[\u4e00-\u9fa5]+')
+
 
 def re_compile(items, prefix='', suffix='', flags=regex.I):
     if items is None or len(items) == 0:

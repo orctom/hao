@@ -1,9 +1,15 @@
 # -*- coding: utf-8 -*-
+import base64
+import hashlib
 import mmap
-
-import regex
+import os
 import typing
 
+import regex
+
+from . import logs
+
+LOGGER = logs.get_logger(__name__)
 
 P_BLANK_LINE = regex.compile(r'^(?:\s|\r|\n)*$')
 
@@ -34,3 +40,20 @@ def count_matched_lines(file: str, p: typing.Pattern):
             if p.search(line.decode()) is not None:
                 n_lines += 1
         return n_lines
+
+
+def md5(file_name, hexical: bool = True, block_size=64 * 1024):
+    if not os.path.exists(file_name):
+        return None
+    with open(file_name, 'rb') as f:
+        digest = hashlib.md5()
+        while True:
+            data = f.read(block_size)
+            if not data:
+                break
+            digest.update(data)
+
+    if hexical:
+        return digest.hexdigest()
+    else:
+        return base64.b64encode(digest.digest()).decode()
