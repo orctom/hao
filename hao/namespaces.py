@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import argparse
 
-from . import config, logs
+from . import config, logs, strings
 
 LOGGER = logs.get_logger(__name__)
 
@@ -74,14 +74,15 @@ def from_args(_cls=None, prefix=None, adds=None):
             arg_name = f'--{self._get_arg_name(_name)}'
             LOGGER.debug(f"[from_args] add argument: {arg_name}")
 
-            if _attr.type is list or issubclass(_attr.type, list):
-                _attr.kwargs['nargs'] = '+'
+            if _attr.type is list or isinstance(_attr.type, list):
+                _attr.kwargs['nargs'] = '*'
                 _attr.type = str
 
             if 'action' in _attr.kwargs:
                 parser.add_argument(arg_name, help=_attr.help, **_attr.kwargs)
             else:
-                parser.add_argument(arg_name, type=_attr.type, help=_attr.help, **_attr.kwargs)
+                attr_type = _attr.type if _attr.type != bool else lambda x: strings.boolean(x)
+                parser.add_argument(arg_name, type=attr_type, help=_attr.help, **_attr.kwargs)
 
         args, _ = parser.parse_known_args()
         values = {}

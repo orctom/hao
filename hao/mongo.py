@@ -74,3 +74,6 @@ class Mongo(object):
         if name is None:
             name = self._conf.get('db')
         return self.client[name]
+
+    def is_collection_exist(self, collection_name):
+        return len(self.db.list_collection_names(filter={"name": collection_name})) > 0

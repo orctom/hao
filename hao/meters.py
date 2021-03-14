@@ -3,7 +3,9 @@ import collections
 import threading
 import typing
 
-from . import logs
+import requests
+
+from . import logs, config
 
 LOGGER = logs.get_logger(__name__)
 
@@ -49,6 +51,8 @@ class SimpleMetrics(object):
         self._gauges = {}
         self._reporter = PeriodicalTask(interval, self._report)
         self._n_cycle = 0
+        self.prometheus_gateway = config.get('prometheus.gateway')
+        self.prometheus_key = config.get('prometheus.key')
 
     def start(self):
         if self._reporter.is_alive():
@@ -87,7 +91,8 @@ class SimpleMetrics(object):
             rate = delta / self._interval
             total = counter.get()
             rate_total = total / (self._interval * self._n_cycle)
-            self._logger.info(f"[{key}] count: {delta}, rate: {rate:.2f} it/s; total: {total}, rate: {rate_total:.2f} it/s")
+            self._logger.info(f"[meter-{key}] count: {delta}, rate: {rate:.2f} it/s; total: {total}, rate: {rate_total:.2f} it/s")
+            self._report_to_prometheus(key, rate)
 
     def _report_gauges(self):
         for key, gauge in self._gauges.copy():
@@ -96,6 +101,15 @@ class SimpleMetrics(object):
                 self._logger.info(f"[{key}] gauge: {value}")
             except Exception as e:
                 self._logger.warning(e)
+
+    def _report_to_prometheus(self, job_name, value):
+        if self.prometheus_gateway and self.prometheus_key:
+            url = f"{self.prometheus_gateway}/metrics/job/{job_name}/instance/{config.HOSTNAME}"
+            data = f'''# TYPE {self.prometheus_key} gauge\n{self.prometheus_key} {value}\n'''.encode()
+            try:
+                requests.put(url, data=data, timeout=5)
+            except Exception as e:
+                LOGGER.info(e)
 
 
 class PeriodicalTask(threading.Thread):

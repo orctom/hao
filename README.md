@@ -33,7 +33,7 @@ It will try to load YAML config file from `conf` folder
 │   ├── config-{hhostname}.yml  # try to load this file, then the default `config.yml`
 │   └── config.yml              # the default config file that should always exist
 ├── requirements.txt            # every project should have this file
-├── VERSION                     # spanner.versions.get_version() will try to read this file
+├── VERSION                     # hao.versions.get_version() will try to read this file
 ├── .git
 ```
 

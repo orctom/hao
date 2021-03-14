@@ -113,3 +113,7 @@ def get_path(*paths):
     if paths[0][0] in ('/', '~', '$'):
         return expand(os.path.join(*paths))
     return expand(os.path.join(project_root_path(), *paths))
+
+
+def get(*paths):
+    return get_path(*paths)

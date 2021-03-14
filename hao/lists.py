@@ -93,26 +93,16 @@ def add_to_list(items, adding):
     return True
 
 
-def remove_fields(items: list, fields: list, copy=False) -> list:
+def remove_fields(items: list, fields: list, copy=False, remove_empty: bool = False, remove_private: bool = False) -> list:
     if items is None or fields is None or len(fields) == 0:
         return items or []
     results = list()
     for item in items:
-        _item = dicts.remove_fields(item, fields, copy)
+        _item = dicts.remove_fields(item, fields, copy, remove_empty, remove_private)
         if _item is None:
             continue
         results.append(_item)
     return results
-
-
-def remove_empty_fields(items: list):
-    try:
-        if items is None or len(items) == 0:
-            return None
-
-        return list(map(dicts.remove_empty_fields, items))
-    except RecursionError:
-        return None
 
 
 def padding(items: list, size, padding_item):

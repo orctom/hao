@@ -9,7 +9,7 @@ import typing
 
 from decorator import decorator
 
-from . import logs, exceptions
+from . import logs, asyncs, exceptions
 from .stopwatch import Stopwatch
 
 LOGGER = logs.get_logger(__name__)
@@ -126,7 +126,7 @@ def background(func, *a, **kw):
             return await func(*args, **kwargs)
     else:
         def wrapper(*args, **kwargs):
-            loop = asyncio.get_event_loop()
+            loop = asyncs.get_event_loop()
             if contextvars is not None:
                 # Ensure we run in the same context
                 context = contextvars.copy_context()

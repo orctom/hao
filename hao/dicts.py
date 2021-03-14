@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+
 def get(data: dict, attribute, *fallback_attributes, default_value=None):
     if data is None:
         return default_value
@@ -13,33 +14,27 @@ def get(data: dict, attribute, *fallback_attributes, default_value=None):
     return default_value
 
 
-def remove_fields(data: dict, fields: list, copy=False):
-    if data is None or fields is None:
-        return None
-
-    if isinstance(data, (list, set, tuple)):
-        return [remove_fields(item, fields, copy) for item in data]
-
-    if isinstance(data, dict):
-        return {k: remove_fields(v, fields, copy) for k, v in data.items() if k not in fields}
-
-    return data
-
-
-def remove_empty_fields(data):
+def remove_fields(data: dict, fields: list = None, copy=False, remove_empty: bool = False, remove_private: bool = False):
     try:
-        if data in [None, '', [], {}, ()]:
+        if data is None:
+            return None
+
+        if remove_empty and data in [None, '', [], {}, ()]:
             return None
 
         if isinstance(data, (list, set, tuple)):
-            return list(map(remove_empty_fields, data))
+            return [remove_fields(item, fields, copy, remove_empty, remove_private) for item in data]
 
         if isinstance(data, dict):
             new_data = {}
             for k, v in data.items():
-                if v in [None, '', [], {}, ()]:
+                if fields and k in fields:
                     continue
-                new_data[k] = remove_empty_fields(v)
+                if remove_empty and v in [None, '', [], {}, ()]:
+                    continue
+                if remove_private and k.startswith('_'):
+                    continue
+                new_data[k] = remove_fields(v, fields, copy, remove_empty, remove_private)
             return new_data
 
         return data
