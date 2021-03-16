@@ -1,4 +1,4 @@
-ruamel.yaml~=0.16.5
+PyYAML
 regex
 decorator
 requests

@@ -5,8 +5,7 @@ import socket
 import sys
 import traceback
 import typing
-
-from ruamel import yaml
+import yaml
 
 from . import paths
 

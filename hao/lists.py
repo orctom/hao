@@ -8,12 +8,12 @@ def uniquify(sequence, min_size=0):
     seen = set()
     return list(filter(
         None,
-        [__strip_list_item(x) for x in sequence
+        [_strip_list_item(x) for x in sequence
          if x is not None and len(x) >= min_size and not (x in seen or seen.add(x))]
     ))
 
 
-def __strip_list_item(item):
+def _strip_list_item(item):
     if item is None:
         return None
     if callable(getattr(item, 'strip', None)):
