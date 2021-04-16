@@ -138,7 +138,7 @@ class Rabbit(object):
         self.close()
         self.ensure_connection()
 
-    def get_queue(self, queue_id: str = None, prefetch=1) -> (typing.Optional[SimpleQueue], str):
+    def get_queue(self, queue_id: str = None) -> (typing.Optional[SimpleQueue], str):
         self.ensure_connection()
         if queue_id is None:
             queue_id = list(self._queue_options)[0]
@@ -148,13 +148,13 @@ class Rabbit(object):
             queue = self._queues.get(queue_id)
             if queue is not None:
                 return queue, queue_id
-            queue = self._simple_queue(queue_id, prefetch)
+            queue = self._simple_queue(queue_id)
             self._queues[queue_id] = queue
             return queue, queue_id
 
-    def _simple_queue(self, queue_id, prefetch) -> SimpleQueue:
-        channel = self._get_channel(prefetch)
+    def _simple_queue(self, queue_id) -> SimpleQueue:
         options = self._queue_options.get(queue_id, {})
+        channel = self._get_channel(options.get('prefetch', 1))
         queue_name = options.get('name', queue_id)
         LOGGER.debug(f'[rabbit] queue id: {queue_id} -> queue name: {queue_name}')
         return self._conn.SimpleQueue(
@@ -203,13 +203,13 @@ class Rabbit(object):
                     msg = msg if isinstance(msg, str) else jsons.dumps(msg)
                     queue.put(msg, retry=retry, retry_policy=RETRY_POLICY, priority=priority)
                 if verbose:
-                    LOGGER.info(f'[rabbit] added: {len(message)} tasks, prior: {prior}, priority: {priority}')
+                    LOGGER.info(f'[rabbit] [{queue_id}] added: {len(message)} tasks, prior: {prior}, priority: {priority}')
             else:
                 msg = message if isinstance(message, str) else jsons.dumps(message)
                 queue.put(msg, retry=retry, retry_policy=RETRY_POLICY, priority=priority)
 
                 if verbose:
-                    LOGGER.info(f'[rabbit] added: {msg}, prior: {prior}, priority: {priority}')
+                    LOGGER.info(f'[rabbit] [{queue_id}] added: {msg}, prior: {prior}, priority: {priority}')
         except AttributeError as e:
             self.ensure_connection(True)
             raise e

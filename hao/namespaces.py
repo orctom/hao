@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import argparse
+import os
 
 from . import config, logs, strings
 
@@ -23,13 +24,16 @@ class Attr(object):
 attr = Attr
 
 
-def from_args(_cls=None, prefix=None, adds=None):
+def from_args(_cls=None, prefix=None, adds=None, env: bool = True):
     """
-    populate args from: command line / constructor / config / defaults.
+    resolves args from: command line / constructor / env / config / defaults (by order).
     also supports arg resolving according attributes declared upper
+
     :param _cls: do not pass in this param
     :param prefix: optional prefix for command line: {prefix}_attribute
-    :param adds: optional one or more function to add more args to ArgumentParser()
+    :param adds: optional one or more function to add more args to ArgumentParser()<br/>
+        e.g. <pre> @from_args(adds=pytorch_lightning.Trainer.add_argparse_args) </pre>
+    :param env: will try to resolve args from environment properties if True
     :return: the object with value populated
     """
 
@@ -86,25 +90,35 @@ def from_args(_cls=None, prefix=None, adds=None):
 
         args, _ = parser.parse_known_args()
         values = {}
+
+        # constructor
         for _name, _value in kwargs.items():
             setattr(self, _name, _value)
+
+        # adds
         for _name, _default in fields_adds.items():
-            _value = getattr(args, self._get_arg_name(_name))
-            if _value is None:
+            arg_name = self._get_arg_name(_name)
+            _value = getattr(args, arg_name)                   # namespace
+            if _value is None:                                 # constructor
                 _value = kwargs.get(_name)
-            if _value is None:
-                _value = _default
+            if _value is None:                                 # env / default
+                _value = os.getenv(arg_name, _default) if env else _default
             setattr(self, _name, _value)
             values[_name] = _value
 
+        # static fields
         for _name, _value in fields.items():
             setattr(self, _name, _value)
             values[_name] = _value
 
+        # attrs
         for _name, _attr in attrs.items():
-            _value = getattr(args, self._get_arg_name(_name), None)
+            arg_name = self._get_arg_name(_name)
+            _value = getattr(args, arg_name, None)  # namespace
             if _value is None and _name in kwargs:
                 _value = kwargs.get(_name)
+            if _value is None and env:
+                _value = os.getenv(arg_name)
             if _value is None:  # 0 or 2 -> 2
                 if _attr.key:
                     _value = kwargs.get(_name, config.get(_attr.key.format(**values), _attr.default))

@@ -48,6 +48,7 @@ else:
 
 Say you have the following content in your config file:
 ```yaml
+# config.yml
 es:
   default:
     host: 172.23.3.3
@@ -68,10 +69,11 @@ indices = hao.config.get('es.default.indices')       # list
 
 ### logs
 
-Set the logger level in `config.yml`
+Set the logger levels to filter logs
 
 e.g.
 ```yaml
+# config.yml
 logging:
   __main__: DEBUG
   transformers: WARNING
@@ -82,26 +84,48 @@ logging:
   root: INFO                        # root level
 ```
 
-If you want to change the log format:
+Settings for logger:
 ```yaml
+# config.yml
 logger:
-  format: "%(asctime)s %(levelname)-7s %(name)s:%(lineno)-4d - %(message)s"
+  format: "%(asctime)s %(levelname)-7s %(name)s:%(lineno)-4d - %(message)s"  # this is the built-in format
+  file:                         # using time-based-rotating file logger
+    dir: ~/.logs/spanner/       # log parent folder
+    enabled: false              # depends on `logger.file.dir`
+    rotate:
+      count: 3                  # keep n rotate log files
+      when: d                   # rotate log files every `d` (day)
 ```
 
-Declear your logger
+Declare and user the logger
 
 ```python
 import hao
 LOGGER = hao.logs.get_logger(__name__)
+
+LOGGER.debug('message')
+LOGGER.info('message')
+LOGGER.warnning('message')
+LOGGER.error('message')
+LOGGER.exception(err)
 ```
 
 ### namespaces
 
 ```python
+import hao
 from hao.namespaces import from_args, attr
 
 @from_args
-#@from_args(adds=Trainer.add_argparse_args)
+class ProcessConf(object):
+    file_in = attr(str, required=True, help="file path to process")
+    file_out = attr(str, required=True, help="file path to save")
+    tokenizer = attr(str, required=True, choice=('wordpiece', 'bpe'))
+
+
+from argparse import Namespace
+from pytorch_lightning import Trainer
+@from_args(adds=Trainer.add_argparse_args)
 class TrainConf(Namespace):
     root_path_checkpoints = attr(str, default=hao.paths.get_path('data/checkpoints/'))
     dataset_train = attr(str, default='train.txt')
