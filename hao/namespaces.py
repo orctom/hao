@@ -81,6 +81,9 @@ def from_args(_cls=None, prefix=None, adds=None, env: bool = True):
             if _attr.type is list or isinstance(_attr.type, list):
                 _attr.kwargs['nargs'] = '*'
                 _attr.type = str
+            if hasattr(_attr.type, '__args__') and getattr(_attr.type, '__origin__') in (list, set, tuple):
+                _attr.kwargs['nargs'] = '*'
+                _attr.type = getattr(_attr.type, '__args__')[0]
 
             if 'action' in _attr.kwargs:
                 parser.add_argument(arg_name, help=_attr.help, **_attr.kwargs)
