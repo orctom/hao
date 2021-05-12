@@ -77,9 +77,10 @@ RETRY_POLICY = {'interval_start': 0, 'interval_step': 1, 'max_retries': 3}
 
 class Rabbit(object):
 
-    def __init__(self, profile='default') -> None:
+    def __init__(self, profile='default', prefetch=1) -> None:
         super().__init__()
         self.profile = profile
+        self.prefetch = prefetch
         self._conn: typing.Optional[Connection] = None
         self._queues = {}
         self._queue_options = {}
@@ -154,7 +155,7 @@ class Rabbit(object):
 
     def _simple_queue(self, queue_id) -> SimpleQueue:
         options = self._queue_options.get(queue_id, {})
-        channel = self._get_channel(options.get('prefetch', 1))
+        channel = self._get_channel(self.prefetch)
         queue_name = options.get('name', queue_id)
         LOGGER.debug(f'[rabbit] queue id: {queue_id} -> queue name: {queue_name}')
         return self._conn.SimpleQueue(
@@ -213,6 +214,8 @@ class Rabbit(object):
         except AttributeError as e:
             self.ensure_connection(True)
             raise e
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            self.reconnect()
 
     def pull(self, queue_id: str = None, timeout=5, block=True) -> typing.Optional[Message]:
         queue, queue_id = self.get_queue(queue_id)
@@ -227,8 +230,8 @@ class Rabbit(object):
         except Exception as e:
             LOGGER.exception(e)
 
-    def consume(self, queue_id: str = None, timeout=1, block=True, prefetch=1) -> typing.Generator[Message, None, None]:
-        queue, queue_id = self.get_queue(queue_id, prefetch)
+    def consume(self, queue_id: str = None, timeout=1, block=True) -> typing.Generator[Message, None, None]:
+        queue, queue_id = self.get_queue(queue_id)
         if queue is None:
             return None
         try:

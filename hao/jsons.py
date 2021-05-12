@@ -8,8 +8,16 @@ LOGGER = logs.get_logger(__name__)
 
 
 def json_default(o):
-    if type(o) is datetime.date or type(o) is datetime.datetime:
+    if isinstance(o, (datetime.date, datetime.datetime)):
         return o.isoformat()
+    if hasattr(o, '__dict__'):
+        return getattr(o, '__dict__')
+    try:
+        from bson import ObjectId
+        if isinstance(o, ObjectId):
+            return str(o)
+    except ImportError:
+        pass
 
 
 def dumps(data):

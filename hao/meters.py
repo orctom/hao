@@ -91,7 +91,7 @@ class SimpleMetrics(object):
             rate = delta / self._interval
             total = counter.get()
             rate_total = total / (self._interval * self._n_cycle)
-            self._logger.info(f"[meter-{key}] count: {delta}, rate: {rate:.2f} it/s; total: {total}, rate: {rate_total:.2f} it/s")
+            self._logger.info(f"[meter-{key}] count: {delta}, rate: {rate:.2f} it/s; total: {total}, avg: {rate_total:.2f} it/s")
             self._report_to_prometheus(key, rate)
 
     def _report_gauges(self):
