@@ -34,6 +34,9 @@ item = mongo.db.collection_name.find_one({'_id': ObjectId(_id)})
 collection = mongo.db['collection_name']
 
 """
+import typing
+
+import bson
 from pymongo import MongoClient
 from pymongo.common import KW_VALIDATORS, URI_OPTIONS_VALIDATOR_MAP, NONSPEC_OPTIONS_VALIDATOR_MAP, URI_OPTIONS_ALIAS_MAP, \
     INTERNAL_URI_OPTION_NAME_MAP, URI_OPTIONS_DEPRECATION_MAP, TIMEOUT_OPTIONS, WRITE_CONCERN_OPTIONS
@@ -59,6 +62,15 @@ def connect(host=None,
     return MongoClient(host, port, document_class, tz_aware, connect_now, type_registry, **params)
 
 
+def ensure_id_type(_id):
+    if _id is None:
+        return None
+    assert isinstance(_id, (str, bson.ObjectId))
+    if isinstance(_id, str):
+        _id = bson.ObjectId(_id)
+    return _id
+
+
 class Mongo(object):
 
     def __init__(self, profile='default') -> None:
@@ -75,5 +87,36 @@ class Mongo(object):
             name = self._conf.get('db')
         return self.client[name]
 
+    def col(self, name: str):
+        return self.db[name]
+
     def is_collection_exist(self, collection_name):
         return len(self.db.list_collection_names(filter={"name": collection_name})) > 0
+
+    def count(self, col_name: str, query: typing.Optional[dict] = None):
+        return self.col(col_name).count_documents(query or {})
+
+    def find_by_id(self, col_name: str, _id: typing.Union[str, bson.ObjectId]):
+        _id = ensure_id_type(_id)
+        return self.col(col_name).find_one({'_id': _id})
+
+    def find(self, col_name: str, query: typing.Optional[dict] = None, projection: typing.Optional[dict] = None, **kwargs):
+        return self.col(col_name).find(query or {}, projection or {}, **kwargs)
+
+    def find_one(self, col_name: str, query: typing.Optional[dict] = None, projection: typing.Optional[dict] = None, **kwargs):
+        return self.col(col_name).find_one(query or {}, projection or {}, **kwargs)
+
+    def save(self, col_name: str, data: dict):
+        _id = data.pop('_id', None)
+        if _id is None:
+            self.col(col_name).save(data)
+        else:
+            _id = ensure_id_type(_id)
+            self.col(col_name).update_one({'_id': _id}, {"$set": data})
+
+    def delete_by_id(self, col_name: str, _id: typing.Union[str, bson.ObjectId]):
+        _id = ensure_id_type(_id)
+        self.col(col_name).delete_one({'_id': _id})
+
+    def delete(self, col_name: str, query: dict):
+        self.col(col_name).delete(query)

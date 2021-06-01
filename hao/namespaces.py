@@ -2,7 +2,10 @@
 import argparse
 import os
 
-from . import config, logs, strings
+import typing
+
+from . import logs, strings
+from .config import get_config, Config
 
 LOGGER = logs.get_logger(__name__)
 
@@ -24,7 +27,11 @@ class Attr(object):
 attr = Attr
 
 
-def from_args(_cls=None, prefix=None, adds=None, env: bool = True):
+def from_args(_cls=None,
+              prefix=None,
+              adds=None,
+              env: bool = True,
+              config: typing.Optional[typing.Union[str, Config]] = None):
     """
     resolves args from: command line / constructor / env / config / defaults (by order).
     also supports arg resolving according attributes declared upper
@@ -34,12 +41,14 @@ def from_args(_cls=None, prefix=None, adds=None, env: bool = True):
     :param adds: optional one or more function to add more args to ArgumentParser()<br/>
         e.g. <pre> @from_args(adds=pytorch_lightning.Trainer.add_argparse_args) </pre>
     :param env: will try to resolve args from environment properties if True
+    :param config: None (default) / yml filename / Config
     :return: the object with value populated
     """
 
     def __init__(self, *args, **kwargs):
         if len(args) > 0 and _cls is not None:
             raise ValueError('@from_args() not allowed arg: "_cls"')
+        cfg = get_config(config)
         parser = argparse.ArgumentParser(conflict_handler='resolve')
 
         if adds is not None:
@@ -124,7 +133,7 @@ def from_args(_cls=None, prefix=None, adds=None, env: bool = True):
                 _value = os.getenv(arg_name)
             if _value is None:  # 0 or 2 -> 2
                 if _attr.key:
-                    _value = kwargs.get(_name, config.get(_attr.key.format(**values), _attr.default))
+                    _value = kwargs.get(_name, cfg.get(_attr.key.format(**values), _attr.default))
                 else:
                     _value = _attr.default
             if _value is None and _attr.required:

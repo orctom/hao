@@ -123,6 +123,18 @@ def config_from(config_file_name, config_dir=None):
     return Config(config_file_name, config_dir)
 
 
+def get_config(config: typing.Optional[typing.Union[str, Config]] = None):
+    if config is None:
+        cfg = Config()
+    elif isinstance(config, str):
+        cfg = Config(config)
+    elif isinstance(config, Config):
+        cfg = config
+    else:
+        raise ValueError(f'Unsupported cfg type: {type(config)}')
+    return cfg
+
+
 _CONFIG: typing.Optional[Config] = None
 
 
