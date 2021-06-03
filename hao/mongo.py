@@ -121,4 +121,4 @@ class Mongo(object, metaclass=singleton.Multiton):
         self.col(col_name).delete_one({'_id': _id})
 
     def delete(self, col_name: str, query: dict):
-        self.col(col_name).delete(query)
+        self.col(col_name).delete_many(query)
