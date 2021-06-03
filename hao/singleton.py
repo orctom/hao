@@ -7,12 +7,27 @@ LOGGER = logs.get_logger(__name__)
 
 
 class Singleton(type):
-    _instance = None
-
+    _instances = {}
     _lock: Lock = Lock()
 
     def __call__(cls, *args, **kwargs):
         with cls._lock:
-            if not cls._instance:
-                cls._instance = super().__call__(*args, **kwargs)
-            return cls._instance
+            instance = cls._instances.get(cls)
+            if not instance:
+                _instance = super().__call__(*args, **kwargs)
+                cls._instances[cls] = instance
+            return instance
+
+
+class Multiton(type):
+    _instances = {}
+    _lock: Lock = Lock()
+
+    def __call__(cls, *args, **kwargs):
+        with cls._lock:
+            key = (list(args) + list(kwargs.values()) + [None])[0]
+            instance = cls._instances.get((cls, key))
+            if instance is None:
+                instance = super().__call__(*args, **kwargs)
+                cls._instances[(cls, key)] = instance
+            return instance

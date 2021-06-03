@@ -38,10 +38,12 @@ import typing
 
 import bson
 from pymongo import MongoClient
+from pymongo.collection import Collection
 from pymongo.common import KW_VALIDATORS, URI_OPTIONS_VALIDATOR_MAP, NONSPEC_OPTIONS_VALIDATOR_MAP, URI_OPTIONS_ALIAS_MAP, \
     INTERNAL_URI_OPTION_NAME_MAP, URI_OPTIONS_DEPRECATION_MAP, TIMEOUT_OPTIONS, WRITE_CONCERN_OPTIONS
+from pymongo.database import Database
 
-from . import logs, config
+from . import logs, config, singleton
 
 LOGGER = logs.get_logger(__name__)
 
@@ -71,7 +73,7 @@ def ensure_id_type(_id):
     return _id
 
 
-class Mongo(object):
+class Mongo(object, metaclass=singleton.Multiton):
 
     def __init__(self, profile='default') -> None:
         super().__init__()
@@ -82,12 +84,12 @@ class Mongo(object):
         self.client = connect(**self._conf)
         self.db = self.db()
 
-    def db(self, name=None):
+    def db(self, name=None) -> Database:
         if name is None:
             name = self._conf.get('db')
         return self.client[name]
 
-    def col(self, name: str):
+    def col(self, name: str) -> Collection:
         return self.db[name]
 
     def is_collection_exist(self, collection_name):
@@ -101,10 +103,10 @@ class Mongo(object):
         return self.col(col_name).find_one({'_id': _id})
 
     def find(self, col_name: str, query: typing.Optional[dict] = None, projection: typing.Optional[dict] = None, **kwargs):
-        return self.col(col_name).find(query or {}, projection or {}, **kwargs)
+        return self.col(col_name).find(query or {}, projection, **kwargs)
 
     def find_one(self, col_name: str, query: typing.Optional[dict] = None, projection: typing.Optional[dict] = None, **kwargs):
-        return self.col(col_name).find_one(query or {}, projection or {}, **kwargs)
+        return self.col(col_name).find_one(query or {}, projection, **kwargs)
 
     def save(self, col_name: str, data: dict):
         _id = data.pop('_id', None)
