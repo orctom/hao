@@ -111,14 +111,20 @@ class Mongo(object, metaclass=singleton.Multiton):
     def save(self, col_name: str, data: dict):
         _id = data.pop('_id', None)
         if _id is None:
-            self.col(col_name).save(data)
+            return self.col(col_name).save(data)
         else:
             _id = ensure_id_type(_id)
-            self.col(col_name).update_one({'_id': _id}, {"$set": data})
+            return self.col(col_name).update_one({'_id': _id}, {"$set": data})
 
     def delete_by_id(self, col_name: str, _id: typing.Union[str, bson.ObjectId]):
         _id = ensure_id_type(_id)
-        self.col(col_name).delete_one({'_id': _id})
+        return self.col(col_name).delete_one({'_id': _id})
+
+    def delete_one(self, col_name: str, query: dict):
+        return self.col(col_name).delete_one(query)
 
     def delete(self, col_name: str, query: dict):
-        self.col(col_name).delete_many(query)
+        return self.col(col_name).delete_many(query)
+
+    def agg(self, col_name: str, pipeline: dict):
+        return self.col(col_name).aggregate(pipeline)
