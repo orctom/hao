@@ -14,7 +14,7 @@ class Singleton(type):
         with cls._lock:
             instance = cls._instances.get(cls)
             if not instance:
-                _instance = super().__call__(*args, **kwargs)
+                instance = super().__call__(*args, **kwargs)
                 cls._instances[cls] = instance
             return instance
 
