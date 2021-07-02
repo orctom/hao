@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 from multiprocessing import Lock
 
-from . import logs
-
-LOGGER = logs.get_logger(__name__)
-
 
 class Singleton(type):
     _instances = {}

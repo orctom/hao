@@ -7,9 +7,6 @@ import typing
 
 import regex
 
-from . import logs
-
-LOGGER = logs.get_logger(__name__)
 
 P_BLANK_LINE = regex.compile(r'^(?:\s|\r|\n)*$')
 

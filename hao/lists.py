@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import itertools
+
 from . import dicts
 
 
@@ -53,9 +55,15 @@ def cycle(iterable):
 
 
 def batchify(iterable, n=1):
-    l = len(iterable)
-    for ndx in range(0, l, n):
-        yield iterable[ndx:min(ndx + n, l)]
+    size = len(iterable)
+    for ndx in range(0, size, n):
+        yield iterable[ndx:min(ndx + n, size)]
+
+
+def sliding(iterable, window_size):
+    iterators = itertools.tee(iterable, window_size)
+    iterators = [itertools.islice(iterator, i, None) for i, iterator in enumerate(iterators)]
+    yield from zip(*iterators)
 
 
 def remove_from_list(target_list: list, removal):

@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
-import fnmatch
+import argparse
 import logging
 import os
 import sys
-from logging.handlers import TimedRotatingFileHandler
-
+from logging import handlers as logging_handlers
 import typing
 
-from . import paths, config, envs
+from . import paths, config, invoker
 
 LOGGER_FORMAT = config.get('logger.format', "%(asctime)s %(levelname)-7s %(name)s:%(lineno)-4d - %(message)s")
 LOGGER_FORMATTER = logging.Formatter(LOGGER_FORMAT)
@@ -15,68 +14,63 @@ LOGGER_FORMATTER = logging.Formatter(LOGGER_FORMAT)
 _LOGGING_LEVELS = config.get('logging', {})
 _LOGGING_LEVEL_ROOT = _LOGGING_LEVELS.get('root', 'INFO')
 
-_STREAM_HANDLER: typing.Optional[logging.Handler] = None
-_FILE_HANDLER: typing.Optional[logging.Handler] = None
+_HANDLERS: typing.List[logging.Handler] = []
 
 _LOGGERS = {}
+_LOGGER_FILENAME: typing.Optional[str] = None
 
 
-def get_stream_handler():
-    global _STREAM_HANDLER
-    if _STREAM_HANDLER is not None:
-        return _STREAM_HANDLER
+def _get_handlers():
+    global _HANDLERS
+    if len(_HANDLERS) > 0:
+        return _HANDLERS
+
+    handlers = []
     stream_handler = logging.StreamHandler(sys.stdout)
     stream_handler.setFormatter(LOGGER_FORMATTER)
-    _STREAM_HANDLER = stream_handler
-    return stream_handler
+    handlers.append(stream_handler)
+
+    for handler_name, handler_config in config.get('logger.handlers', {}).items():
+        handler_cls = getattr(logging, handler_name) or getattr(logging_handlers, handler_name)
+        if handler_cls is None:
+            print('[logger] skip invalid logger handler: ', handler_name)
+            continue
+        handler = invoker.invoke(handler_cls, **_updated_handler_config(handler_config))
+        handler.setFormatter(LOGGER_FORMATTER)
+        handlers.append(handler)
+    return handlers
 
 
-def get_file_handler(log_file_path: str = None):
-    global _FILE_HANDLER
-    if log_file_path is None:
-        return _FILE_HANDLER
-    file_handler = TimedRotatingFileHandler(
-        log_file_path,
-        when=config.get('logger.file.rotate.when', 'd'),
-        encoding='utf8',
-        backupCount=config.get('logger.file.rotate.count', 7)
-    )
-    file_handler.setFormatter(LOGGER_FORMATTER)
-    _FILE_HANDLER = file_handler
-    return file_handler
-
-
-def config_logger(log_file_path: str = None):
-    if log_file_path:
-        handlers = [get_stream_handler(), get_file_handler(log_file_path)]
-    else:
-        handlers = [get_stream_handler()]
-    logging.basicConfig(handlers=handlers, format=LOGGER_FORMAT, level=_LOGGING_LEVEL_ROOT)
-
-
-def get_log_file_path():
-    if envs.is_in_docker():
-        return None
-    log_file_dir = config.get_path('logger.file.dir')
-    log_file_enabled = config.get('logger.file.enabled', True)
-    if log_file_dir is None or not log_file_enabled:
-        return None
-    path = paths.get(log_file_dir, f"{paths.program_name()}.log")
-    paths.make_parent_dirs(path)
-    return path
-
-
-def config_base_logger():
-    try:
-        log_file_path = get_log_file_path()
-        if log_file_path:
-            print('logging to file:', log_file_path)
-            config_logger(log_file_path)
+def _updated_handler_config(handler_config: dict):
+    if handler_config is None:
+        handler_config = {}
+    filename = handler_config.get('filename')
+    log_file_dir = config.get_path('logger.dir', 'data/logs')
+    if filename:
+        if filename[0] in ('/', '~', '$'):
+            filename = paths.get(filename)
         else:
-            config_logger()
-    except ModuleNotFoundError as err:
-        logging.warn(f"Logging config not loaded, due to: {err}")
-        config_logger()
+            filename = paths.get(log_file_dir, filename)
+    else:
+        filename = _get_logger_filename()
+
+    handler_config['filename'] = filename
+    paths.make_parent_dirs(filename)
+
+    return handler_config
+
+
+def _get_logger_filename():
+    global _LOGGER_FILENAME
+    if _LOGGER_FILENAME is None:
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--log_filename', required=False)
+        args, _ = parser.parse_known_args()
+        log_file_dir = config.get_path('logger.dir', 'data/logs')
+        filename = paths.get(log_file_dir, args.log_filename or f"{paths.program_name()}.log")
+        print('logging to:', filename)
+        _LOGGER_FILENAME = filename
+    return _LOGGER_FILENAME
 
 
 def get_logger(name=None, level=None):
@@ -101,21 +95,24 @@ def get_logger(name=None, level=None):
 
 def _get_logger(name, level=None):
     _logger = logging.getLogger(name)
-    _logger.setLevel(level or get_logging_level(name))
+    _logger.setLevel(level or _get_logging_level(name))
     _logger.handlers.clear()
-    _logger.addHandler(get_stream_handler())
+
+    handlers = _get_handlers()
+    _logger.propagate = False
+    if os.environ.get('SCRAPY_PROJECT') is not None:
+        _logger.addHandler(handlers[0])
+    else:
+        for handler in handlers:
+            _logger.addHandler(handler)
+
     if level:
         _LOGGING_LEVELS[name] = level
-    if os.environ.get('SCRAPY_PROJECT') is None:
-        _logger.propagate = False
-        file_handler = get_file_handler()
-        if file_handler is not None:
-            _logger.addHandler(file_handler)
 
     return _logger
 
 
-def get_logging_level(name):
+def _get_logging_level(name):
     while True:
         level = _LOGGING_LEVELS.get(name)
         if level is not None:
@@ -126,10 +123,11 @@ def get_logging_level(name):
         name = name[:end]
 
 
-def update_logger_levels(logging_levels=None):
+def update_logger_levels(logging_levels: dict):
     if logging_levels is None or len(logging_levels) == 0:
         return
-    for module, level in logging_levels.items():
+    _LOGGING_LEVELS.update(logging_levels)
+    for module, level in sorted(_LOGGING_LEVELS.items()):
         update_logger_level(module, level)
 
 
@@ -137,18 +135,19 @@ def update_logger_level(module: str, level):
     _logger = _LOGGERS.get(module)
     if _logger:
         _logger.setLevel(level)
-        _LOGGING_LEVELS[module] = level
         return
 
-    if '*' in module:
-        for _module, _logger in _LOGGERS.items():
-            fnmatch.fnmatch(_module, module)
-            if not fnmatch.fnmatch(_module, module):
-                continue
+    for _module, _logger in _LOGGERS.items():
+        if _module.startswith(module):
             _logger.setLevel(level)
-            _LOGGING_LEVELS[_module] = level
-    else:
-        _LOGGERS[module] = _get_logger(module, level)
 
 
-config_base_logger()
+def _config_base_logger():
+    logging.basicConfig(**{
+        'handlers': _get_handlers(),
+        'format': LOGGER_FORMAT,
+        'level': _LOGGING_LEVEL_ROOT
+    })
+
+
+_config_base_logger()

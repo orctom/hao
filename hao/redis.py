@@ -31,9 +31,7 @@ print(redis_gpu1.scard('bidding-non-product-set'))
 """
 import redis as r
 
-from . import logs, config
-
-LOGGER = logs.get_logger(__name__)
+from . import config
 
 
 class Redis(r.Redis):

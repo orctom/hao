@@ -26,9 +26,8 @@ for word in tqdm.tqdm(words_all):
         transitions[c].add(chunk)
 NAIVE_NEG_CHAR_TRANSITION = {c: chars2 - followings for c, followings in transitions.items()}
 """
-from . import logs, strings
+from . import strings
 
-LOGGER = logs.get_logger(__name__)
 
 NAIVE_NEG_CHAR_TRANSITION = {
     'a': {

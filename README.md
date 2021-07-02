@@ -88,13 +88,11 @@ Settings for logger:
 ```yaml
 # config.yml
 logger:
-  format: "%(asctime)s %(levelname)-7s %(name)s:%(lineno)-4d - %(message)s"  # this is the built-in format
-  file:                         # using time-based-rotating file logger
-    dir: ~/.logs/spanner/       # log parent folder
-    enabled: false              # depends on `logger.file.dir`
-    rotate:
-      count: 3                  # keep n rotate log files
-      when: d                   # rotate log files every `d` (day)
+  format: "%(asctime)s %(levelname)-7s %(name)s:%(lineno)-4d - %(message)s"   # overwrite to change to other format
+  handlers:
+    TimedRotatingFileHandler:    # any Handlers in `logging` and `logging.handlers` with it's config
+      when: d
+      backupCount: 3
 ```
 
 Declare and user the logger

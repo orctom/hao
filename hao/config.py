@@ -2,23 +2,22 @@
 import functools
 import os
 import socket
-import sys
 import traceback
 import typing
 import yaml
 
-from . import paths
+from . import paths, singleton
 
 ENV = os.environ.get("env")
 HOSTNAME = socket.gethostname()
 
 
-class Config(object):
+class Config(object, metaclass=singleton.Multiton):
 
-    def __init__(self, config_file_name=None, config_dir=None) -> None:
+    def __init__(self, config_file_name=None) -> None:
         super().__init__()
         self.config_file_name = config_file_name
-        self.config_dir = config_dir or get_config_dir() or os.getcwd()
+        self.config_dir = get_config_dir() or os.getcwd()
         self.conf = self.read_conf()
 
     def read_conf(self):
@@ -112,15 +111,14 @@ def get_config_dir():
     root_path = paths.project_root_path()
     if root_path is None:
         root_path = os.getcwd()
-    sys.path.append(root_path)
     program_path = os.environ.get('_')
     if program_path:
         os.environ['program_name'] = os.path.basename(program_path)
     return os.path.join(root_path, 'conf')
 
 
-def config_from(config_file_name, config_dir=None):
-    return Config(config_file_name, config_dir)
+def config_from(config_file_name):
+    return Config(config_file_name)
 
 
 def get_config(config: typing.Optional[typing.Union[str, Config]] = None):
