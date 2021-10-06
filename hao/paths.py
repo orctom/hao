@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
+import contextlib
 import inspect
 import os
 import pathlib
 import sys
 import types
+import typing
+from glob import glob
 
 import regex
 
@@ -104,7 +107,7 @@ def set_temp_dir(path: str = '~/.temp') -> bool:
     return True
 
 
-def get_path(*paths):
+def get(*paths, search_paths: typing.Optional[typing.Union[str, typing.List[str]]] = None):
     if paths is None or len(paths) == 0:
         return ''
     paths = list(filter(None, paths))
@@ -112,8 +115,28 @@ def get_path(*paths):
         return ''
     if paths[0][0] in ('/', '~', '$'):
         return expand(os.path.join(*paths))
-    return expand(os.path.join(project_root_path(), *paths))
+
+    path_project = expand(os.path.join(project_root_path(), *paths))
+    if search_paths:
+        if isinstance(search_paths, list):
+            for search_path in search_paths:
+                path = os.path.join(get(search_path, *paths))
+                if os.path.exists(path):
+                    return path
+            return path_project if os.path.exists(path_project) else None
+        if isinstance(search_paths, str):
+            path = os.path.join(get(search_paths, *paths))
+            if os.path.exists(path):
+                return path
+            return path_project if os.path.exists(path_project) else None
+    return path_project
 
 
-def get(*paths):
-    return get_path(*paths)
+def get_path(*paths):
+    return get(*paths)
+
+
+def delete(path):
+    for filename in glob(path):
+        with contextlib.suppress(FileNotFoundError, OSError):
+            os.remove(filename)

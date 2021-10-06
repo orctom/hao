@@ -126,18 +126,21 @@ def background(func, *a, **kw):
             return await func(*args, **kwargs)
     else:
         def wrapper(*args, **kwargs):
-            loop = asyncs.get_event_loop()
-            if contextvars is not None:
-                # Ensure we run in the same context
-                context = contextvars.copy_context()
-                f = functools.partial(context.run, func, *args, **kwargs)
-                args = []
-            elif kwargs:
-                # loop.run_in_executor doesn't accept 'kwargs', so bind them in here
-                f = functools.partial(func, **kwargs)
+            if asyncs.is_in_main_thread():
+                loop = asyncs.get_event_loop()
+                if contextvars is not None:
+                    # Ensure we run in the same context
+                    context = contextvars.copy_context()
+                    f = functools.partial(context.run, func, *args, **kwargs)
+                    args = []
+                elif kwargs:
+                    # loop.run_in_executor doesn't accept 'kwargs', so bind them in here
+                    f = functools.partial(func, **kwargs)
+                else:
+                    f = func
+                return loop.run_in_executor(None, f, *args)
             else:
-                f = func
-            return loop.run_in_executor(None, f, *args)
+                return func(*args, **kwargs)
     return wrapper(*a, **kw)
 
 
@@ -161,11 +164,14 @@ def timeout(func: typing.Callable, seconds=5, timeout_exception=TimeoutError, me
                 signal.alarm(0)
     else:
         def wrapper(*args, **kwargs):
-            old = signal.signal(signal.SIGALRM, handle)
-            signal.alarm(seconds)
-            try:
+            if asyncs.is_in_main_thread():
+                old = signal.signal(signal.SIGALRM, handle)
+                signal.alarm(seconds)
+                try:
+                    return func(*args, **kwargs)
+                finally:
+                    signal.signal(signal.SIGALRM, old)
+                    signal.alarm(0)
+            else:
                 return func(*args, **kwargs)
-            finally:
-                signal.signal(signal.SIGALRM, old)
-                signal.alarm(0)
     return wrapper(*a, **kw)

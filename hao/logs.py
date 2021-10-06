@@ -17,7 +17,7 @@ _LOGGING_LEVEL_ROOT = _LOGGING_LEVELS.get('root', 'INFO')
 _HANDLERS: typing.List[logging.Handler] = []
 
 _LOGGERS = {}
-_LOGGER_FILENAME: typing.Optional[str] = None
+_LOGGER_DIR = config.get_path('logger.dir', 'data/logs')
 
 
 def _get_handlers():
@@ -25,52 +25,73 @@ def _get_handlers():
     if len(_HANDLERS) > 0:
         return _HANDLERS
 
-    handlers = []
     stream_handler = logging.StreamHandler(sys.stdout)
     stream_handler.setFormatter(LOGGER_FORMATTER)
-    handlers.append(stream_handler)
+    _HANDLERS.append(stream_handler)
 
-    for handler_name, handler_config in config.get('logger.handlers', {}).items():
-        handler_cls = getattr(logging, handler_name) or getattr(logging_handlers, handler_name)
-        if handler_cls is None:
-            print('[logger] skip invalid logger handler: ', handler_name)
-            continue
-        handler = invoker.invoke(handler_cls, **_updated_handler_config(handler_config))
-        handler.setFormatter(LOGGER_FORMATTER)
-        handlers.append(handler)
-    return handlers
+    log_filename_arg = _get_logger_filename_arg()
+    log_filename_fallback = _get_logger_filename_fallback()
+
+    logger_handlers = config.get('logger.handlers')
+    if logger_handlers:
+        for handler_name, handler_args in logger_handlers.items():
+            handler_cls = _get_handler_cls(handler_name)
+            if handler_cls is None:
+                print('[logger] skip invalid logger handler: ', handler_name)
+                continue
+            handler_args = _updated_handler_args(handler_args, log_filename_arg, log_filename_fallback)
+            handler = invoker.invoke(handler_cls, **handler_args)
+            handler.setFormatter(LOGGER_FORMATTER)
+            _HANDLERS.append(handler)
+            log_path = handler_args.get('filename')
+            if log_path:
+                print(f'logging to: {log_path} [{handler_name}]')
+    else:
+        if log_filename_arg:
+            log_path = paths.get(_LOGGER_DIR, log_filename_arg)
+            handler = logging.FileHandler(log_path)
+            handler.setFormatter(LOGGER_FORMATTER)
+            _HANDLERS.append(handler)
+            print(f'logging to: {log_path} [FileHandler]')
+
+    return _HANDLERS
 
 
-def _updated_handler_config(handler_config: dict):
-    if handler_config is None:
-        handler_config = {}
-    filename = handler_config.get('filename')
-    log_file_dir = config.get_path('logger.dir', 'data/logs')
+def _get_handler_cls(handler_name):
+    if hasattr(logging, handler_name):
+        return getattr(logging, handler_name)
+    if hasattr(logging_handlers, handler_name):
+        return getattr(logging_handlers, handler_name)
+    return None
+
+
+def _updated_handler_args(handler_args: dict, log_filename_arg: str, log_filename_fallback: str):
+    if handler_args is None:
+        handler_args = {}
+    filename = handler_args.get('filename')
     if filename:
         if filename[0] in ('/', '~', '$'):
             filename = paths.get(filename)
         else:
-            filename = paths.get(log_file_dir, filename)
+            filename = paths.get(_LOGGER_DIR, filename)
     else:
-        filename = _get_logger_filename()
+        filename = paths.get(_LOGGER_DIR, log_filename_arg or log_filename_fallback)
 
-    handler_config['filename'] = filename
+    handler_args['filename'] = filename
     paths.make_parent_dirs(filename)
 
-    return handler_config
+    return handler_args
 
 
-def _get_logger_filename():
-    global _LOGGER_FILENAME
-    if _LOGGER_FILENAME is None:
-        parser = argparse.ArgumentParser()
-        parser.add_argument('--log_filename', required=False)
-        args, _ = parser.parse_known_args()
-        log_file_dir = config.get_path('logger.dir', 'data/logs')
-        filename = paths.get(log_file_dir, args.log_filename or f"{paths.program_name()}.log")
-        print('logging to:', filename)
-        _LOGGER_FILENAME = filename
-    return _LOGGER_FILENAME
+def _get_logger_filename_arg():
+    parser = argparse.ArgumentParser(prog='logs', add_help=False)
+    parser.add_argument('--log_filename', required=False)
+    args, _ = parser.parse_known_args()
+    return args.log_filename
+
+
+def _get_logger_filename_fallback():
+    return f"{paths.program_name()}.log"
 
 
 def get_logger(name=None, level=None):
@@ -101,7 +122,8 @@ def _get_logger(name, level=None):
     handlers = _get_handlers()
     _logger.propagate = False
     if os.environ.get('SCRAPY_PROJECT') is not None:
-        _logger.addHandler(handlers[0])
+        if len(handlers) > 0:
+            _logger.addHandler(handlers[0])
     else:
         for handler in handlers:
             _logger.addHandler(handler)
@@ -126,8 +148,7 @@ def _get_logging_level(name):
 def update_logger_levels(logging_levels: dict):
     if logging_levels is None or len(logging_levels) == 0:
         return
-    _LOGGING_LEVELS.update(logging_levels)
-    for module, level in sorted(_LOGGING_LEVELS.items()):
+    for module, level in sorted(logging_levels.items()):
         update_logger_level(module, level)
 
 
@@ -135,7 +156,6 @@ def update_logger_level(module: str, level):
     _logger = _LOGGERS.get(module)
     if _logger:
         _logger.setLevel(level)
-        return
 
     for _module, _logger in _LOGGERS.items():
         if _module.startswith(module):

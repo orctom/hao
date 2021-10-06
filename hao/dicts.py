@@ -1,16 +1,21 @@
 # -*- coding: utf-8 -*-
+import functools
 
 
 def get(data: dict, attribute, *fallback_attributes, default_value=None):
     if data is None:
         return default_value
-    value = data.get(attribute)
-    if value is not None:
-        return value
-    for fallback in fallback_attributes:
-        value = data.get(fallback)
+    try:
+        value = functools.reduce(getattr, attribute.split('.'), data)
         if value is not None:
             return value
+    except AttributeError:
+        pass
+    if fallback_attributes:
+        for fallback in fallback_attributes:
+            value = data.get(fallback)
+            if value is not None:
+                return value
     return default_value
 
 

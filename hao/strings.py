@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import base64
+import codecs
 import hashlib
+import json
 import random as rand
 import string
 import typing
@@ -17,6 +19,7 @@ PUNCTUATION_ZH = '＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［�
 SUB_NORMALIZE = [
     (regex.compile(r'<200d>'), ''),
     (regex.compile(r'\u200d'), ''),
+    (regex.compile(r'\ufeff'), ''),
     (regex.compile(r'&?nbsp;?'), ''),
 ]
 
@@ -48,6 +51,7 @@ def normalize(
         controls: bool = True,
         specials: bool = True,
         emoji: bool = True,
+        unicode: bool = False,
         encoding: str = None
 ):
     if text is None:
@@ -55,12 +59,18 @@ def normalize(
     text = text.strip()
     for p, sub in SUB_NORMALIZE:
         text = p.sub(sub, text)
+    try:
+        text = json.loads(f'"{text}"')
+    except json.JSONDecodeError:
+        pass
     if controls:
         text = remove_control_chars(text)
     if specials:
         text = unicodedata.normalize('NFKD', text)
     if emoji:
         text = remove_emoji(text)
+    if unicode:
+        text = codecs.decode(codecs.encode(text, 'latin-1', 'backslashreplace'), 'unicode-escape')
     if encoding:
         try:
             text = text.encode(encoding, 'ignore').decode(encoding, 'ignore')
@@ -133,7 +143,7 @@ def sha1(text: str, hexical: bool = True):
     if hexical:
         return hashlib.sha1(unique_key).hexdigest()
     else:
-        return base64.b64encode(hashlib.sha1(unique_key).digest()).encode()
+        return base64.b64encode(hashlib.sha1(unique_key).digest())
 
 
 def md5(text: str, hexical: bool = True):
@@ -144,7 +154,7 @@ def md5(text: str, hexical: bool = True):
     if hexical:
         return hashlib.md5(unique_key).hexdigest()
     else:
-        return base64.b64encode(hashlib.md5(unique_key).digest()).encode()
+        return base64.b64encode(hashlib.md5(unique_key).digest())
 
 
 def sim(a, b):

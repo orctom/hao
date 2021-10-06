@@ -12,18 +12,18 @@ pip install kafka-python
 kafka:
   default:
     hosts:
-      - kafka001.bl-ai.com:59092
-      - kafka002.bl-ai.com:59092
-      - kafka003.bl-ai.com:59092
-    group_id: bidding-hao
-    client_id: bidding-hao
+      - host1:port1
+      - host2:port2
+      - host3:port3
+    group_id: group_id
+    client_id: client_id
   some-other:
     hosts:
-      - kafka001.bl-ai.com:59092
-      - kafka002.bl-ai.com:59092
-      - kafka003.bl-ai.com:59092
-    group_id: bidding-hao
-    client_id: bidding-hao
+      - host1:port1
+      - host2:port2
+      - host3:port3
+    group_id: group_id
+    client_id: client_id
 
 ####################################################
 ###########          usage              ############
@@ -80,13 +80,18 @@ class Kafka(object):
                      topic: typing.Union[str, list],
                      enable_auto_commit=False,
                      auto_commit_interval_ms=1_000,
-                     max_poll_records=500):
+                     max_poll_records=500,
+                     group_id=None,
+                     client_id=None):
         topics = [topic] if isinstance(topic, str) else topic
+        group_id = group_id or self._conf.get('group_id')
+        client_id = client_id or self._conf.get('client_id', self._conf.get('group_id'))
+        LOGGER.info(f"[kafka] consumer to topics: {topics}, group_id: {group_id}, client_id: {client_id}")
         return KafkaConsumer(
             *topics,
             bootstrap_servers=self._conf.get('hosts'),
-            group_id=self._conf.get('group_id'),
-            client_id=self._conf.get('client_id', self._conf.get('group_id')),
+            group_id=group_id,
+            client_id=client_id,
             auto_offset_reset=self._conf.get('auto_offset_reset', 'earliest'),
             enable_auto_commit=enable_auto_commit,
             auto_commit_interval_ms=auto_commit_interval_ms,
@@ -103,7 +108,7 @@ class Kafka(object):
             )
         return self._producer
 
-    def publish(self, topic, message):
+    def publish(self, topic, message, flush: bool = True):
         message_type = type(message)
         if message_type == str:
             payload = message.encode()
@@ -114,8 +119,14 @@ class Kafka(object):
             return
         try:
             LOGGER.debug(f"sending payload: {payload}")
-            return self.get_producer().send(topic, payload)
+            producer = self.get_producer()
+            future = producer.send(topic, payload)
+            if flush:
+                producer.flush(10)
+            return future
         except (KafkaTimeoutError, NoBrokersAvailable) as err:
             LOGGER.error(f'Failed to send data to {topic}, payload: {payload}')
             LOGGER.error(err)
 
+    def flush(self, timeout=10):
+        self.get_producer().flush(timeout)

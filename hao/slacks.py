@@ -6,26 +6,33 @@ from datetime import datetime
 
 import requests
 
-from . import logs, versions, config, paths, decorators, jsons
+from . import logs, versions, config, dates, paths, decorators, jsons
 
 LOGGER = logs.get_logger(__name__)
 
-identifier = f'[{config.HOSTNAME}-{paths.project_name()}-{paths.program_name()}]'
 version = versions.get_version()
 
 _SLACK_TOKENS = config.get('slack')
+_IDENTIFIER = None
 
 
-def _get_token(channel):
+def slack_token(channel):
     try:
         return _SLACK_TOKENS.get(channel)
     except (AttributeError, ValueError):
         return None
 
 
+def identifier():
+    global _IDENTIFIER
+    if _IDENTIFIER is None:
+        _IDENTIFIER = f'[{config.HOSTNAME}-{paths.project_name()}-{paths.program_name()}]'
+    return _IDENTIFIER
+
+
 @decorators.background
 def notify(message: str, channel='default'):
-    token = _get_token(channel)
+    token = slack_token(channel)
     if token is None:
         LOGGER.debug(f"channel not found: {channel}")
         LOGGER.info(message)
@@ -33,8 +40,8 @@ def notify(message: str, channel='default'):
     try:
         url = f'https://hooks.slack.com/services/{token}'
         headers = {'content-type': 'application/json'}
-        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        payload = {'text': f"{identifier} {timestamp}\tversion: {version}\n```{message}```"}
+        timestamp = dates.formatted(datetime.now(), dates.FORMAT_DATE_TIME)
+        payload = {'text': f"{identifier()} {timestamp}\tversion: {version}\n```{message}```"}
         response = requests.post(url, data=json.dumps(payload), headers=headers)
         LOGGER.info(response.text)
     except Exception as e:
@@ -42,7 +49,7 @@ def notify(message: str, channel='default'):
 
 
 def notify_exception(e: Exception, data: typing.Union[str, dict] = None, channel='default'):
-    token = _get_token(channel)
+    token = slack_token(channel)
     if isinstance(data, dict):
         text = jsons.dumps(data)
     else:

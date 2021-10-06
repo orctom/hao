@@ -5,7 +5,10 @@ uninstall:
 	pip uninstall hao -y
 
 install:
+	make clean
+	make uninstall
 	pip install .
+	make clean
 
 reinstall:
 	make clean && make uninstall && make install

@@ -165,15 +165,21 @@ class EsClient(object):
             body=query,
             request_timeout=timeout
         )
-        return data['aggregations']['sources'], data['hits']['total']
 
-    def delete_by_id(self, _id, index=None, doc_type=None, silent=True, timeout=30):
+        buckets = {k: v.get('buckets') for k, v in data.get('aggregations').items()}
+        total = data['hits']['total']
+        return buckets, total
+
+    def delete_by_id(self, _id, index=None, doc_type=None, silent=True, timeout=30) -> bool:
         try:
             index = index or self.index
             doc_type = doc_type or self.doc_type
             self.client.delete(index=index, doc_type=doc_type, id=_id, request_timeout=timeout)
+            return True
         except NotFoundError as e:
-            if not silent:
+            if silent:
+                return False
+            else:
                 raise e
 
     def delete_by_query(self, query, index=None, doc_type=None, silent=True, timeout=30):
@@ -182,7 +188,11 @@ class EsClient(object):
             doc_type = doc_type or self.doc_type
             return self.client.delete_by_query(index=index, body=query, doc_type=doc_type, request_timeout=timeout)
         except NotFoundError as e:
-            if not silent:
+            if silent:
+                LOGGER.error(f"Failed to delete_by_query: {query}, index: {index}")
+                LOGGER.exception(e)
+                slacks.notify_exception(e, f"{jsons.dumps(query)}, index: {index}")
+            else:
                 raise e
 
     def save(self, _id, doc, index=None, doc_type=None, overwrite=True, silent: bool = True):
@@ -199,7 +209,7 @@ class EsClient(object):
             if silent:
                 LOGGER.error(f"Failed to process: {doc}")
                 LOGGER.exception(e)
-                slacks.notify_exception(e, doc)
+                slacks.notify_exception(e, f'{_id}\n{jsons.dumps(doc)}')
             else:
                 raise e
 
