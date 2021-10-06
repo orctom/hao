@@ -11,7 +11,6 @@ from . import (
     lists,
     dicts,
     nations,
-    notifier,
     paths,
     regexes,
     decorators,
