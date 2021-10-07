@@ -57,7 +57,7 @@ es_client.bulk(actions)
 
 from elasticsearch import Elasticsearch, NotFoundError, helpers
 
-from . import config, logs, slacks, invoker
+from . import config, logs, slacks, invoker, jsons
 
 LOGGER = logs.get_logger(__name__)
 

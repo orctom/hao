@@ -34,7 +34,6 @@ with MySQL() as db:
 with MySQL('some-other', cursor_class='dict') as db:
     ...
 """
-import pymysql
 
 from . import config, logs
 

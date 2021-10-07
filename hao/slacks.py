@@ -6,7 +6,7 @@ from datetime import datetime
 
 import requests
 
-from . import logs, versions, config, dates, paths, decorators, jsons
+from . import logs, versions, config, paths, decorators, jsons
 
 LOGGER = logs.get_logger(__name__)
 
@@ -40,7 +40,7 @@ def notify(message: str, channel='default'):
     try:
         url = f'https://hooks.slack.com/services/{token}'
         headers = {'content-type': 'application/json'}
-        timestamp = dates.formatted(datetime.now(), dates.FORMAT_DATE_TIME)
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         payload = {'text': f"{identifier()} {timestamp}\tversion: {version}\n```{message}```"}
         response = requests.post(url, data=json.dumps(payload), headers=headers)
         LOGGER.info(response.text)
