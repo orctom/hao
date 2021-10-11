@@ -1,24 +1,32 @@
 # -*- coding: utf-8 -*-
 import typing
 
-CHILD_TYPE_CITY = 'city'
-CHILD_TYPE_DIRECT = 'direct'
-CHILD_TYPE_COUNTY = 'county'
+TYPE_CITY = 'city'
+TYPE_DIRECT = 'direct'
+TYPE_COUNTY = 'county'
 
 
 class Place(object):
-    __slots__ = ['id', 'name', 'parent', 'children_type', 'children']
+    __slots__ = ['id', 'name', 'shorts', 'parent', 'children_type', 'children']
 
-    def __init__(self, _id: str, name: str, children_type: str = None, children=None) -> None:
+    def __init__(self,
+                 _id: str,
+                 name: str,
+                 shorts: typing.Optional[typing.List[str]] = None,
+                 children_type: str = None,
+                 children: typing.Optional[typing.List] = None,
+                 enabled: bool = True) -> None:
         super().__init__()
         self.id: str = _id
         self.name: str = name
+        self.shorts: typing.Optional[typing.List[str]] = shorts
         self.parent: typing.Optional[Place] = None
         self.children_type = children_type
         self.children: typing.Optional[typing.List[Place]] = children
         if children is not None and len(children) > 0:
             for child in children:
                 child.set_parent(self)
+        self.enabled = enabled
 
     def set_parent(self, parent):
         self.parent = parent
@@ -57,62 +65,63 @@ class Place(object):
         return f"{indent}Place('{self.id}', '{self.name}'),"
 
 
+
 PLACES = [
-    Place('11', '北京', CHILD_TYPE_DIRECT, [
-        Place('1101', '北京', CHILD_TYPE_COUNTY, [
+    Place('11', '北京市', shorts=['北京'], children_type=TYPE_DIRECT, children=[
+        Place('1101', '北京市', children_type=TYPE_COUNTY, children=[
             Place('110101', '东城区'),
             Place('110102', '西城区'),
-            Place('110105', '朝阳区'),
-            Place('110106', '丰台区'),
-            Place('110107', '石景山区'),
-            Place('110108', '海淀区'),
-            Place('110109', '门头沟区'),
-            Place('110111', '房山区'),
-            Place('110112', '通州区'),
-            Place('110113', '顺义区'),
-            Place('110114', '昌平区'),
-            Place('110115', '大兴区'),
-            Place('110116', '怀柔区'),
-            Place('110117', '平谷区'),
-            Place('110118', '密云区'),
-            Place('110119', '延庆区'),
+            Place('110105', '朝阳区', shorts=['朝阳']),
+            Place('110106', '丰台区', shorts=['丰台']),
+            Place('110107', '石景山区', shorts=['石景山']),
+            Place('110108', '海淀区', shorts=['海淀']),
+            Place('110109', '门头沟区', shorts=['门头沟']),
+            Place('110111', '房山区', shorts=['房山']),
+            Place('110112', '通州区', shorts=['通州']),
+            Place('110113', '顺义区', shorts=['顺义']),
+            Place('110114', '昌平区', shorts=['昌平']),
+            Place('110115', '大兴区', shorts=['大兴']),
+            Place('110116', '怀柔区', shorts=['怀柔']),
+            Place('110117', '平谷区', shorts=['平谷']),
+            Place('110118', '密云区', shorts=['密云']),
+            Place('110119', '延庆区', shorts=['延庆']),
         ]),
-        Place('110228', '密云县'),
-        Place('110229', '延庆县'),
+        Place('110228', '密云县', enabled=False),
+        Place('110229', '延庆县', enabled=False),
     ]),
-    Place('12', '天津', CHILD_TYPE_DIRECT, [
-        Place('1201', '天津', CHILD_TYPE_COUNTY, [
+    Place('12', '天津市', shorts=['天津'], children_type=TYPE_DIRECT, children=[
+        Place('1201', '天津市', children_type=TYPE_COUNTY, children=[
             Place('120101', '和平区'),
             Place('120102', '河东区'),
             Place('120103', '河西区'),
             Place('120104', '南开区'),
             Place('120105', '河北区'),
-            Place('120106', '红桥区'),
+            Place('120106', '红桥区', shorts=['红桥']),
             Place('120110', '东丽区'),
-            Place('120111', '西青区'),
-            Place('120112', '津南区'),
+            Place('120111', '西青区', shorts=['西青']),
+            Place('120112', '津南区', shorts=['津南']),
             Place('120113', '北辰区'),
-            Place('120114', '武清区'),
-            Place('120115', '宝坻区'),
+            Place('120114', '武清区', shorts=['武清']),
+            Place('120115', '宝坻区', shorts=['宝坻']),
             Place('120116', '滨海新区'),
-            Place('120117', '宁河区'),
-            Place('120118', '静海区'),
-            Place('120119', '蓟州区'),
+            Place('120117', '宁河区', shorts=['宁河']),
+            Place('120118', '静海区', shorts=['静海']),
+            Place('120119', '蓟州区', shorts=['蓟州']),
         ]),
-        Place('120221', '宁河县'),
-        Place('120223', '静海县'),
-        Place('120225', '蓟县'),
+        Place('120221', '宁河县', enabled=False),
+        Place('120223', '静海县', enabled=False),
+        Place('120225', '蓟县', enabled=False),
     ]),
-    Place('13', '河北', CHILD_TYPE_CITY, [
-        Place('1301', '石家庄市', CHILD_TYPE_COUNTY, [
+    Place('13', '河北省', shorts=['河北'], children_type=TYPE_CITY, children=[
+        Place('1301', '石家庄市', shorts=['石家庄'], children_type=TYPE_COUNTY, children=[
             Place('130102', '长安区'),
             Place('130104', '桥西区'),
             Place('130105', '新华区'),
-            Place('130107', '井陉矿区'),
+            Place('130107', '井陉矿区', shorts=['井陉矿']),
             Place('130108', '裕华区'),
             Place('130109', '藁城区'),
             Place('130110', '鹿泉区'),
-            Place('130111', '栾城区'),
+            Place('130111', '栾城区', enabled=False),
             Place('130121', '井陉县'),
             Place('130123', '正定县'),
             Place('130125', '行唐县'),
@@ -126,52 +135,52 @@ PLACES = [
             Place('130133', '赵县'),
             Place('130171', '石家庄高新技术产业开发区'),
             Place('130172', '石家庄循环化工园区'),
-            Place('130181', '辛集市'),
-            Place('130183', '晋州市'),
-            Place('130184', '新乐市'),
+            Place('130181', '辛集市', shorts=['辛集']),
+            Place('130183', '晋州市', shorts=['晋州']),
+            Place('130184', '新乐市', shorts=['新乐']),
             Place('130124', '栾城县'),
-            Place('130182', '藁城市'),
-            Place('130185', '鹿泉市'),
+            Place('130182', '藁城市', shorts=['藁城']),
+            Place('130185', '鹿泉市', shorts=['鹿泉']),
         ]),
-        Place('1302', '唐山市', CHILD_TYPE_COUNTY, [
+        Place('1302', '唐山市', shorts=['唐山'], children_type=TYPE_COUNTY, children=[
             Place('130202', '路南区'),
             Place('130203', '路北区'),
             Place('130204', '古冶区'),
             Place('130205', '开平区'),
             Place('130207', '丰南区'),
             Place('130208', '丰润区'),
-            Place('130209', '曹妃甸区'),
+            Place('130209', '曹妃甸区', shorts=['曹妃甸']),
             Place('130223', '滦县'),
             Place('130224', '滦南县'),
             Place('130225', '乐亭县'),
             Place('130227', '迁西县'),
             Place('130229', '玉田县'),
-            Place('130271', '芦台经济技术开发区'),
-            Place('130272', '市汉沽管理区'),
+            Place('130271', '芦台经济技术开发区', shorts=['芦台开发区', '芦台技术开发区', '芦台区']),
+            Place('130272', '汉沽管理区', shorts=['汉沽区']),
             Place('130273', '唐山高新技术产业开发区'),
-            Place('130274', '河北唐山海港经济开发区'),
-            Place('130281', '遵化市'),
-            Place('130283', '迁安市'),
+            Place('130274', '唐山海港经济开发区'),
+            Place('130281', '遵化市', shorts=['遵化']),
+            Place('130283', '迁安市', shorts=['迁安']),
             Place('130230', '唐海县'),
-            Place('130284', '滦州市'),
+            Place('130284', '滦州市', shorts=['滦州']),
         ]),
-        Place('1303', '秦皇岛市', CHILD_TYPE_COUNTY, [
+        Place('1303', '秦皇岛市', shorts=['秦皇岛'], children_type=TYPE_COUNTY, children=[
             Place('130302', '海港区'),
             Place('130303', '山海关区'),
-            Place('130304', '北戴河区'),
+            Place('130304', '北戴河区', shorts=['北戴河']),
             Place('130306', '抚宁区'),
-            Place('130321', '青龙自治县'),
+            Place('130321', '青龙自治县', shorts=['青龙县']),
             Place('130322', '昌黎县'),
             Place('130324', '卢龙县'),
             Place('130371', '皇岛市经济技术开发区'),
             Place('130372', '北戴河新区'),
-            Place('130323', '抚宁县'),
+            Place('130323', '抚宁县', enabled=False),
         ]),
-        Place('1304', '邯郸市', CHILD_TYPE_COUNTY, [
+        Place('1304', '邯郸市', shorts=['邯郸'], children_type=TYPE_COUNTY, children=[
             Place('130402', '邯山区'),
             Place('130403', '丛台区'),
             Place('130404', '复兴区'),
-            Place('130406', '峰峰矿区'),
+            Place('130406', '峰峰矿区', shorts=['峰峰矿']),
             Place('130407', '肥乡区'),
             Place('130408', '永年区'),
             Place('130423', '临漳县'),
@@ -186,13 +195,13 @@ PLACES = [
             Place('130434', '魏县'),
             Place('130435', '曲周县'),
             Place('130471', '邯郸经济技术开发区'),
-            Place('130473', '邯郸冀南新区'),
-            Place('130481', '武安市'),
+            Place('130473', '邯郸冀南新区', shorts=['冀南新区']),
+            Place('130481', '武安市', shorts=['武安']),
             Place('130421', '邯郸县'),
-            Place('130428', '肥乡县'),
-            Place('130429', '永年县'),
+            Place('130428', '肥乡县', enabled=False),
+            Place('130429', '永年县', enabled=False),
         ]),
-        Place('1305', '邢台市', CHILD_TYPE_COUNTY, [
+        Place('1305', '邢台市', shorts=['邢台'], children_type=TYPE_COUNTY, children=[
             Place('130502', '桥东区'),
             Place('130503', '桥西区'),
             Place('130521', '邢台县'),
@@ -201,7 +210,7 @@ PLACES = [
             Place('130524', '柏乡县'),
             Place('130525', '隆尧县'),
             Place('130526', '任县'),
-            Place('130527', '南和县'),
+            Place('130527', '南和县', enabled=False),
             Place('130528', '宁晋县'),
             Place('130529', '巨鹿县'),
             Place('130530', '新河县'),
@@ -211,14 +220,14 @@ PLACES = [
             Place('130534', '清河县'),
             Place('130535', '临西县'),
             Place('130571', '邢台经济开发区'),
-            Place('130581', '南宫市'),
+            Place('130581', '南宫市', shorts=['南宫']),
             Place('130582', '沙河市'),
-            Place('130502', '襄都区'),
-            Place('130503', '信都区'),
-            Place('130505', '任泽区'),
-            Place('130506', '南和区'),
+            Place('130502', '襄都区', shorts=['襄都']),
+            Place('130503', '信都区', shorts=['信都']),
+            Place('130505', '任泽区', shorts=['任泽']),
+            Place('130506', '南和区', shorts=['南和']),
         ]),
-        Place('1306', '保定市', CHILD_TYPE_COUNTY, [
+        Place('1306', '保定市', shorts=['保定'], children_type=TYPE_COUNTY, children=[
             Place('130601', '新市区'),
             Place('130602', '竞秀区'),
             Place('130606', '莲池区'),
@@ -239,24 +248,23 @@ PLACES = [
             Place('130635', '蠡县'),
             Place('130636', '顺平县'),
             Place('130637', '博野县'),
-            Place('130638', '雄县'),
-            Place('130671', '高新技术产业开发区'),
+            Place('130638', '雄县', enabled=False),
             Place('130672', '白沟'),
-            Place('130681', '涿州市'),
-            Place('130682', '定州市'),
-            Place('130683', '安国市'),
-            Place('130684', '高碑店市'),
+            Place('130681', '涿州市', shorts=['涿州']),
+            Place('130682', '定州市', shorts=['定州']),
+            Place('130683', '安国市', shorts=['安国']),
+            Place('130684', '高碑店市', shorts=['高碑店']),
             Place('130685', '雄安'),
             Place('130603', '北市区'),
             Place('130604', '南市区'),
             Place('130621', '满城县'),
-            Place('130622', '清苑县'),
-            Place('130625', '徐水县'),
+            Place('130622', '清苑县', enabled=False),
+            Place('130625', '徐水县', enabled=False),
         ]),
-        Place('1307', '张家口市', CHILD_TYPE_COUNTY, [
+        Place('1307', '张家口市', shorts=['张家口'], children_type=TYPE_COUNTY, children=[
             Place('130702', '桥东区'),
             Place('130703', '桥西区'),
-            Place('130705', '宣化区'),
+            Place('130705', '宣化区', shorts=['宣化']),
             Place('130706', '下花园区'),
             Place('130708', '万全区'),
             Place('130709', '崇礼区'),
@@ -271,49 +279,49 @@ PLACES = [
             Place('130731', '涿鹿县'),
             Place('130732', '赤城县'),
             Place('130771', '张家口市高新技术产业开发区'),
-            Place('130772', '察北管理区'),
-            Place('130773', '塞北管理区'),
-            Place('130721', '宣化县'),
-            Place('130729', '万全县'),
-            Place('130733', '崇礼县'),
+            Place('130772', '察北管理区', shorts=['察北区']),
+            Place('130773', '塞北管理区', shorts=['塞北区']),
+            Place('130721', '宣化县', enabled=False),
+            Place('130729', '万全县', enabled=False),
+            Place('130733', '崇礼县', enabled=False),
         ]),
-        Place('1308', '承德市', CHILD_TYPE_COUNTY, [
+        Place('1308', '承德市', shorts=['承德'], children_type=TYPE_COUNTY, children=[
             Place('130802', '双桥区'),
             Place('130803', '双滦区'),
-            Place('130804', '鹰手营子矿区'),
+            Place('130804', '鹰手营子矿区', shorts=['鹰手营子矿']),
             Place('130821', '承德县'),
             Place('130822', '兴隆县'),
             Place('130824', '滦平县'),
             Place('130825', '隆化县'),
-            Place('130826', '丰宁满族自治县'),
-            Place('130827', '宽城满族自治县'),
-            Place('130828', '围场满族蒙古族自治县'),
+            Place('130826', '丰宁满族自治县', shorts=['丰宁自治县', '丰宁县']),
+            Place('130827', '宽城满族自治县', shorts=['宽城自治县', '宽城县']),
+            Place('130828', '围场满族蒙古族自治县', shorts=['围场自治县', '围场县']),
             Place('130871', '承德高新技术产业开发区'),
-            Place('130881', '平泉市'),
-            Place('130823', '平泉县'),
+            Place('130881', '平泉市', shorts=['平泉']),
+            Place('130823', '平泉县', enabled=False),
         ]),
-        Place('1309', '沧州市', CHILD_TYPE_COUNTY, [
+        Place('1309', '沧州市', shorts=['沧州'], children_type=TYPE_COUNTY, children=[
             Place('130902', '新华区'),
             Place('130903', '运河区'),
             Place('130921', '沧县'),
             Place('130922', '青县'),
             Place('130923', '东光县'),
             Place('130924', '海兴县'),
-            Place('130925', '盐山县'),
-            Place('130926', '肃宁县'),
+            Place('130925', '盐山县', shorts=['盐山']),
+            Place('130926', '肃宁县', shorts=['肃宁']),
             Place('130927', '南皮县'),
-            Place('130928', '吴桥县'),
+            Place('130928', '吴桥县', shorts=['吴桥']),
             Place('130929', '献县'),
-            Place('130930', '孟村回族自治县'),
-            Place('130971', '河北沧州经济开发区'),
-            Place('130972', '沧州高新技术产业开发区'),
+            Place('130930', '孟村回族自治县', shorts=['孟村县', '孟村自治县']),
+            Place('130971', '河北沧州经济开发区', shorts=['沧州经济开发区', '沧州开发区']),
+            Place('130972', '沧州高新技术产业开发区', shorts=['沧州高新开发区', '沧州高新区', '沧州高新产业开发区', '沧州高新技术开发区']),
             Place('130973', '沧州渤海新区'),
-            Place('130981', '泊头市'),
-            Place('130982', '任丘市'),
-            Place('130983', '黄骅市'),
-            Place('130984', '河间市'),
+            Place('130981', '泊头市', shorts=['泊头']),
+            Place('130982', '任丘市', shorts=['任丘']),
+            Place('130983', '黄骅市', shorts=['黄骅']),
+            Place('130984', '河间市', shorts=['河间']),
         ]),
-        Place('1310', '廊坊市', CHILD_TYPE_COUNTY, [
+        Place('1310', '廊坊市', shorts=['廊坊'], children_type=TYPE_COUNTY, children=[
             Place('131002', '安次区'),
             Place('131003', '广阳区'),
             Place('131022', '固安县'),
@@ -321,12 +329,12 @@ PLACES = [
             Place('131024', '香河县'),
             Place('131025', '大城县'),
             Place('131026', '文安县'),
-            Place('131028', '大厂回族自治县'),
+            Place('131028', '大厂回族自治县', shorts=['大厂自治县', '大厂县']),
             Place('131071', '廊坊经济技术开发区'),
-            Place('131081', '霸州市'),
-            Place('131082', '三河市'),
+            Place('131081', '霸州市', shorts=['霸州']),
+            Place('131082', '三河市', shorts=['三河']),
         ]),
-        Place('1311', '衡水市', CHILD_TYPE_COUNTY, [
+        Place('1311', '衡水市', children_type=TYPE_COUNTY, children=[
             Place('131102', '桃城区'),
             Place('131103', '冀州区'),
             Place('131121', '枣强县'),
@@ -339,12 +347,12 @@ PLACES = [
             Place('131128', '阜城县'),
             Place('131171', '衡水经济开发区'),
             Place('131172', '衡水滨湖新区'),
-            Place('131182', '深州市'),
-            Place('131181', '冀州市'),
+            Place('131182', '深州市', shorts=['深州']),
+            Place('131181', '冀州市', shorts=['冀州']),
         ]),
     ]),
-    Place('14', '山西', CHILD_TYPE_CITY, [
-        Place('1401', '太原市', CHILD_TYPE_COUNTY, [
+    Place('14', '山西省', shorts=['山西'], children_type=TYPE_CITY, children=[
+        Place('1401', '太原市', shorts=['太原'], children_type=TYPE_COUNTY, children=[
             Place('140105', '小店区'),
             Place('140106', '迎泽区'),
             Place('140107', '杏花岭区'),
@@ -355,9 +363,9 @@ PLACES = [
             Place('140122', '阳曲县'),
             Place('140123', '娄烦县'),
             Place('140171', '山西转型综合改革示范区'),
-            Place('140181', '古交市'),
+            Place('140181', '古交市', shorts=['古交']),
         ]),
-        Place('1402', '大同市', CHILD_TYPE_COUNTY, [
+        Place('1402', '大同市', shorts=['大同'], children_type=TYPE_COUNTY, children=[
             Place('140211', '南郊区'),
             Place('140212', '新荣区'),
             Place('140221', '阳高县'),
@@ -367,18 +375,18 @@ PLACES = [
             Place('140225', '浑源县'),
             Place('140226', '左云县'),
             Place('140227', '大同县'),
-            Place('140271', '山西大同经济开发区'),
+            Place('140271', '大同经济开发区', shorts=['大同开发区']),
             Place('140213', '平城区'),
             Place('140214', '云冈区'),
             Place('140215', '云州区'),
         ]),
-        Place('1403', '阳泉市', CHILD_TYPE_COUNTY, [
+        Place('1403', '阳泉市', shorts=['阳泉'], children_type=TYPE_COUNTY, children=[
             Place('140321', '平定县'),
             Place('140322', '盂县'),
-            Place('140371', '山西阳泉经济开发区'),
+            Place('140371', '阳泉经济开发区'),
         ]),
-        Place('1404', '长治市', CHILD_TYPE_COUNTY, [
-            Place('140421', '长治县'),
+        Place('1404', '长治市', shorts=['长治'], children_type=TYPE_COUNTY, children=[
+            Place('140421', '长治县', enabled=False),
             Place('140423', '襄垣县'),
             Place('140424', '屯留县'),
             Place('140425', '平顺县'),
@@ -389,20 +397,20 @@ PLACES = [
             Place('140430', '沁县'),
             Place('140431', '沁源县'),
             Place('140471', '长治高新技术产业园区'),
-            Place('140481', '潞城市'),
+            Place('140481', '潞城市', enabled=False),
             Place('140403', '潞州区'),
             Place('140404', '上党区'),
             Place('140405', '屯留区'),
             Place('140406', '潞城区'),
         ]),
-        Place('1405', '晋城市', CHILD_TYPE_COUNTY, [
+        Place('1405', '晋城市', shorts=['晋城'], children_type=TYPE_COUNTY, children=[
             Place('140521', '沁水县'),
             Place('140522', '阳城县'),
             Place('140524', '陵川县'),
             Place('140525', '泽州县'),
-            Place('140581', '高平市'),
+            Place('140581', '高平市', shorts=['高平']),
         ]),
-        Place('1406', '朔州市', CHILD_TYPE_COUNTY, [
+        Place('1406', '朔州市', shorts=['朔州'], children_type=TYPE_COUNTY, children=[
             Place('140602', '朔城区'),
             Place('140603', '平鲁区'),
             Place('140621', '山阴县'),
@@ -410,23 +418,23 @@ PLACES = [
             Place('140623', '右玉县'),
             Place('140624', '怀仁县'),
             Place('140671', '朔州经济开发区'),
-            Place('140681', '怀仁市'),
+            Place('140681', '怀仁市', shorts=['怀仁']),
         ]),
-        Place('1407', '晋中市', CHILD_TYPE_COUNTY, [
+        Place('1407', '晋中市', shorts=['晋中'], children_type=TYPE_COUNTY, children=[
             Place('140702', '榆次区'),
             Place('140721', '榆社县'),
             Place('140722', '左权县'),
             Place('140723', '和顺县'),
             Place('140724', '昔阳县'),
             Place('140725', '寿阳县'),
-            Place('140726', '太谷县'),
+            Place('140726', '太谷县', enabled=False),
             Place('140727', '祁县'),
             Place('140728', '平遥县'),
             Place('140729', '灵石县'),
-            Place('140781', '介休市'),
+            Place('140781', '介休市', shorts=['介休']),
             Place('140703', '太谷区'),
         ]),
-        Place('1408', '运城市', CHILD_TYPE_COUNTY, [
+        Place('1408', '运城市', shorts=['运城'], children_type=TYPE_COUNTY, children=[
             Place('140802', '盐湖区'),
             Place('140821', '临猗县'),
             Place('140822', '万荣县'),
@@ -438,10 +446,10 @@ PLACES = [
             Place('140828', '夏县'),
             Place('140829', '平陆县'),
             Place('140830', '芮城县'),
-            Place('140881', '永济市'),
-            Place('140882', '河津市'),
+            Place('140881', '永济市', shorts=['永济']),
+            Place('140882', '河津市', shorts=['河津']),
         ]),
-        Place('1409', '忻州市', CHILD_TYPE_COUNTY, [
+        Place('1409', '忻州市', shorts=['忻州'], children_type=TYPE_COUNTY, children=[
             Place('140902', '忻府区'),
             Place('140921', '定襄县'),
             Place('140922', '五台县'),
@@ -456,9 +464,9 @@ PLACES = [
             Place('140931', '保德县'),
             Place('140932', '偏关县'),
             Place('140971', '五台山'),
-            Place('140981', '原平市'),
+            Place('140981', '原平市', shorts=['原平']),
         ]),
-        Place('1410', '临汾市', CHILD_TYPE_COUNTY, [
+        Place('1410', '临汾市', shorts=['临汾'], children_type=TYPE_COUNTY, children=[
             Place('141002', '尧都区'),
             Place('141021', '曲沃县'),
             Place('141022', '翼城县'),
@@ -475,9 +483,9 @@ PLACES = [
             Place('141033', '蒲县'),
             Place('141034', '汾西县'),
             Place('141081', '侯马市'),
-            Place('141082', '霍州市'),
+            Place('141082', '霍州市', shorts=['霍州']),
         ]),
-        Place('1411', '吕梁市', CHILD_TYPE_COUNTY, [
+        Place('1411', '吕梁市', shorts=['吕梁'], children_type=TYPE_COUNTY, children=[
             Place('141102', '离石区'),
             Place('141121', '文水县'),
             Place('141122', '交城县'),
@@ -489,94 +497,94 @@ PLACES = [
             Place('141128', '方山县'),
             Place('141129', '中阳县'),
             Place('141130', '交口县'),
-            Place('141181', '孝义市'),
-            Place('141182', '汾阳市'),
+            Place('141181', '孝义市', shorts=['孝义']),
+            Place('141182', '汾阳市', shorts=['汾阳']),
         ]),
     ]),
-    Place('15', '内蒙古', CHILD_TYPE_CITY, [
-        Place('1501', '呼和浩特市', CHILD_TYPE_COUNTY, [
+    Place('15', '内蒙古自治区', shorts=['内蒙古'], children_type=TYPE_CITY, children=[
+        Place('1501', '呼和浩特市', shorts=['呼和浩特'], children_type=TYPE_COUNTY, children=[
             Place('150102', '新城区'),
             Place('150103', '回民区'),
             Place('150104', '玉泉区'),
             Place('150105', '赛罕区'),
             Place('150121', '土默特左旗'),
-            Place('150122', '托克托县'),
-            Place('150123', '和林格尔县'),
+            Place('150122', '托克托县', shorts=['托克托']),
+            Place('150123', '和林格尔县', shorts=['和林格尔']),
             Place('150124', '清水河县'),
             Place('150125', '武川县'),
-            Place('150171', '金海工业园区'),
+            Place('150171', '金海工业园区', shorts=['金海区']),
             Place('150172', '呼和浩特经济技术开发区'),
         ]),
-        Place('1502', '包头市', CHILD_TYPE_COUNTY, [
+        Place('1502', '包头市', shorts=['包头'], children_type=TYPE_COUNTY, children=[
             Place('150202', '东河区'),
-            Place('150203', '昆都仑区'),
+            Place('150203', '昆都仑区', shorts=['昆都仑']),
             Place('150204', '青山区'),
             Place('150205', '石拐区'),
-            Place('150206', '白云鄂博矿区'),
+            Place('150206', '白云鄂博矿区', shorts=['白云鄂博矿']),
             Place('150207', '九原区'),
             Place('150221', '土默特右旗'),
             Place('150222', '固阳县'),
-            Place('150223', '达尔罕茂明安联合旗'),
+            Place('150223', '达尔罕茂明安联合旗', shorts=['达茂旗']),
             Place('150271', '包头稀土高新技术产业开发区'),
         ]),
-        Place('1503', '乌海市', CHILD_TYPE_COUNTY, [
+        Place('1503', '乌海市', shorts=['乌海'], children_type=TYPE_COUNTY, children=[
             Place('150302', '海勃湾区'),
             Place('150303', '海南区'),
             Place('150304', '乌达区'),
         ]),
-        Place('1504', '赤峰市', CHILD_TYPE_COUNTY, [
+        Place('1504', '赤峰市', shorts=['赤峰'], children_type=TYPE_COUNTY, children=[
             Place('150402', '红山区'),
             Place('150403', '元宝山区'),
             Place('150404', '松山区'),
-            Place('150421', '阿鲁科尔沁旗'),
+            Place('150421', '阿鲁科尔沁旗', shorts=['阿鲁科尔沁']),
             Place('150422', '巴林左旗'),
             Place('150423', '巴林右旗'),
             Place('150424', '林西县'),
-            Place('150425', '克什克腾旗'),
-            Place('150426', '翁牛特旗'),
-            Place('150428', '喀喇沁旗'),
+            Place('150425', '克什克腾旗', shorts=['克什克腾']),
+            Place('150426', '翁牛特旗', shorts=['翁牛特']),
+            Place('150428', '喀喇沁旗', shorts=['喀喇沁']),
             Place('150429', '宁城县'),
             Place('150430', '敖汉旗'),
         ]),
-        Place('1505', '通辽市', CHILD_TYPE_COUNTY, [
-            Place('150502', '科尔沁区'),
+        Place('1505', '通辽市', shorts=['通辽'], children_type=TYPE_COUNTY, children=[
+            Place('150502', '科尔沁区', shorts=['科尔沁']),
             Place('150521', '科尔沁左翼中旗'),
             Place('150522', '科尔沁左翼后旗'),
             Place('150523', '开鲁县'),
             Place('150524', '库伦旗'),
             Place('150525', '奈曼旗'),
-            Place('150526', '扎鲁特旗'),
+            Place('150526', '扎鲁特旗', shorts=['扎鲁特']),
             Place('150571', '通辽经济技术开发区'),
-            Place('150581', '霍林郭勒市'),
+            Place('150581', '霍林郭勒市', shorts=['霍林郭勒']),
         ]),
-        Place('1506', '鄂尔多斯市', CHILD_TYPE_COUNTY, [
+        Place('1506', '鄂尔多斯市', shorts=['鄂尔多斯'], children_type=TYPE_COUNTY, children=[
             Place('150602', '东胜区'),
-            Place('150603', '康巴什区'),
-            Place('150621', '达拉特旗'),
+            Place('150603', '康巴什区', shorts=['康巴什']),
+            Place('150621', '达拉特旗', shorts=['达拉特']),
             Place('150622', '准格尔旗'),
             Place('150623', '鄂托克前旗'),
             Place('150624', '鄂托克旗'),
             Place('150625', '杭锦旗'),
             Place('150626', '乌审旗'),
-            Place('150627', '伊金霍洛旗'),
+            Place('150627', '伊金霍洛旗', shorts=['伊金霍洛']),
         ]),
-        Place('1507', '呼伦贝尔市', CHILD_TYPE_COUNTY, [
-            Place('150702', '海拉尔区'),
-            Place('150703', '扎赉诺尔区'),
+        Place('1507', '呼伦贝尔市', shorts=['呼伦贝尔'], children_type=TYPE_COUNTY, children=[
+            Place('150702', '海拉尔区', shorts=['海拉尔']),
+            Place('150703', '扎赉诺尔区', shorts=['扎赉诺尔']),
             Place('150721', '阿荣旗'),
-            Place('150722', '莫力达瓦达斡尔族自治旗'),
-            Place('150723', '鄂伦春自治旗'),
-            Place('150724', '鄂温克族自治旗'),
-            Place('150725', '陈巴尔虎旗'),
+            Place('150722', '莫力达瓦达斡尔族自治旗', shorts=['莫旗', '莫力达瓦达斡尔族旗']),
+            Place('150723', '鄂伦春自治旗', shorts=['鄂伦春']),
+            Place('150724', '鄂温克族自治旗', shorts=['鄂温克']),
+            Place('150725', '陈巴尔虎旗', shorts=['陈巴尔虎']),
             Place('150726', '新巴尔虎左旗'),
             Place('150727', '新巴尔虎右旗'),
-            Place('150781', '满洲里市'),
-            Place('150782', '牙克石市'),
-            Place('150783', '扎兰屯市'),
-            Place('150784', '额尔古纳市'),
-            Place('150785', '根河市'),
+            Place('150781', '满洲里市', shorts=['满洲里']),
+            Place('150782', '牙克石市', shorts=['牙克石']),
+            Place('150783', '扎兰屯市', shorts=['扎兰屯']),
+            Place('150784', '额尔古纳市', shorts=['额尔古纳']),
+            Place('150785', '根河市', shorts=['根河']),
         ]),
-        Place('1508', '巴彦淖尔市', CHILD_TYPE_COUNTY, [
+        Place('1508', '巴彦淖尔市', shorts=['巴彦淖尔'], children_type=TYPE_COUNTY, children=[
             Place('150802', '临河区'),
             Place('150821', '五原县'),
             Place('150822', '磴口县'),
@@ -585,7 +593,7 @@ PLACES = [
             Place('150825', '乌拉特后旗'),
             Place('150826', '杭锦后旗'),
         ]),
-        Place('1509', '乌兰察布市', CHILD_TYPE_COUNTY, [
+        Place('1509', '乌兰察布市', shorts=['乌兰察布'], children_type=TYPE_COUNTY, children=[
             Place('150902', '集宁区'),
             Place('150921', '卓资县'),
             Place('150922', '化德县'),
@@ -596,40 +604,40 @@ PLACES = [
             Place('150927', '察哈尔右翼中旗'),
             Place('150928', '察哈尔右翼后旗'),
             Place('150929', '四子王旗'),
-            Place('150981', '丰镇市'),
+            Place('150981', '丰镇市', shorts=['丰镇']),
         ]),
-        Place('1522', '兴安盟', CHILD_TYPE_COUNTY, [
-            Place('152201', '乌兰浩特市'),
-            Place('152202', '阿尔山市'),
+        Place('1522', '兴安盟', children_type=TYPE_COUNTY, children=[
+            Place('152201', '乌兰浩特市', shorts=['乌兰浩特']),
+            Place('152202', '阿尔山市', shorts=['阿尔山']),
             Place('152221', '科尔沁右翼前旗'),
             Place('152222', '科尔沁右翼中旗'),
             Place('152223', '扎赉特旗'),
             Place('152224', '突泉县'),
         ]),
-        Place('1525', '锡林郭勒', CHILD_TYPE_COUNTY, [
-            Place('152501', '二连浩特市'),
-            Place('152502', '锡林浩特市'),
-            Place('152522', '阿巴嘎旗'),
+        Place('1525', '锡林郭勒盟', shorts=['锡林郭勒'], children_type=TYPE_COUNTY, children=[
+            Place('152501', '二连浩特市', shorts=['二连浩特']),
+            Place('152502', '锡林浩特市', shorts=['锡林浩特']),
+            Place('152522', '阿巴嘎旗', shorts=['阿巴嘎']),
             Place('152523', '苏尼特左旗'),
             Place('152524', '苏尼特右旗'),
-            Place('152525', '东乌珠穆沁旗'),
-            Place('152526', '西乌珠穆沁旗'),
-            Place('152527', '太仆寺旗'),
+            Place('152525', '东乌珠穆沁旗', shorts=['东乌珠穆沁']),
+            Place('152526', '西乌珠穆沁旗', shorts=['西乌珠穆沁']),
+            Place('152527', '太仆寺旗', shorts=['太仆寺']),
             Place('152528', '镶黄旗'),
             Place('152529', '正镶白旗'),
             Place('152530', '正蓝旗'),
             Place('152531', '多伦县'),
-            Place('152571', '乌拉盖管委会'),
+            Place('152571', '乌拉盖管委会', shorts=['乌拉盖']),
         ]),
-        Place('1529', '阿拉善', CHILD_TYPE_COUNTY, [
+        Place('1529', '阿拉善盟', shorts=['阿拉善'], children_type=TYPE_COUNTY, children=[
             Place('152921', '阿拉善左旗'),
             Place('152922', '阿拉善右旗'),
-            Place('152923', '额济纳旗'),
+            Place('152923', '额济纳旗', shorts=['额济纳']),
             Place('152971', '阿拉善经济开发区'),
         ]),
     ]),
-    Place('21', '辽宁', CHILD_TYPE_CITY, [
-        Place('2101', '沈阳市', CHILD_TYPE_COUNTY, [
+    Place('21', '辽宁省', shorts=['辽宁'], children_type=TYPE_CITY, children=[
+        Place('2101', '沈阳市', shorts=['沈阳'], children_type=TYPE_COUNTY, children=[
             Place('210102', '和平区'),
             Place('210103', '沈河区'),
             Place('210104', '大东区'),
@@ -646,80 +654,80 @@ PLACES = [
             Place('210112', '东陵区'),
             Place('210122', '辽中县'),
         ]),
-        Place('2102', '大连市', CHILD_TYPE_COUNTY, [
+        Place('2102', '大连市', shorts=['大连'], children_type=TYPE_COUNTY, children=[
             Place('210202', '中山区'),
             Place('210203', '西岗区'),
             Place('210204', '沙河口区'),
             Place('210211', '甘井子区'),
             Place('210212', '旅顺口区'),
             Place('210213', '金州区'),
-            Place('210214', '普兰店区'),
+            Place('210214', '普兰店区', shorts=['普兰店']),
             Place('210224', '长海县'),
-            Place('210281', '瓦房店市'),
-            Place('210283', '庄河市'),
-            Place('210282', '普兰店市'),
+            Place('210281', '瓦房店市', shorts=['瓦房店']),
+            Place('210283', '庄河市', shorts=['庄河']),
+            Place('210282', '普兰店市', enabled=False),
         ]),
-        Place('2103', '鞍山市', CHILD_TYPE_COUNTY, [
+        Place('2103', '鞍山市', shorts=['鞍山'], children_type=TYPE_COUNTY, children=[
             Place('210302', '铁东区'),
             Place('210303', '铁西区'),
             Place('210304', '立山区'),
             Place('210311', '千山区'),
             Place('210321', '台安县'),
-            Place('210323', '岫岩自治县'),
+            Place('210323', '岫岩自治县', shorts=['岫岩县']),
             Place('210381', '海城市'),
         ]),
-        Place('2104', '抚顺市', CHILD_TYPE_COUNTY, [
+        Place('2104', '抚顺市', shorts=['抚顺'], children_type=TYPE_COUNTY, children=[
             Place('210402', '新抚区'),
             Place('210403', '东洲区'),
             Place('210404', '望花区'),
             Place('210411', '顺城区'),
             Place('210421', '抚顺县'),
-            Place('210422', '新宾自治县'),
-            Place('210423', '清原自治县'),
+            Place('210422', '新宾自治县', shorts=['新宾县']),
+            Place('210423', '清原自治县', shorts=['清原县']),
         ]),
-        Place('2105', '本溪市', CHILD_TYPE_COUNTY, [
+        Place('2105', '本溪市', shorts=['本溪'], children_type=TYPE_COUNTY, children=[
             Place('210502', '平山区'),
             Place('210503', '溪湖区'),
             Place('210504', '明山区'),
             Place('210505', '南芬区'),
-            Place('210521', '本溪自治县'),
-            Place('210522', '桓仁自治县'),
+            Place('210521', '本溪自治县', shorts=['本溪县']),
+            Place('210522', '桓仁自治县', shorts=['桓仁县']),
         ]),
-        Place('2106', '丹东市', CHILD_TYPE_COUNTY, [
+        Place('2106', '丹东市', shorts=['丹东'], children_type=TYPE_COUNTY, children=[
             Place('210602', '元宝区'),
             Place('210603', '振兴区'),
             Place('210604', '振安区'),
-            Place('210624', '宽甸自治县'),
-            Place('210681', '东港市'),
+            Place('210624', '宽甸自治县', shorts=['宽甸县']),
+            Place('210681', '东港市', shorts=['东港']),
             Place('210682', '凤城市'),
         ]),
-        Place('2107', '锦州市', CHILD_TYPE_COUNTY, [
+        Place('2107', '锦州市', shorts=['锦州'], children_type=TYPE_COUNTY, children=[
             Place('210702', '古塔区'),
             Place('210703', '凌河区'),
             Place('210711', '太和区'),
             Place('210726', '黑山县'),
             Place('210727', '义县'),
-            Place('210781', '凌海市'),
+            Place('210781', '凌海市', shorts=['凌海']),
             Place('210782', '北镇市'),
         ]),
-        Place('2108', '营口市', CHILD_TYPE_COUNTY, [
+        Place('2108', '营口市', shorts=['营口'], children_type=TYPE_COUNTY, children=[
             Place('210802', '站前区'),
             Place('210803', '西市区'),
             Place('210804', '鲅鱼圈区'),
             Place('210811', '老边区'),
-            Place('210881', '盖州市'),
+            Place('210881', '盖州市', shorts=['盖州']),
             Place('210882', '大石桥市'),
         ]),
-        Place('2109', '阜新市', CHILD_TYPE_COUNTY, [
+        Place('2109', '阜新市', shorts=['阜新'], children_type=TYPE_COUNTY, children=[
             Place('210902', '海州区'),
             Place('210903', '新邱区'),
             Place('210904', '太平区'),
             Place('210905', '清河门区'),
             Place('210911', '细河区'),
-            Place('210921', '阜新自治县'),
+            Place('210921', '阜新自治县', shorts=['阜新县']),
             Place('210922', '彰武县'),
         ]),
-        Place('2110', '辽阳市', CHILD_TYPE_COUNTY, [
+        Place('2110', '辽阳市', shorts=['辽阳'], children_type=TYPE_COUNTY, children=[
             Place('211002', '白塔区'),
             Place('211003', '文圣区'),
             Place('211004', '宏伟区'),
@@ -728,42 +736,42 @@ PLACES = [
             Place('211021', '辽阳县'),
             Place('211081', '灯塔市'),
         ]),
-        Place('2111', '盘锦市', CHILD_TYPE_COUNTY, [
+        Place('2111', '盘锦市', children_type=TYPE_COUNTY, children=[
             Place('211102', '双台子区'),
             Place('211103', '兴隆台区'),
             Place('211104', '大洼区'),
             Place('211122', '盘山县'),
             Place('211121', '大洼县'),
         ]),
-        Place('2112', '铁岭市', CHILD_TYPE_COUNTY, [
+        Place('2112', '铁岭市', shorts=['铁岭'], children_type=TYPE_COUNTY, children=[
             Place('211202', '银州区'),
             Place('211204', '清河区'),
             Place('211221', '铁岭县'),
             Place('211223', '西丰县'),
             Place('211224', '昌图县'),
-            Place('211281', '调兵山市'),
-            Place('211282', '开原市'),
+            Place('211281', '调兵山市', shorts=['调兵山']),
+            Place('211282', '开原市', shorts=['开原']),
         ]),
-        Place('2113', '朝阳市', CHILD_TYPE_COUNTY, [
+        Place('2113', '朝阳市', children_type=TYPE_COUNTY, children=[
             Place('211302', '双塔区'),
             Place('211303', '龙城区'),
             Place('211321', '朝阳县'),
             Place('211322', '建平县'),
-            Place('211324', '喀喇沁自治县'),
-            Place('211381', '北票市'),
-            Place('211382', '凌源市'),
+            Place('211324', '喀喇沁自治县', shorts=['喀喇沁']),
+            Place('211381', '北票市', shorts=['北票']),
+            Place('211382', '凌源市', shorts=['凌源']),
         ]),
-        Place('2114', '葫芦岛市', CHILD_TYPE_COUNTY, [
+        Place('2114', '葫芦岛市', shorts=['葫芦岛'], children_type=TYPE_COUNTY, children=[
             Place('211402', '连山区'),
             Place('211403', '龙港区'),
             Place('211404', '南票区'),
             Place('211421', '绥中县'),
             Place('211422', '建昌县'),
-            Place('211481', '兴城市'),
+            Place('211481', '兴城市', shorts=['兴城']),
         ]),
     ]),
-    Place('22', '吉林', CHILD_TYPE_CITY, [
-        Place('2201', '长春市', CHILD_TYPE_COUNTY, [
+    Place('22', '吉林省', shorts=['吉林'], children_type=TYPE_CITY, children=[
+        Place('2201', '长春市', shorts=['长春'], children_type=TYPE_COUNTY, children=[
             Place('220102', '南关区'),
             Place('220103', '宽城区'),
             Place('220104', '朝阳区'),
@@ -772,16 +780,16 @@ PLACES = [
             Place('220112', '双阳区'),
             Place('220113', '九台区'),
             Place('220122', '农安县'),
-            Place('220171', '长春经济技术开发区'),
-            Place('220172', '净月高新技术产业开发区'),
-            Place('220173', '长春高新技术产业开发区'),
-            Place('220174', '长春汽车经济技术开发区'),
+            Place('220171', '长春经济技术开发区', shorts=['长春经济开发区']),
+            Place('220172', '净月高新技术产业开发区', shorts=['净月高新技术开发区', '净月高新产业开发区', '净月高新开发区', '净月开发区']),
+            Place('220173', '长春高新技术产业开发区', shorts=['长春高新技术开发区', '长春高新产业开发区', '长春高新开发区']),
+            Place('220174', '长春汽车经济技术开发区', shorts=['长春汽车经济技术开发区', '长春汽车经济开发区', '长春汽车技术开发区', '长春汽车开发区']),
             Place('220182', '榆树市'),
             Place('220183', '德惠市'),
-            Place('220181', '九台市'),
-            Place('220184', '公主岭市'),
+            Place('220181', '九台市', shorts=['九台']),
+            Place('220184', '公主岭市', shorts=['公主岭']),
         ]),
-        Place('2202', '吉林市', CHILD_TYPE_COUNTY, [
+        Place('2202', '吉林市', shorts=['吉林'], children_type=TYPE_COUNTY, children=[
             Place('220202', '昌邑区'),
             Place('220203', '龙潭区'),
             Place('220204', '船营区'),
@@ -790,72 +798,71 @@ PLACES = [
             Place('220271', '吉林经济开发区'),
             Place('220272', '吉林高新技术产业开发区'),
             Place('220273', '吉林中国新加坡食品区'),
-            Place('220281', '蛟河市'),
-            Place('220282', '桦甸市'),
-            Place('220283', '舒兰市'),
+            Place('220281', '蛟河市', shorts=['蛟河']),
+            Place('220282', '桦甸市', shorts=['桦甸']),
+            Place('220283', '舒兰市', shorts=['舒兰']),
             Place('220284', '磐石市'),
         ]),
-        Place('2203', '四平市', CHILD_TYPE_COUNTY, [
+        Place('2203', '四平市', shorts=['四平'], children_type=TYPE_COUNTY, children=[
             Place('220302', '铁西区'),
             Place('220303', '铁东区'),
             Place('220322', '梨树县'),
-            Place('220323', '伊通自治县'),
-            Place('220381', '公主岭市'),
-            Place('220382', '双辽市'),
+            Place('220323', '伊通自治县', shorts=['伊通县']),
+            Place('220382', '双辽市', shorts=['双辽']),
         ]),
-        Place('2204', '辽源市', CHILD_TYPE_COUNTY, [
+        Place('2204', '辽源市', shorts=['辽源'], children_type=TYPE_COUNTY, children=[
             Place('220402', '龙山区'),
             Place('220403', '西安区'),
-            Place('220421', '东丰县'),
-            Place('220422', '东辽县'),
+            Place('220421', '东丰县', shorts=['东丰']),
+            Place('220422', '东辽县', shorts=['东辽']),
         ]),
-        Place('2205', '通化市', CHILD_TYPE_COUNTY, [
+        Place('2205', '通化市', shorts=['通化'], children_type=TYPE_COUNTY, children=[
             Place('220502', '东昌区'),
             Place('220503', '二道江区'),
             Place('220521', '通化县'),
             Place('220523', '辉南县'),
             Place('220524', '柳河县'),
-            Place('220581', '梅河口市'),
-            Place('220582', '集安市'),
+            Place('220581', '梅河口市', shorts=['梅河口']),
+            Place('220582', '集安市', shorts=['集安']),
         ]),
-        Place('2206', '白山市', CHILD_TYPE_COUNTY, [
+        Place('2206', '白山市', children_type=TYPE_COUNTY, children=[
             Place('220602', '浑江区'),
             Place('220605', '江源区'),
             Place('220621', '抚松县'),
             Place('220622', '靖宇县'),
-            Place('220623', '长白自治县'),
+            Place('220623', '长白自治县', shorts=['长白县']),
             Place('220681', '临江市'),
         ]),
-        Place('2207', '松原市', CHILD_TYPE_COUNTY, [
+        Place('2207', '松原市', shorts=['松原'], children_type=TYPE_COUNTY, children=[
             Place('220702', '宁江区'),
-            Place('220721', '前郭尔罗斯自治县'),
+            Place('220721', '前郭尔罗斯自治县', shorts=['前郭尔罗斯']),
             Place('220722', '长岭县'),
             Place('220723', '乾安县'),
-            Place('220771', '松原经济开发区'),
-            Place('220781', '扶余市'),
-            Place('220724', '扶余县'),
+            Place('220771', '松原经济开发区', shorts=['松原开发区']),
+            Place('220781', '扶余市', shorts=['扶余']),
+            Place('220724', '扶余县', enabled=False),
         ]),
-        Place('2208', '白城市', CHILD_TYPE_COUNTY, [
+        Place('2208', '白城市', shorts=['白城'], children_type=TYPE_COUNTY, children=[
             Place('220802', '洮北区'),
             Place('220821', '镇赉县'),
             Place('220822', '通榆县'),
-            Place('220871', '白城经济开发区'),
-            Place('220881', '洮南市'),
-            Place('220882', '大安市'),
+            Place('220871', '白城经济开发区', shorts=['白城开发区']),
+            Place('220881', '洮南市', shorts=['洮南']),
+            Place('220882', '大安市', shorts=['大安']),
         ]),
-        Place('2224', '延边', CHILD_TYPE_COUNTY, [
-            Place('222401', '延吉市'),
-            Place('222402', '图们市'),
-            Place('222403', '敦化市'),
-            Place('222404', '珲春市'),
+        Place('2224', '延边朝鲜族自治州', shorts=['延边自治州', '延边'], children_type=TYPE_COUNTY, children=[
+            Place('222401', '延吉市', shorts=['延吉']),
+            Place('222402', '图们市', shorts=['图们']),
+            Place('222403', '敦化市', shorts=['敦化']),
+            Place('222404', '珲春市', shorts=['珲春']),
             Place('222405', '龙井市'),
             Place('222406', '和龙市'),
             Place('222424', '汪清县'),
             Place('222426', '安图县'),
         ]),
     ]),
-    Place('23', '黑龙江', CHILD_TYPE_CITY, [
-        Place('2301', '哈尔滨市', CHILD_TYPE_COUNTY, [
+    Place('23', '黑龙江省', shorts=['黑龙江'], children_type=TYPE_CITY, children=[
+        Place('2301', '哈尔滨市', shorts=['哈尔滨'], children_type=TYPE_COUNTY, children=[
             Place('230102', '道里区'),
             Place('230103', '南岗区'),
             Place('230104', '道外区'),
@@ -876,7 +883,7 @@ PLACES = [
             Place('230184', '五常市'),
             Place('230182', '双城市'),
         ]),
-        Place('2302', '齐齐哈尔市', CHILD_TYPE_COUNTY, [
+        Place('2302', '齐齐哈尔市', shorts=['齐齐哈尔'], children_type=TYPE_COUNTY, children=[
             Place('230202', '龙沙区'),
             Place('230203', '建华区'),
             Place('230204', '铁锋区'),
@@ -892,9 +899,9 @@ PLACES = [
             Place('230229', '克山县'),
             Place('230230', '克东县'),
             Place('230231', '拜泉县'),
-            Place('230281', '讷河市'),
+            Place('230281', '讷河市', shorts=['讷河']),
         ]),
-        Place('2303', '鸡西市', CHILD_TYPE_COUNTY, [
+        Place('2303', '鸡西市', shorts=['鸡西'], children_type=TYPE_COUNTY, children=[
             Place('230302', '鸡冠区'),
             Place('230303', '恒山区'),
             Place('230304', '滴道区'),
@@ -902,10 +909,10 @@ PLACES = [
             Place('230306', '城子河区'),
             Place('230307', '麻山区'),
             Place('230321', '鸡东县'),
-            Place('230381', '虎林市'),
-            Place('230382', '密山市'),
+            Place('230381', '虎林市', shorts=['虎林']),
+            Place('230382', '密山市', shorts=['密山']),
         ]),
-        Place('2304', '鹤岗市', CHILD_TYPE_COUNTY, [
+        Place('2304', '鹤岗市', shorts=['鹤岗'], children_type=TYPE_COUNTY, children=[
             Place('230402', '向阳区'),
             Place('230403', '工农区'),
             Place('230404', '南山区'),
@@ -915,7 +922,7 @@ PLACES = [
             Place('230421', '萝北县'),
             Place('230422', '绥滨县'),
         ]),
-        Place('2305', '双鸭山市', CHILD_TYPE_COUNTY, [
+        Place('2305', '双鸭山市', shorts=['双鸭山'], children_type=TYPE_COUNTY, children=[
             Place('230502', '尖山区'),
             Place('230503', '岭东区'),
             Place('230505', '四方台区'),
@@ -925,7 +932,7 @@ PLACES = [
             Place('230523', '宝清县'),
             Place('230524', '饶河县'),
         ]),
-        Place('2306', '大庆市', CHILD_TYPE_COUNTY, [
+        Place('2306', '大庆市', shorts=['大庆'], children_type=TYPE_COUNTY, children=[
             Place('230602', '萨尔图区'),
             Place('230603', '龙凤区'),
             Place('230604', '让胡路区'),
@@ -934,10 +941,10 @@ PLACES = [
             Place('230621', '肇州县'),
             Place('230622', '肇源县'),
             Place('230623', '林甸县'),
-            Place('230624', '杜尔伯特自治县'),
+            Place('230624', '杜尔伯特自治县', shorts=['杜尔伯特县', '杜尔伯特']),
             Place('230671', '大庆高新技术产业开发区'),
         ]),
-        Place('2307', '伊春市', CHILD_TYPE_COUNTY, [
+        Place('2307', '伊春市', shorts=['伊春'], children_type=TYPE_COUNTY, children=[
             Place('230702', '伊春区'),
             Place('230703', '南岔区'),
             Place('230704', '友好区'),
@@ -954,7 +961,7 @@ PLACES = [
             Place('230715', '红星区'),
             Place('230716', '上甘岭区'),
             Place('230722', '嘉荫县'),
-            Place('230781', '铁力市'),
+            Place('230781', '铁力市', shorts=['铁力']),
             Place('230719', '友好区'),
             Place('230717', '伊美区'),
             Place('230718', '乌翠区'),
@@ -964,48 +971,48 @@ PLACES = [
             Place('230726', '南岔县'),
             Place('230751', '金林区'),
         ]),
-        Place('2308', '佳木斯市', CHILD_TYPE_COUNTY, [
+        Place('2308', '佳木斯市', shorts=['佳木斯'], children_type=TYPE_COUNTY, children=[
             Place('230803', '向阳区'),
             Place('230804', '前进区'),
             Place('230805', '东风区'),
             Place('230822', '桦南县'),
             Place('230826', '桦川县'),
             Place('230828', '汤原县'),
-            Place('230881', '同江市'),
-            Place('230882', '富锦市'),
-            Place('230883', '抚远市'),
-            Place('230833', '抚远县'),
+            Place('230881', '同江市', shorts=['同江']),
+            Place('230882', '富锦市', shorts=['富锦']),
+            Place('230883', '抚远市', shorts=['抚远']),
+            Place('230833', '抚远县', enabled=False),
         ]),
-        Place('2309', '七台河市', CHILD_TYPE_COUNTY, [
+        Place('2309', '七台河市', shorts=['七台河'], children_type=TYPE_COUNTY, children=[
             Place('230902', '新兴区'),
             Place('230903', '桃山区'),
             Place('230904', '茄子河区'),
             Place('230921', '勃利县'),
         ]),
-        Place('2310', '牡丹江市', CHILD_TYPE_COUNTY, [
+        Place('2310', '牡丹江市', shorts=['牡丹江'], children_type=TYPE_COUNTY, children=[
             Place('231002', '东安区'),
             Place('231003', '阳明区'),
             Place('231004', '爱民区'),
             Place('231005', '西安区'),
             Place('231025', '林口县'),
             Place('231071', '牡丹江经济技术开发区'),
-            Place('231081', '绥芬河市'),
-            Place('231083', '海林市'),
-            Place('231084', '宁安市'),
-            Place('231085', '穆棱市'),
-            Place('231086', '东宁市'),
-            Place('231024', '东宁县'),
+            Place('231081', '绥芬河市', shorts=['绥芬河']),
+            Place('231083', '海林市', shorts=['海林']),
+            Place('231084', '宁安市', shorts=['宁安']),
+            Place('231085', '穆棱市', shorts=['穆棱']),
+            Place('231086', '东宁市', shorts=['东宁']),
+            Place('231024', '东宁县', enabled=False),
         ]),
-        Place('2311', '黑河市', CHILD_TYPE_COUNTY, [
+        Place('2311', '黑河市', shorts=['黑河'], children_type=TYPE_COUNTY, children=[
             Place('231102', '爱辉区'),
             Place('231121', '嫩江县'),
             Place('231123', '逊克县'),
             Place('231124', '孙吴县'),
-            Place('231181', '北安市'),
-            Place('231182', '五大连池市'),
-            Place('231183', '嫩江市'),
+            Place('231181', '北安市', shorts=['北安']),
+            Place('231182', '五大连池市', shorts=['五大连池']),
+            Place('231183', '嫩江市', shorts=['嫩江']),
         ]),
-        Place('2312', '绥化市', CHILD_TYPE_COUNTY, [
+        Place('2312', '绥化市', shorts=['绥化'], children_type=TYPE_COUNTY, children=[
             Place('231202', '北林区'),
             Place('231221', '望奎县'),
             Place('231222', '兰西县'),
@@ -1014,22 +1021,22 @@ PLACES = [
             Place('231225', '明水县'),
             Place('231226', '绥棱县'),
             Place('231281', '安达市'),
-            Place('231282', '肇东市'),
+            Place('231282', '肇东市', shorts=['肇东']),
             Place('231283', '海伦市'),
         ]),
-        Place('2327', '大兴安岭地区', CHILD_TYPE_COUNTY, [
+        Place('2327', '大兴安岭地区', shorts=['大兴安岭'], children_type=TYPE_COUNTY, children=[
             Place('232701', '加格达奇区'),
             Place('232702', '松岭区'),
             Place('232703', '新林区'),
             Place('232704', '呼中区'),
             Place('232721', '呼玛县'),
             Place('232722', '塔河县'),
-            Place('232723', '漠河县'),
-            Place('232701', '漠河市'),
+            Place('232723', '漠河县', enabled=False),
+            Place('232701', '漠河市', shorts=['漠河']),
         ]),
     ]),
-    Place('31', '上海', CHILD_TYPE_DIRECT, [
-        Place('3101', '上海', CHILD_TYPE_COUNTY, [
+    Place('31', '上海市', shorts=['上海'], children_type=TYPE_DIRECT, children=[
+        Place('3101', '上海', children_type=TYPE_COUNTY, children=[
             Place('310101', '黄浦区'),
             Place('310104', '徐汇区'),
             Place('310105', '长宁区'),
@@ -1049,10 +1056,10 @@ PLACES = [
             Place('310103', '卢湾区'),
             Place('310108', '闸北区'),
         ]),
-        Place('310230', '崇明县'),
+        Place('310230', '崇明县', shorts=['崇明']),
     ]),
-    Place('32', '江苏', CHILD_TYPE_CITY, [
-        Place('3201', '南京市', CHILD_TYPE_COUNTY, [
+    Place('32', '江苏省', shorts=['江苏'], children_type=TYPE_CITY, children=[
+        Place('3201', '南京市', shorts=['南京'], children_type=TYPE_COUNTY, children=[
             Place('320102', '玄武区'),
             Place('320104', '秦淮区'),
             Place('320105', '建邺区'),
@@ -1069,19 +1076,19 @@ PLACES = [
             Place('320124', '溧水县'),
             Place('320125', '高淳县'),
         ]),
-        Place('3202', '无锡市', CHILD_TYPE_COUNTY, [
+        Place('3202', '无锡市', shorts=['无锡'], children_type=TYPE_COUNTY, children=[
             Place('320205', '锡山区'),
             Place('320206', '惠山区'),
             Place('320211', '滨湖区'),
             Place('320213', '梁溪区'),
             Place('320214', '新吴区'),
-            Place('320281', '江阴市'),
-            Place('320282', '宜兴市'),
+            Place('320281', '江阴市', shorts=['江阴']),
+            Place('320282', '宜兴市', shorts=['宜兴']),
             Place('320202', '崇安区'),
             Place('320203', '南长区'),
             Place('320204', '北塘区'),
         ]),
-        Place('3203', '徐州市', CHILD_TYPE_COUNTY, [
+        Place('3203', '徐州市', shorts=['徐州'], children_type=TYPE_COUNTY, children=[
             Place('320302', '鼓楼区'),
             Place('320303', '云龙区'),
             Place('320305', '贾汪区'),
@@ -1091,48 +1098,48 @@ PLACES = [
             Place('320322', '沛县'),
             Place('320324', '睢宁县'),
             Place('320371', '徐州经济技术开发区'),
-            Place('320381', '新沂市'),
-            Place('320382', '邳州市'),
+            Place('320381', '新沂市', shorts=['新沂']),
+            Place('320382', '邳州市', shorts=['邳州']),
         ]),
-        Place('3204', '常州市', CHILD_TYPE_COUNTY, [
+        Place('3204', '常州市', shorts=['常州'], children_type=TYPE_COUNTY, children=[
             Place('320402', '天宁区'),
             Place('320404', '钟楼区'),
             Place('320411', '新北区'),
             Place('320412', '武进区'),
             Place('320413', '金坛区'),
-            Place('320481', '溧阳市'),
-            Place('320405', '戚墅堰区'),
-            Place('320482', '金坛市'),
+            Place('320481', '溧阳市', shorts=['溧阳']),
+            Place('320405', '戚墅堰区', shorts=['戚墅堰']),
+            Place('320482', '金坛市', shorts=['金坛']),
         ]),
-        Place('3205', '苏州市', CHILD_TYPE_COUNTY, [
+        Place('3205', '苏州市', shorts=['苏州'], children_type=TYPE_COUNTY, children=[
             Place('320505', '虎丘区'),
             Place('320506', '吴中区'),
             Place('320507', '相城区'),
             Place('320508', '姑苏区'),
             Place('320509', '吴江区'),
             Place('320571', '苏州工业园区'),
-            Place('320581', '常熟市'),
-            Place('320582', '张家港市'),
-            Place('320583', '昆山市'),
-            Place('320585', '太仓市'),
+            Place('320581', '常熟市', shorts=['常熟']),
+            Place('320582', '张家港市', shorts=['张家港']),
+            Place('320583', '昆山市', shorts=['昆山']),
+            Place('320585', '太仓市', shorts=['太仓']),
             Place('320502', '沧浪区'),
             Place('320503', '平江区'),
             Place('320504', '金阊区'),
             Place('320584', '吴江市'),
         ]),
-        Place('3206', '南通市', CHILD_TYPE_COUNTY, [
+        Place('3206', '南通市', shorts=['南通'], children_type=TYPE_COUNTY, children=[
             Place('320602', '崇川区'),
             Place('320611', '港闸区'),
             Place('320612', '通州区'),
             Place('320621', '海安县'),
             Place('320623', '如东县'),
             Place('320671', '南通经济技术开发区'),
-            Place('320681', '启东市'),
-            Place('320682', '如皋市'),
-            Place('320684', '海门市'),
-            Place('320685', '海安市'),
+            Place('320681', '启东市', shorts=['启东']),
+            Place('320682', '如皋市', shorts=['如皋']),
+            Place('320684', '海门市', shorts=['海门']),
+            Place('320685', '海安市', shorts=['海安']),
         ]),
-        Place('3207', '连云港市', CHILD_TYPE_COUNTY, [
+        Place('3207', '连云港市', shorts=['连云港'], children_type=TYPE_COUNTY, children=[
             Place('320703', '连云区'),
             Place('320706', '海州区'),
             Place('320707', '赣榆区'),
@@ -1144,7 +1151,7 @@ PLACES = [
             Place('320705', '新浦区'),
             Place('320721', '赣榆县'),
         ]),
-        Place('3208', '淮安市', CHILD_TYPE_COUNTY, [
+        Place('3208', '淮安市', shorts=['淮安'], children_type=TYPE_COUNTY, children=[
             Place('320803', '淮安区'),
             Place('320804', '淮阴区'),
             Place('320812', '清江浦区'),
@@ -1157,7 +1164,7 @@ PLACES = [
             Place('320811', '清浦区'),
             Place('320829', '洪泽县'),
         ]),
-        Place('3209', '盐城市', CHILD_TYPE_COUNTY, [
+        Place('3209', '盐城市', shorts=['盐城'], children_type=TYPE_COUNTY, children=[
             Place('320902', '亭湖区'),
             Place('320903', '盐都区'),
             Place('320904', '大丰区'),
@@ -1167,40 +1174,40 @@ PLACES = [
             Place('320924', '射阳县'),
             Place('320925', '建湖县'),
             Place('320971', '盐城经济技术开发区'),
-            Place('320981', '东台市'),
-            Place('320982', '大丰市'),
+            Place('320981', '东台市', shorts=['东台']),
+            Place('320982', '大丰市', shorts=['大丰']),
         ]),
-        Place('3210', '扬州市', CHILD_TYPE_COUNTY, [
+        Place('3210', '扬州市', shorts=['扬州'], children_type=TYPE_COUNTY, children=[
             Place('321002', '广陵区'),
             Place('321003', '邗江区'),
             Place('321012', '江都区'),
             Place('321023', '宝应县'),
             Place('321071', '扬州经济技术开发区'),
-            Place('321081', '仪征市'),
-            Place('321084', '高邮市'),
+            Place('321081', '仪征市', shorts=['仪征']),
+            Place('321084', '高邮市', shorts=['高邮']),
             Place('321011', '维扬区'),
-            Place('321088', '江都市'),
+            Place('321088', '江都市', shorts=['江都']),
         ]),
-        Place('3211', '镇江市', CHILD_TYPE_COUNTY, [
+        Place('3211', '镇江市', shorts=['镇江'], children_type=TYPE_COUNTY, children=[
             Place('321102', '京口区'),
             Place('321111', '润州区'),
             Place('321112', '丹徒区'),
             Place('321171', '镇江新区'),
-            Place('321181', '丹阳市'),
-            Place('321182', '扬中市'),
-            Place('321183', '句容市'),
+            Place('321181', '丹阳市', shorts=['丹阳']),
+            Place('321182', '扬中市', shorts=['扬中']),
+            Place('321183', '句容市', shorts=['句容']),
         ]),
-        Place('3212', '泰州市', CHILD_TYPE_COUNTY, [
+        Place('3212', '泰州市', shorts=['泰州'], children_type=TYPE_COUNTY, children=[
             Place('321202', '海陵区'),
             Place('321203', '高港区'),
             Place('321204', '姜堰区'),
             Place('321271', '泰州医药高新技术产业开发区'),
-            Place('321281', '兴化市'),
-            Place('321282', '靖江市'),
-            Place('321283', '泰兴市'),
-            Place('321284', '姜堰市'),
+            Place('321281', '兴化市', shorts=['兴化']),
+            Place('321282', '靖江市', shorts=['靖江']),
+            Place('321283', '泰兴市', shorts=['泰兴']),
+            Place('321284', '姜堰市', shorts=['姜堰']),
         ]),
-        Place('3213', '宿迁市', CHILD_TYPE_COUNTY, [
+        Place('3213', '宿迁市', shorts=['宿迁'], children_type=TYPE_COUNTY, children=[
             Place('321302', '宿城区'),
             Place('321311', '宿豫区'),
             Place('321322', '沭阳县'),
@@ -1209,8 +1216,8 @@ PLACES = [
             Place('321371', '宿迁经济技术开发区'),
         ]),
     ]),
-    Place('33', '浙江', CHILD_TYPE_CITY, [
-        Place('3301', '杭州市', CHILD_TYPE_COUNTY, [
+    Place('33', '浙江省', shorts=['浙江'], children_type=TYPE_CITY, children=[
+        Place('3301', '杭州市', shorts=['杭州'], children_type=TYPE_COUNTY, children=[
             Place('330102', '上城区'),
             Place('330103', '下城区'),
             Place('330104', '江干区'),
@@ -1220,14 +1227,14 @@ PLACES = [
             Place('330109', '萧山区'),
             Place('330110', '余杭区'),
             Place('330111', '富阳区'),
-            Place('330112', '临安区'),
+            Place('330112', '临安区', enabled=False),
             Place('330122', '桐庐县'),
             Place('330127', '淳安县'),
-            Place('330182', '建德市'),
-            Place('330183', '富阳市'),
-            Place('330185', '临安市'),
+            Place('330182', '建德市', shorts=['建德']),
+            Place('330183', '富阳市', shorts=['富阳']),
+            Place('330185', '临安市', shorts=['临安']),
         ]),
-        Place('3302', '宁波市', CHILD_TYPE_COUNTY, [
+        Place('3302', '宁波市', shorts=['宁波'], children_type=TYPE_COUNTY, children=[
             Place('330203', '海曙区'),
             Place('330205', '江北区'),
             Place('330206', '北仑区'),
@@ -1236,12 +1243,12 @@ PLACES = [
             Place('330213', '奉化区'),
             Place('330225', '象山县'),
             Place('330226', '宁海县'),
-            Place('330281', '余姚市'),
-            Place('330282', '慈溪市'),
+            Place('330281', '余姚市', shorts=['余姚']),
+            Place('330282', '慈溪市', shorts=['慈溪']),
             Place('330204', '江东区'),
-            Place('330283', '奉化市'),
+            Place('330283', '奉化市', shorts=['奉化']),
         ]),
-        Place('3303', '温州市', CHILD_TYPE_COUNTY, [
+        Place('3303', '温州市', shorts=['温州'], children_type=TYPE_COUNTY, children=[
             Place('330302', '鹿城区'),
             Place('330303', '龙湾区'),
             Place('330304', '瓯海区'),
@@ -1252,49 +1259,49 @@ PLACES = [
             Place('330328', '文成县'),
             Place('330329', '泰顺县'),
             Place('330371', '温州经济技术开发区'),
-            Place('330381', '瑞安市'),
-            Place('330382', '乐清市'),
+            Place('330381', '瑞安市', shorts=['瑞安']),
+            Place('330382', '乐清市', shorts=['乐清']),
             Place('330322', '洞头县'),
-            Place('330383', '龙港市'),
+            Place('330383', '龙港市', shorts=['龙港']),
         ]),
-        Place('3304', '嘉兴市', CHILD_TYPE_COUNTY, [
+        Place('3304', '嘉兴市', shorts=['嘉兴'], children_type=TYPE_COUNTY, children=[
             Place('330402', '南湖区'),
             Place('330411', '秀洲区'),
             Place('330421', '嘉善县'),
             Place('330424', '海盐县'),
-            Place('330481', '海宁市'),
-            Place('330482', '平湖市'),
-            Place('330483', '桐乡市'),
+            Place('330481', '海宁市', shorts=['海宁']),
+            Place('330482', '平湖市', shorts=['平湖']),
+            Place('330483', '桐乡市', shorts=['桐乡']),
         ]),
-        Place('3305', '湖州市', CHILD_TYPE_COUNTY, [
+        Place('3305', '湖州市', shorts=['湖州'], children_type=TYPE_COUNTY, children=[
             Place('330502', '吴兴区'),
             Place('330503', '南浔区'),
             Place('330521', '德清县'),
             Place('330522', '长兴县'),
             Place('330523', '安吉县'),
         ]),
-        Place('3306', '绍兴市', CHILD_TYPE_COUNTY, [
+        Place('3306', '绍兴市', shorts=['绍兴'], children_type=TYPE_COUNTY, children=[
             Place('330602', '越城区'),
             Place('330603', '柯桥区'),
             Place('330604', '上虞区'),
             Place('330624', '新昌县'),
-            Place('330681', '诸暨市'),
-            Place('330683', '嵊州市'),
+            Place('330681', '诸暨市', shorts=['诸暨']),
+            Place('330683', '嵊州市', shorts=['嵊州']),
             Place('330621', '绍兴县'),
-            Place('330682', '上虞市'),
+            Place('330682', '上虞市', shorts=['上虞']),
         ]),
-        Place('3307', '金华市', CHILD_TYPE_COUNTY, [
+        Place('3307', '金华市', shorts=['金华'], children_type=TYPE_COUNTY, children=[
             Place('330702', '婺城区'),
             Place('330703', '金东区'),
             Place('330723', '武义县'),
             Place('330726', '浦江县'),
             Place('330727', '磐安县'),
-            Place('330781', '兰溪市'),
-            Place('330782', '义乌市'),
-            Place('330783', '东阳市'),
-            Place('330784', '永康市'),
+            Place('330781', '兰溪市', shorts=['兰溪']),
+            Place('330782', '义乌市', shorts=['义乌']),
+            Place('330783', '东阳市', shorts=['东阳']),
+            Place('330784', '永康市', shorts=['永康']),
         ]),
-        Place('3308', '衢州市', CHILD_TYPE_COUNTY, [
+        Place('3308', '衢州市', shorts=['衢州'], children_type=TYPE_COUNTY, children=[
             Place('330802', '柯城区'),
             Place('330803', '衢江区'),
             Place('330822', '常山县'),
@@ -1302,25 +1309,25 @@ PLACES = [
             Place('330825', '龙游县'),
             Place('330881', '江山市'),
         ]),
-        Place('3309', '舟山市', CHILD_TYPE_COUNTY, [
+        Place('3309', '舟山市', shorts=['舟山'], children_type=TYPE_COUNTY, children=[
             Place('330902', '定海区'),
             Place('330903', '普陀区'),
             Place('330921', '岱山县'),
             Place('330922', '嵊泗县'),
         ]),
-        Place('3310', '台州市', CHILD_TYPE_COUNTY, [
+        Place('3310', '台州市', shorts=['台州'], children_type=TYPE_COUNTY, children=[
             Place('331002', '椒江区'),
             Place('331003', '黄岩区'),
             Place('331004', '路桥区'),
             Place('331022', '三门县'),
             Place('331023', '天台县'),
             Place('331024', '仙居县'),
-            Place('331081', '温岭市'),
-            Place('331082', '临海市'),
-            Place('331083', '玉环市'),
-            Place('331021', '玉环县'),
+            Place('331081', '温岭市', shorts=['温岭']),
+            Place('331082', '临海市', shorts=['临海']),
+            Place('331083', '玉环市', shorts=['玉环']),
+            Place('331021', '玉环县', enabled=False),
         ]),
-        Place('3311', '丽水市', CHILD_TYPE_COUNTY, [
+        Place('3311', '丽水市', shorts=['丽水'], children_type=TYPE_COUNTY, children=[
             Place('331102', '莲都区'),
             Place('331121', '青田县'),
             Place('331122', '缙云县'),
@@ -1332,8 +1339,8 @@ PLACES = [
             Place('331181', '龙泉市'),
         ]),
     ]),
-    Place('34', '安徽', CHILD_TYPE_CITY, [
-        Place('3401', '合肥市', CHILD_TYPE_COUNTY, [
+    Place('34', '安徽省', shorts=['安徽'], children_type=TYPE_CITY, children=[
+        Place('3401', '合肥市', shorts=['合肥'], children_type=TYPE_COUNTY, children=[
             Place('340102', '瑶海区'),
             Place('340103', '庐阳区'),
             Place('340104', '蜀山区'),
@@ -1345,9 +1352,9 @@ PLACES = [
             Place('340171', '合肥高新技术产业开发区'),
             Place('340172', '合肥经济技术开发区'),
             Place('340173', '合肥新站高新技术产业开发区'),
-            Place('340181', '巢湖市'),
+            Place('340181', '巢湖市', shorts=['巢湖']),
         ]),
-        Place('3402', '芜湖市', CHILD_TYPE_COUNTY, [
+        Place('3402', '芜湖市', shorts=['芜湖'], children_type=TYPE_COUNTY, children=[
             Place('340202', '镜湖区'),
             Place('340203', '弋江区'),
             Place('340207', '鸠江区'),
@@ -1355,15 +1362,15 @@ PLACES = [
             Place('340221', '芜湖县'),
             Place('340222', '繁昌县'),
             Place('340223', '南陵县'),
-            Place('340225', '无为县'),
+            Place('340225', '无为县', enabled=False),
             Place('340271', '芜湖经济技术开发区'),
             Place('340272', '芜湖长江大桥经济开发区'),
             Place('340209', '弋江区'),
-            Place('340281', '无为市'),
+            Place('340281', '无为市', shorts=['无为']),
             Place('340210', '湾沚区'),
             Place('340211', '繁昌区'),
         ]),
-        Place('3403', '蚌埠市', CHILD_TYPE_COUNTY, [
+        Place('3403', '蚌埠市', shorts=['蚌埠'], children_type=TYPE_COUNTY, children=[
             Place('340302', '龙子湖区'),
             Place('340303', '蚌山区'),
             Place('340304', '禹会区'),
@@ -1374,7 +1381,7 @@ PLACES = [
             Place('340371', '蚌埠市高新技术开发区'),
             Place('340372', '蚌埠市经济开发区'),
         ]),
-        Place('3404', '淮南市', CHILD_TYPE_COUNTY, [
+        Place('3404', '淮南市', shorts=['淮南'], children_type=TYPE_COUNTY, children=[
             Place('340402', '大通区'),
             Place('340403', '田家庵区'),
             Place('340404', '谢家集区'),
@@ -1383,7 +1390,7 @@ PLACES = [
             Place('340421', '凤台县'),
             Place('340422', '寿县'),
         ]),
-        Place('3405', '马鞍山市', CHILD_TYPE_COUNTY, [
+        Place('3405', '马鞍山市', children_type=TYPE_COUNTY, children=[
             Place('340503', '花山区'),
             Place('340504', '雨山区'),
             Place('340506', '博望区'),
@@ -1392,21 +1399,21 @@ PLACES = [
             Place('340523', '和县'),
             Place('340502', '金家庄区'),
         ]),
-        Place('3406', '淮北市', CHILD_TYPE_COUNTY, [
+        Place('3406', '淮北市', shorts=['淮北'], children_type=TYPE_COUNTY, children=[
             Place('340602', '杜集区'),
             Place('340603', '相山区'),
             Place('340604', '烈山区'),
             Place('340621', '濉溪县'),
         ]),
-        Place('3407', '铜陵市', CHILD_TYPE_COUNTY, [
+        Place('3407', '铜陵市', shorts=['铜陵'], children_type=TYPE_COUNTY, children=[
             Place('340705', '铜官区'),
             Place('340706', '义安区'),
             Place('340722', '枞阳县'),
             Place('340702', '铜官山区'),
             Place('340703', '狮子山区'),
-            Place('340721', '铜陵县'),
+            Place('340721', '铜陵县', enabled=False),
         ]),
-        Place('3408', '安庆市', CHILD_TYPE_COUNTY, [
+        Place('3408', '安庆市', shorts=['安庆'], children_type=TYPE_COUNTY, children=[
             Place('340802', '迎江区'),
             Place('340803', '大观区'),
             Place('340811', '宜秀区'),
@@ -1417,10 +1424,10 @@ PLACES = [
             Place('340827', '望江县'),
             Place('340828', '岳西县'),
             Place('340871', '安徽安庆经济开发区'),
-            Place('340881', '桐城市'),
-            Place('340882', '潜山市'),
+            Place('340881', '桐城市', shorts=['桐城']),
+            Place('340882', '潜山市', shorts=['潜山']),
         ]),
-        Place('3410', '黄山市', CHILD_TYPE_COUNTY, [
+        Place('3410', '黄山市', shorts=['黄山'], children_type=TYPE_COUNTY, children=[
             Place('341002', '屯溪区'),
             Place('341003', '黄山区'),
             Place('341004', '徽州区'),
@@ -1429,7 +1436,7 @@ PLACES = [
             Place('341023', '黟县'),
             Place('341024', '祁门县'),
         ]),
-        Place('3411', '滁州市', CHILD_TYPE_COUNTY, [
+        Place('3411', '滁州市', shorts=['滁州'], children_type=TYPE_COUNTY, children=[
             Place('341102', '琅琊区'),
             Place('341103', '南谯区'),
             Place('341122', '来安县'),
@@ -1439,9 +1446,9 @@ PLACES = [
             Place('341171', '苏滁现代产业园'),
             Place('341172', '滁州经济技术开发区'),
             Place('341181', '天长市'),
-            Place('341182', '明光市'),
+            Place('341182', '明光市', shorts=['明光']),
         ]),
-        Place('3412', '阜阳市', CHILD_TYPE_COUNTY, [
+        Place('3412', '阜阳市', shorts=['阜阳'], children_type=TYPE_COUNTY, children=[
             Place('341202', '颍州区'),
             Place('341203', '颍东区'),
             Place('341204', '颍泉区'),
@@ -1451,9 +1458,9 @@ PLACES = [
             Place('341226', '颍上县'),
             Place('341271', '阜阳合肥现代产业园区'),
             Place('341272', '阜阳经济技术开发区'),
-            Place('341282', '界首市'),
+            Place('341282', '界首市', shorts=['界首']),
         ]),
-        Place('3413', '宿州市', CHILD_TYPE_COUNTY, [
+        Place('3413', '宿州市', shorts=['宿州'], children_type=TYPE_COUNTY, children=[
             Place('341302', '埇桥区'),
             Place('341321', '砀山县'),
             Place('341322', '萧县'),
@@ -1462,7 +1469,7 @@ PLACES = [
             Place('341371', '宿州马鞍山现代产业园区'),
             Place('341372', '宿州经济技术开发区'),
         ]),
-        Place('3415', '六安市', CHILD_TYPE_COUNTY, [
+        Place('3415', '六安市', shorts=['六安'], children_type=TYPE_COUNTY, children=[
             Place('341502', '金安区'),
             Place('341503', '裕安区'),
             Place('341504', '叶集区'),
@@ -1471,33 +1478,33 @@ PLACES = [
             Place('341524', '金寨县'),
             Place('341525', '霍山县'),
         ]),
-        Place('3416', '亳州市', CHILD_TYPE_COUNTY, [
+        Place('3416', '亳州市', shorts=['亳州'], children_type=TYPE_COUNTY, children=[
             Place('341602', '谯城区'),
             Place('341621', '涡阳县'),
             Place('341622', '蒙城县'),
             Place('341623', '利辛县'),
         ]),
-        Place('3417', '池州市', CHILD_TYPE_COUNTY, [
+        Place('3417', '池州市', shorts=['池州'], children_type=TYPE_COUNTY, children=[
             Place('341702', '贵池区'),
             Place('341721', '东至县'),
             Place('341722', '石台县'),
             Place('341723', '青阳县'),
         ]),
-        Place('3418', '宣城市', CHILD_TYPE_COUNTY, [
+        Place('3418', '宣城市', shorts=['宣城'], children_type=TYPE_COUNTY, children=[
             Place('341802', '宣州区'),
             Place('341821', '郎溪县'),
-            Place('341822', '广德县'),
+            Place('341822', '广德县', enabled=False),
             Place('341823', '泾县'),
             Place('341824', '绩溪县'),
             Place('341825', '旌德县'),
             Place('341871', '宣城市经济开发区'),
-            Place('341881', '宁国市'),
-            Place('341882', '广德市'),
+            Place('341881', '宁国市', shorts=['宁国']),
+            Place('341882', '广德市', shorts=['广德']),
         ]),
         Place('341402', '居巢区'),
     ]),
-    Place('35', '福建', CHILD_TYPE_CITY, [
-        Place('3501', '福州市', CHILD_TYPE_COUNTY, [
+    Place('35', '福建省', shorts=['福建'], children_type=TYPE_CITY, children=[
+        Place('3501', '福州市', shorts=['福州'], children_type=TYPE_COUNTY, children=[
             Place('350102', '鼓楼区'),
             Place('350103', '台江区'),
             Place('350104', '仓山区'),
@@ -1509,11 +1516,11 @@ PLACES = [
             Place('350124', '闽清县'),
             Place('350125', '永泰县'),
             Place('350128', '平潭县'),
-            Place('350181', '福清市'),
+            Place('350181', '福清市', shorts=['福清']),
             Place('350182', '长乐市'),
-            Place('350112', '长乐区'),
+            Place('350112', '长乐区', enabled=False),
         ]),
-        Place('3502', '厦门市', CHILD_TYPE_COUNTY, [
+        Place('3502', '厦门市', shorts=['厦门'], children_type=TYPE_COUNTY, children=[
             Place('350203', '思明区'),
             Place('350205', '海沧区'),
             Place('350206', '湖里区'),
@@ -1521,14 +1528,14 @@ PLACES = [
             Place('350212', '同安区'),
             Place('350213', '翔安区'),
         ]),
-        Place('3503', '莆田市', CHILD_TYPE_COUNTY, [
+        Place('3503', '莆田市', shorts=['莆田'], children_type=TYPE_COUNTY, children=[
             Place('350302', '城厢区'),
             Place('350303', '涵江区'),
             Place('350304', '荔城区'),
             Place('350305', '秀屿区'),
             Place('350322', '仙游县'),
         ]),
-        Place('3504', '三明市', CHILD_TYPE_COUNTY, [
+        Place('3504', '三明市', shorts=['三明'], children_type=TYPE_COUNTY, children=[
             Place('350402', '梅列区'),
             Place('350403', '三元区'),
             Place('350421', '明溪县'),
@@ -1542,7 +1549,7 @@ PLACES = [
             Place('350430', '建宁县'),
             Place('350481', '永安市'),
         ]),
-        Place('3505', '泉州市', CHILD_TYPE_COUNTY, [
+        Place('3505', '泉州市', shorts=['泉州'], children_type=TYPE_COUNTY, children=[
             Place('350502', '鲤城区'),
             Place('350503', '丰泽区'),
             Place('350504', '洛江区'),
@@ -1553,10 +1560,10 @@ PLACES = [
             Place('350526', '德化县'),
             Place('350527', '金门县'),
             Place('350581', '石狮市'),
-            Place('350582', '晋江市'),
-            Place('350583', '南安市'),
+            Place('350582', '晋江市', shorts=['晋江']),
+            Place('350583', '南安市', shorts=['南安']),
         ]),
-        Place('3506', '漳州市', CHILD_TYPE_COUNTY, [
+        Place('3506', '漳州市', shorts=['漳州'], children_type=TYPE_COUNTY, children=[
             Place('350602', '芗城区'),
             Place('350603', '龙文区'),
             Place('350622', '云霄县'),
@@ -1567,9 +1574,9 @@ PLACES = [
             Place('350627', '南靖县'),
             Place('350628', '平和县'),
             Place('350629', '华安县'),
-            Place('350681', '龙海市'),
+            Place('350681', '龙海市', shorts=['龙海']),
         ]),
-        Place('3507', '南平市', CHILD_TYPE_COUNTY, [
+        Place('3507', '南平市', shorts=['南平'], children_type=TYPE_COUNTY, children=[
             Place('350702', '延平区'),
             Place('350703', '建阳区'),
             Place('350721', '顺昌县'),
@@ -1577,22 +1584,22 @@ PLACES = [
             Place('350723', '光泽县'),
             Place('350724', '松溪县'),
             Place('350725', '政和县'),
-            Place('350781', '邵武市'),
-            Place('350782', '武夷山市'),
-            Place('350783', '建瓯市'),
-            Place('350784', '建阳市'),
+            Place('350781', '邵武市', shorts=['邵武']),
+            Place('350782', '武夷山市', shorts=['武夷山']),
+            Place('350783', '建瓯市', shorts=['建瓯']),
+            Place('350784', '建阳市', shorts=['建阳']),
         ]),
-        Place('3508', '龙岩市', CHILD_TYPE_COUNTY, [
+        Place('3508', '龙岩市', shorts=['龙岩'], children_type=TYPE_COUNTY, children=[
             Place('350802', '新罗区'),
             Place('350803', '永定区'),
             Place('350821', '长汀县'),
             Place('350823', '上杭县'),
             Place('350824', '武平县'),
             Place('350825', '连城县'),
-            Place('350881', '漳平市'),
+            Place('350881', '漳平市', shorts=['漳平']),
             Place('350822', '永定县'),
         ]),
-        Place('3509', '宁德市', CHILD_TYPE_COUNTY, [
+        Place('3509', '宁德市', children_type=TYPE_COUNTY, children=[
             Place('350902', '蕉城区'),
             Place('350921', '霞浦县'),
             Place('350922', '古田县'),
@@ -1600,38 +1607,38 @@ PLACES = [
             Place('350924', '寿宁县'),
             Place('350925', '周宁县'),
             Place('350926', '柘荣县'),
-            Place('350981', '福安市'),
-            Place('350982', '福鼎市'),
+            Place('350981', '福安市', shorts=['福安']),
+            Place('350982', '福鼎市', shorts=['福鼎']),
         ]),
     ]),
-    Place('36', '江西', CHILD_TYPE_COUNTY, [
-        Place('3601', '南昌市', CHILD_TYPE_COUNTY, [
+    Place('36', '江西省', shorts=['江西'], children_type=TYPE_COUNTY, children=[
+        Place('3601', '南昌市', shorts=['南昌'], children_type=TYPE_COUNTY, children=[
             Place('360102', '东湖区'),
             Place('360103', '西湖区'),
-            Place('360104', '青云谱区'),
+            Place('360104', '青云谱区', shorts=['青云谱']),
             Place('360105', '湾里区'),
-            Place('360111', '青山湖区'),
+            Place('360111', '青山湖区', shorts=['青山湖']),
             Place('360112', '新建区'),
-            Place('360121', '南昌县'),
+            Place('360121', '南昌县', enabled=False),
             Place('360123', '安义县'),
             Place('360124', '进贤县'),
-            Place('360122', '新建县'),
-            Place('360113', '红谷滩区'),
+            Place('360122', '新建县', enabled=False),
+            Place('360113', '红谷滩区', shorts=['红谷滩']),
         ]),
-        Place('3602', '景德镇市', CHILD_TYPE_COUNTY, [
+        Place('3602', '景德镇市', shorts=['景德镇'], children_type=TYPE_COUNTY, children=[
             Place('360202', '昌江区'),
             Place('360203', '珠山区'),
             Place('360222', '浮梁县'),
-            Place('360281', '乐平市'),
+            Place('360281', '乐平市', shorts=['乐平']),
         ]),
-        Place('3603', '萍乡市', CHILD_TYPE_COUNTY, [
+        Place('3603', '萍乡市', shorts=['萍乡'], children_type=TYPE_COUNTY, children=[
             Place('360302', '安源区'),
             Place('360313', '湘东区'),
             Place('360321', '莲花县'),
             Place('360322', '上栗县'),
             Place('360323', '芦溪县'),
         ]),
-        Place('3604', '九江市', CHILD_TYPE_COUNTY, [
+        Place('3604', '九江市', shorts=['九江'], children_type=TYPE_COUNTY, children=[
             Place('360402', '濂溪区'),
             Place('360403', '浔阳区'),
             Place('360404', '柴桑区'),
@@ -1642,24 +1649,24 @@ PLACES = [
             Place('360428', '都昌县'),
             Place('360429', '湖口县'),
             Place('360430', '彭泽县'),
-            Place('360481', '瑞昌市'),
-            Place('360482', '共青城市'),
-            Place('360483', '庐山市'),
-            Place('360402', '庐山区'),
+            Place('360481', '瑞昌市', shorts=['瑞昌']),
+            Place('360482', '共青城市', shorts=['共青城']),
+            Place('360483', '庐山市', shorts=['庐山']),
+            Place('360402', '庐山区', enabled=False),
             Place('360421', '九江县'),
             Place('360427', '星子县'),
         ]),
-        Place('3605', '新余市', CHILD_TYPE_COUNTY, [
+        Place('3605', '新余市', shorts=['新余'], children_type=TYPE_COUNTY, children=[
             Place('360502', '渝水区'),
             Place('360521', '分宜县'),
         ]),
-        Place('3606', '鹰潭市', CHILD_TYPE_COUNTY, [
+        Place('3606', '鹰潭市', shorts=['鹰潭'], children_type=TYPE_COUNTY, children=[
             Place('360602', '月湖区'),
             Place('360622', '余江县'),
-            Place('360681', '贵溪市'),
+            Place('360681', '贵溪市', shorts=['贵溪']),
             Place('360603', '余江区'),
         ]),
-        Place('3607', '赣州市', CHILD_TYPE_COUNTY, [
+        Place('3607', '赣州市', shorts=['赣州'], children_type=TYPE_COUNTY, children=[
             Place('360702', '章贡区'),
             Place('360703', '南康区'),
             Place('360704', '赣县区'),
@@ -1682,7 +1689,7 @@ PLACES = [
             Place('360782', '南康市'),
             Place('360783', '龙南市'),
         ]),
-        Place('3608', '吉安市', CHILD_TYPE_COUNTY, [
+        Place('3608', '吉安市', shorts=['吉安'], children_type=TYPE_COUNTY, children=[
             Place('360802', '吉州区'),
             Place('360803', '青原区'),
             Place('360821', '吉安县'),
@@ -1697,7 +1704,7 @@ PLACES = [
             Place('360830', '永新县'),
             Place('360881', '井冈山市'),
         ]),
-        Place('3609', '宜春市', CHILD_TYPE_COUNTY, [
+        Place('3609', '宜春市', shorts=['宜春'], children_type=TYPE_COUNTY, children=[
             Place('360902', '袁州区'),
             Place('360921', '奉新县'),
             Place('360922', '万载县'),
@@ -1705,11 +1712,11 @@ PLACES = [
             Place('360924', '宜丰县'),
             Place('360925', '靖安县'),
             Place('360926', '铜鼓县'),
-            Place('360981', '丰城市'),
+            Place('360981', '丰城市', shorts=['丰城']),
             Place('360982', '樟树市'),
-            Place('360983', '高安市'),
+            Place('360983', '高安市', shorts=['高安']),
         ]),
-        Place('3610', '抚州市', CHILD_TYPE_COUNTY, [
+        Place('3610', '抚州市', shorts=['抚州'], children_type=TYPE_COUNTY, children=[
             Place('361002', '临川区'),
             Place('361003', '东乡区'),
             Place('361021', '南城县'),
@@ -1723,10 +1730,10 @@ PLACES = [
             Place('361030', '广昌县'),
             Place('361029', '东乡县'),
         ]),
-        Place('3611', '上饶市', CHILD_TYPE_COUNTY, [
+        Place('3611', '上饶市', shorts=['上饶'], children_type=TYPE_COUNTY, children=[
             Place('361102', '信州区'),
             Place('361103', '广丰区'),
-            Place('361121', '上饶县'),
+            Place('361121', '上饶县', enabled=False),
             Place('361123', '玉山县'),
             Place('361124', '铅山县'),
             Place('361125', '横峰县'),
@@ -1740,8 +1747,8 @@ PLACES = [
             Place('361104', '广信区'),
         ]),
     ]),
-    Place('37', '山东', CHILD_TYPE_COUNTY, [
-        Place('3701', '济南市', CHILD_TYPE_COUNTY, [
+    Place('37', '山东省', shorts=['山东'], children_type=TYPE_COUNTY, children=[
+        Place('3701', '济南市', shorts=['济南'], children_type=TYPE_COUNTY, children=[
             Place('370102', '历下区'),
             Place('370103', '市中区'),
             Place('370104', '槐荫区'),
@@ -1753,12 +1760,12 @@ PLACES = [
             Place('370125', '济阳县'),
             Place('370126', '商河县'),
             Place('370171', '济南高新技术产业开发区'),
-            Place('370181', '章丘市'),
+            Place('370181', '章丘市', shorts=['章丘']),
             Place('370117', '钢城区'),
             Place('370115', '济阳区'),
             Place('370116', '莱芜区'),
         ]),
-        Place('3702', '青岛市', CHILD_TYPE_COUNTY, [
+        Place('3702', '青岛市', shorts=['青岛'], children_type=TYPE_COUNTY, children=[
             Place('370202', '市南区'),
             Place('370203', '市北区'),
             Place('370211', '黄岛区'),
@@ -1767,14 +1774,14 @@ PLACES = [
             Place('370214', '城阳区'),
             Place('370215', '即墨区'),
             Place('370271', '青岛高新技术产业开发区'),
-            Place('370281', '胶州市'),
-            Place('370283', '平度市'),
-            Place('370285', '莱西市'),
+            Place('370281', '胶州市', shorts=['胶州']),
+            Place('370283', '平度市', shorts=['平度']),
+            Place('370285', '莱西市', shorts=['莱西']),
             Place('370205', '四方区'),
-            Place('370282', '即墨市'),
-            Place('370284', '胶南市'),
+            Place('370282', '即墨市', shorts=['即墨']),
+            Place('370284', '胶南市', shorts=['胶南']),
         ]),
-        Place('3703', '淄博市', CHILD_TYPE_COUNTY, [
+        Place('3703', '淄博市', shorts=['淄博'], children_type=TYPE_COUNTY, children=[
             Place('370302', '淄川区'),
             Place('370303', '张店区'),
             Place('370304', '博山区'),
@@ -1784,15 +1791,15 @@ PLACES = [
             Place('370322', '高青县'),
             Place('370323', '沂源县'),
         ]),
-        Place('3704', '枣庄市', CHILD_TYPE_COUNTY, [
+        Place('3704', '枣庄市', shorts=['枣庄'], children_type=TYPE_COUNTY, children=[
             Place('370402', '市中区'),
             Place('370403', '薛城区'),
             Place('370404', '峄城区'),
             Place('370405', '台儿庄区'),
             Place('370406', '山亭区'),
-            Place('370481', '滕州市'),
+            Place('370481', '滕州市', shorts=['滕州']),
         ]),
-        Place('3705', '东营市', CHILD_TYPE_COUNTY, [
+        Place('3705', '东营市', shorts=['东营'], children_type=TYPE_COUNTY, children=[
             Place('370502', '东营区'),
             Place('370503', '河口区'),
             Place('370505', '垦利区'),
@@ -1802,7 +1809,7 @@ PLACES = [
             Place('370572', '东营港经济开发区'),
             Place('370521', '垦利县'),
         ]),
-        Place('3706', '烟台市', CHILD_TYPE_COUNTY, [
+        Place('3706', '烟台市', shorts=['烟台'], children_type=TYPE_COUNTY, children=[
             Place('370602', '芝罘区'),
             Place('370611', '福山区'),
             Place('370612', '牟平区'),
@@ -1810,16 +1817,16 @@ PLACES = [
             Place('370634', '长岛县'),
             Place('370671', '烟台高新技术产业开发区'),
             Place('370672', '烟台经济技术开发区'),
-            Place('370681', '龙口市'),
-            Place('370682', '莱阳市'),
-            Place('370683', '莱州市'),
-            Place('370684', '蓬莱市'),
-            Place('370685', '招远市'),
-            Place('370686', '栖霞市'),
-            Place('370687', '海阳市'),
-            Place('370614', '蓬莱区'),
+            Place('370681', '龙口市', shorts=['龙口']),
+            Place('370682', '莱阳市', shorts=['莱阳']),
+            Place('370683', '莱州市', shorts=['莱州']),
+            Place('370684', '蓬莱市', shorts=['蓬莱']),
+            Place('370685', '招远市', shorts=['招远']),
+            Place('370686', '栖霞市', shorts=['栖霞']),
+            Place('370687', '海阳市', shorts=['海阳']),
+            Place('370614', '蓬莱区', enabled=False),
         ]),
-        Place('3707', '潍坊市', CHILD_TYPE_COUNTY, [
+        Place('3707', '潍坊市', shorts=['潍坊'], children_type=TYPE_COUNTY, children=[
             Place('370702', '潍城区'),
             Place('370703', '寒亭区'),
             Place('370704', '坊子区'),
@@ -1827,14 +1834,14 @@ PLACES = [
             Place('370724', '临朐县'),
             Place('370725', '昌乐县'),
             Place('370772', '潍坊滨海经济技术开发区'),
-            Place('370781', '青州市'),
-            Place('370782', '诸城市'),
-            Place('370783', '寿光市'),
-            Place('370784', '安丘市'),
+            Place('370781', '青州市', shorts=['青州']),
+            Place('370782', '诸城市', shorts=['诸城']),
+            Place('370783', '寿光市', shorts=['寿光']),
+            Place('370784', '安丘市', shorts=['安丘']),
             Place('370785', '高密市'),
-            Place('370786', '昌邑市'),
+            Place('370786', '昌邑市', shorts=['昌邑']),
         ]),
-        Place('3708', '济宁市', CHILD_TYPE_COUNTY, [
+        Place('3708', '济宁市', shorts=['济宁'], children_type=TYPE_COUNTY, children=[
             Place('370811', '任城区'),
             Place('370812', '兖州区'),
             Place('370826', '微山县'),
@@ -1845,41 +1852,41 @@ PLACES = [
             Place('370831', '泗水县'),
             Place('370832', '梁山县'),
             Place('370871', '济宁高新技术产业开发区'),
-            Place('370881', '曲阜市'),
-            Place('370883', '邹城市'),
-            Place('370882', '兖州市'),
+            Place('370881', '曲阜市', shorts=['曲阜']),
+            Place('370883', '邹城市', shorts=['邹城']),
+            Place('370882', '兖州市', shorts=['兖州']),
         ]),
-        Place('3709', '泰安市', CHILD_TYPE_COUNTY, [
+        Place('3709', '泰安市', shorts=['泰安'], children_type=TYPE_COUNTY, children=[
             Place('370902', '泰山区'),
             Place('370911', '岱岳区'),
             Place('370921', '宁阳县'),
             Place('370923', '东平县'),
-            Place('370982', '新泰市'),
-            Place('370983', '肥城市'),
+            Place('370982', '新泰市', shorts=['新泰']),
+            Place('370983', '肥城市', shorts=['肥城']),
         ]),
-        Place('3710', '威海市', CHILD_TYPE_COUNTY, [
+        Place('3710', '威海市', shorts=['威海'], children_type=TYPE_COUNTY, children=[
             Place('371002', '环翠区'),
             Place('371003', '文登区'),
             Place('371071', '威海火炬高技术产业开发区'),
             Place('371072', '威海经济技术开发区'),
             Place('371073', '威海临港经济技术开发区'),
-            Place('371082', '荣成市'),
-            Place('371083', '乳山市'),
-            Place('371081', '文登市'),
+            Place('371082', '荣成市', shorts=['荣成']),
+            Place('371083', '乳山市', shorts=['乳山']),
+            Place('371081', '文登市', shorts=['文登']),
         ]),
-        Place('3711', '日照市', CHILD_TYPE_COUNTY, [
+        Place('3711', '日照市', shorts=['日照'], children_type=TYPE_COUNTY, children=[
             Place('371102', '东港区'),
             Place('371103', '岚山区'),
             Place('371121', '五莲县'),
             Place('371122', '莒县'),
-            Place('371171', '日照经济技术开发区'),
-            Place('371172', '日照国际海洋城'),
+            Place('371171', '日照经济技术开发区', shorts=['日照经济开发区', '日照经济开发区', '日照开发区']),
+            Place('371172', '日照国际海洋城', shorts=['日照海洋城']),
         ]),
-        Place('3712', '莱芜市', CHILD_TYPE_COUNTY, [
+        Place('3712', '莱芜市', shorts=['莱芜'], children_type=TYPE_COUNTY, children=[
             Place('371202', '莱城区'),
             Place('371203', '钢城区'),
         ]),
-        Place('3713', '临沂市', CHILD_TYPE_COUNTY, [
+        Place('3713', '临沂市', shorts=['临沂'], children_type=TYPE_COUNTY, children=[
             Place('371302', '兰山区'),
             Place('371311', '罗庄区'),
             Place('371312', '河东区'),
@@ -1897,7 +1904,7 @@ PLACES = [
             Place('371373', '临沂临港经济开发区'),
             Place('371324', '苍山县'),
         ]),
-        Place('3714', '德州市', CHILD_TYPE_COUNTY, [
+        Place('3714', '德州市', shorts=['德州'], children_type=TYPE_COUNTY, children=[
             Place('371402', '德城区'),
             Place('371403', '陵城区'),
             Place('371422', '宁津县'),
@@ -1909,11 +1916,11 @@ PLACES = [
             Place('371428', '武城县'),
             Place('371471', '德州经济技术开发区'),
             Place('371472', '德州运河经济开发区'),
-            Place('371481', '乐陵市'),
-            Place('371482', '禹城市'),
+            Place('371481', '乐陵市', shorts=['乐陵']),
+            Place('371482', '禹城市', shorts=['禹城']),
             Place('371421', '陵县'),
         ]),
-        Place('3715', '聊城市', CHILD_TYPE_COUNTY, [
+        Place('3715', '聊城市', shorts=['聊城'], children_type=TYPE_COUNTY, children=[
             Place('371502', '东昌府区'),
             Place('371521', '阳谷县'),
             Place('371522', '莘县'),
@@ -1921,21 +1928,21 @@ PLACES = [
             Place('371524', '东阿县'),
             Place('371525', '冠县'),
             Place('371526', '高唐县'),
-            Place('371581', '临清市'),
+            Place('371581', '临清市', shorts=['临清']),
             Place('371503', '茌平区'),
         ]),
-        Place('3716', '滨州市', CHILD_TYPE_COUNTY, [
+        Place('3716', '滨州市', shorts=['滨州'], children_type=TYPE_COUNTY, children=[
             Place('371602', '滨城区'),
             Place('371603', '沾化区'),
             Place('371621', '惠民县'),
             Place('371622', '阳信县'),
             Place('371623', '无棣县'),
             Place('371625', '博兴县'),
-            Place('371626', '邹平县'),
+            Place('371626', '邹平县', enabled=False),
             Place('371624', '沾化县'),
-            Place('371681', '邹平市'),
+            Place('371681', '邹平市', shorts=['邹平']),
         ]),
-        Place('3717', '菏泽市', CHILD_TYPE_COUNTY, [
+        Place('3717', '菏泽市', shorts=['菏泽'], children_type=TYPE_COUNTY, children=[
             Place('371702', '牡丹区'),
             Place('371703', '定陶区'),
             Place('371721', '曹县'),
@@ -1950,8 +1957,8 @@ PLACES = [
             Place('371727', '定陶县'),
         ]),
     ]),
-    Place('41', '河南', CHILD_TYPE_CITY, [
-        Place('4101', '郑州市', CHILD_TYPE_COUNTY, [
+    Place('41', '河南省', shorts=['河南'], children_type=TYPE_CITY, children=[
+        Place('4101', '郑州市', shorts=['郑州'], children_type=TYPE_COUNTY, children=[
             Place('410102', '中原区'),
             Place('410103', '二七区'),
             Place('410104', '管城区'),
@@ -1962,26 +1969,26 @@ PLACES = [
             Place('410171', '郑州经济技术开发区'),
             Place('410172', '郑州高新技术产业开发区'),
             Place('410173', '郑州航空港经济综合实验区'),
-            Place('410181', '巩义市'),
-            Place('410182', '荥阳市'),
-            Place('410183', '新密市'),
-            Place('410184', '新郑市'),
+            Place('410181', '巩义市', shorts=['巩义']),
+            Place('410182', '荥阳市', shorts=['荥阳']),
+            Place('410183', '新密市', shorts=['新密']),
+            Place('410184', '新郑市', shorts=['新郑']),
             Place('410185', '登封市'),
         ]),
-        Place('4102', '开封市', CHILD_TYPE_COUNTY, [
+        Place('4102', '开封市', shorts=['开封'], children_type=TYPE_COUNTY, children=[
             Place('410202', '龙亭区'),
             Place('410203', '顺河区'),
             Place('410204', '鼓楼区'),
-            Place('410205', '禹王台区'),
+            Place('410205', '禹王台区', shorts=['禹王台']),
             Place('410212', '祥符区'),
             Place('410221', '杞县'),
             Place('410222', '通许县'),
             Place('410223', '尉氏县'),
             Place('410225', '兰考县'),
             Place('410211', '金明区'),
-            Place('410224', '开封县'),
+            Place('410224', '开封县', enabled=False),
         ]),
-        Place('4103', '洛阳市', CHILD_TYPE_COUNTY, [
+        Place('4103', '洛阳市', shorts=['洛阳'], children_type=TYPE_COUNTY, children=[
             Place('410302', '老城区'),
             Place('410303', '西工区'),
             Place('410304', '瀍河区'),
@@ -1997,9 +2004,9 @@ PLACES = [
             Place('410328', '洛宁县'),
             Place('410329', '伊川县'),
             Place('410371', '洛阳高新技术产业开发区'),
-            Place('410381', '偃师市'),
+            Place('410381', '偃师市', shorts=['偃师']),
         ]),
-        Place('4104', '平顶山市', CHILD_TYPE_COUNTY, [
+        Place('4104', '平顶山市', shorts=['平顶山'], children_type=TYPE_COUNTY, children=[
             Place('410402', '新华区'),
             Place('410403', '卫东区'),
             Place('410404', '石龙区'),
@@ -2010,10 +2017,10 @@ PLACES = [
             Place('410425', '郏县'),
             Place('410471', '平顶山高新技术产业开发区'),
             Place('410472', '平顶山市新城区'),
-            Place('410481', '舞钢市'),
-            Place('410482', '汝州市'),
+            Place('410481', '舞钢市', shorts=['舞钢']),
+            Place('410482', '汝州市', shorts=['汝州']),
         ]),
-        Place('4105', '安阳市', CHILD_TYPE_COUNTY, [
+        Place('4105', '安阳市', shorts=['安阳'], children_type=TYPE_COUNTY, children=[
             Place('410502', '文峰区'),
             Place('410503', '北关区'),
             Place('410505', '殷都区'),
@@ -2023,9 +2030,9 @@ PLACES = [
             Place('410526', '滑县'),
             Place('410527', '内黄县'),
             Place('410571', '安阳高新技术产业开发区'),
-            Place('410581', '林州市'),
+            Place('410581', '林州市', shorts=['林州']),
         ]),
-        Place('4106', '鹤壁市', CHILD_TYPE_COUNTY, [
+        Place('4106', '鹤壁市', shorts=['鹤壁'], children_type=TYPE_COUNTY, children=[
             Place('410602', '鹤山区'),
             Place('410603', '山城区'),
             Place('410611', '淇滨区'),
@@ -2033,7 +2040,7 @@ PLACES = [
             Place('410622', '淇县'),
             Place('410671', '鹤壁经济技术开发区'),
         ]),
-        Place('4107', '新乡市', CHILD_TYPE_COUNTY, [
+        Place('4107', '新乡市', shorts=['新乡'], children_type=TYPE_COUNTY, children=[
             Place('410702', '红旗区'),
             Place('410703', '卫滨区'),
             Place('410704', '凤泉区'),
@@ -2047,11 +2054,11 @@ PLACES = [
             Place('410771', '新乡高新技术产业开发区'),
             Place('410772', '新乡经济技术开发区'),
             Place('410773', '新乡市平原城乡一体化示范区'),
-            Place('410781', '卫辉市'),
-            Place('410782', '辉县市'),
-            Place('410783', '长垣市'),
+            Place('410781', '卫辉市', shorts=['卫辉']),
+            Place('410782', '辉县市', shorts=['辉县']),
+            Place('410783', '长垣市', shorts=['长垣']),
         ]),
-        Place('4108', '焦作市', CHILD_TYPE_COUNTY, [
+        Place('4108', '焦作市', shorts=['焦作'], children_type=TYPE_COUNTY, children=[
             Place('410802', '解放区'),
             Place('410803', '中站区'),
             Place('410804', '马村区'),
@@ -2061,10 +2068,10 @@ PLACES = [
             Place('410823', '武陟县'),
             Place('410825', '温县'),
             Place('410871', '焦作城乡一体化示范区'),
-            Place('410882', '沁阳市'),
-            Place('410883', '孟州市'),
+            Place('410882', '沁阳市', shorts=['沁阳']),
+            Place('410883', '孟州市', shorts=['孟州']),
         ]),
-        Place('4109', '濮阳市', CHILD_TYPE_COUNTY, [
+        Place('4109', '濮阳市', shorts=['濮阳'], children_type=TYPE_COUNTY, children=[
             Place('410902', '华龙区'),
             Place('410922', '清丰县'),
             Place('410923', '南乐县'),
@@ -2074,17 +2081,17 @@ PLACES = [
             Place('410971', '濮阳工业园区'),
             Place('410972', '濮阳经济技术开发区'),
         ]),
-        Place('4110', '许昌市', CHILD_TYPE_COUNTY, [
+        Place('4110', '许昌市', shorts=['许昌'], children_type=TYPE_COUNTY, children=[
             Place('411002', '魏都区'),
             Place('411003', '建安区'),
             Place('411024', '鄢陵县'),
             Place('411025', '襄城县'),
             Place('411071', '许昌经济技术开发区'),
-            Place('411081', '禹州市'),
-            Place('411082', '长葛市'),
-            Place('411023', '许昌县'),
+            Place('411081', '禹州市', shorts=['禹州']),
+            Place('411082', '长葛市', shorts=['长葛']),
+            Place('411023', '许昌县', enabled=False),
         ]),
-        Place('4111', '漯河市', CHILD_TYPE_COUNTY, [
+        Place('4111', '漯河市', shorts=['漯河'], children_type=TYPE_COUNTY, children=[
             Place('411102', '源汇区'),
             Place('411103', '郾城区'),
             Place('411104', '召陵区'),
@@ -2092,17 +2099,17 @@ PLACES = [
             Place('411122', '临颍县'),
             Place('411171', '漯河经济技术开发区'),
         ]),
-        Place('4112', '三门峡市', CHILD_TYPE_COUNTY, [
+        Place('4112', '三门峡市', shorts=['三门峡'], children_type=TYPE_COUNTY, children=[
             Place('411202', '湖滨区'),
             Place('411203', '陕州区'),
             Place('411221', '渑池县'),
             Place('411224', '卢氏县'),
             Place('411271', '三门峡经济开发区'),
-            Place('411281', '义马市'),
-            Place('411282', '灵宝市'),
+            Place('411281', '义马市', shorts=['义马']),
+            Place('411282', '灵宝市', shorts=['灵宝']),
             Place('411222', '陕县'),
         ]),
-        Place('4113', '南阳市', CHILD_TYPE_COUNTY, [
+        Place('4113', '南阳市', shorts=['南阳'], children_type=TYPE_COUNTY, children=[
             Place('411302', '宛城区'),
             Place('411303', '卧龙区'),
             Place('411321', '南召县'),
@@ -2117,9 +2124,9 @@ PLACES = [
             Place('411330', '桐柏县'),
             Place('411371', '南阳高新技术产业开发区'),
             Place('411372', '南阳市城乡一体化示范区'),
-            Place('411381', '邓州市'),
+            Place('411381', '邓州市', shorts=['邓州']),
         ]),
-        Place('4114', '商丘市', CHILD_TYPE_COUNTY, [
+        Place('4114', '商丘市', shorts=['商丘'], children_type=TYPE_COUNTY, children=[
             Place('411402', '梁园区'),
             Place('411403', '睢阳区'),
             Place('411421', '民权县'),
@@ -2130,9 +2137,9 @@ PLACES = [
             Place('411426', '夏邑县'),
             Place('411471', '豫东综合物流产业聚集区'),
             Place('411472', '商丘经济开发区'),
-            Place('411481', '永城市'),
+            Place('411481', '永城市', shorts=['永城']),
         ]),
-        Place('4115', '信阳市', CHILD_TYPE_COUNTY, [
+        Place('4115', '信阳市', shorts=['信阳'], children_type=TYPE_COUNTY, children=[
             Place('411502', '浉河区'),
             Place('411503', '平桥区'),
             Place('411521', '罗山县'),
@@ -2145,7 +2152,7 @@ PLACES = [
             Place('411528', '息县'),
             Place('411571', '信阳高新技术产业开发区'),
         ]),
-        Place('4116', '周口市', CHILD_TYPE_COUNTY, [
+        Place('4116', '周口市', shorts=['周口'], children_type=TYPE_COUNTY, children=[
             Place('411602', '川汇区'),
             Place('411621', '扶沟县'),
             Place('411622', '西华县'),
@@ -2156,10 +2163,10 @@ PLACES = [
             Place('411627', '太康县'),
             Place('411628', '鹿邑县'),
             Place('411671', '周口经济开发区'),
-            Place('411681', '项城市'),
+            Place('411681', '项城市', shorts=['项城']),
             Place('411603', '淮阳区'),
         ]),
-        Place('4117', '驻马店市', CHILD_TYPE_COUNTY, [
+        Place('4117', '驻马店市', shorts=['驻马店'], children_type=TYPE_COUNTY, children=[
             Place('411702', '驿城区'),
             Place('411721', '西平县'),
             Place('411722', '上蔡县'),
@@ -2172,10 +2179,10 @@ PLACES = [
             Place('411729', '新蔡县'),
             Place('411771', '驻马店经济开发区'),
         ]),
-        Place('419001', '济源市'),
+        Place('419001', '济源市', shorts=['济源']),
     ]),
-    Place('42', '湖北', CHILD_TYPE_COUNTY, [
-        Place('4201', '武汉市', CHILD_TYPE_COUNTY, [
+    Place('42', '湖北省', shorts=['湖北'], children_type=TYPE_COUNTY, children=[
+        Place('4201', '武汉市', shorts=['武汉'], children_type=TYPE_COUNTY, children=[
             Place('420102', '江岸区'),
             Place('420103', '江汉区'),
             Place('420104', '硚口区'),
@@ -2190,15 +2197,15 @@ PLACES = [
             Place('420116', '黄陂区'),
             Place('420117', '新洲区'),
         ]),
-        Place('4202', '黄石市', CHILD_TYPE_COUNTY, [
+        Place('4202', '黄石市', shorts=['黄石'], children_type=TYPE_COUNTY, children=[
             Place('420202', '黄石港区'),
             Place('420203', '西塞山区'),
             Place('420204', '下陆区'),
             Place('420205', '铁山区'),
             Place('420222', '阳新县'),
-            Place('420281', '大冶市'),
+            Place('420281', '大冶市', shorts=['大冶']),
         ]),
-        Place('4203', '十堰市', CHILD_TYPE_COUNTY, [
+        Place('4203', '十堰市', shorts=['十堰'], children_type=TYPE_COUNTY, children=[
             Place('420302', '茅箭区'),
             Place('420303', '张湾区'),
             Place('420304', '郧阳区'),
@@ -2206,69 +2213,69 @@ PLACES = [
             Place('420323', '竹山县'),
             Place('420324', '竹溪县'),
             Place('420325', '房县'),
-            Place('420381', '丹江口市'),
+            Place('420381', '丹江口市', shorts=['丹江口']),
             Place('420321', '郧县'),
         ]),
-        Place('4205', '宜昌市', CHILD_TYPE_COUNTY, [
+        Place('4205', '宜昌市', shorts=['宜昌'], children_type=TYPE_COUNTY, children=[
             Place('420502', '西陵区'),
-            Place('420503', '伍家岗区'),
+            Place('420503', '伍家岗区', shorts=['伍家岗']),
             Place('420504', '点军区'),
             Place('420505', '猇亭区'),
             Place('420506', '夷陵区'),
             Place('420525', '远安县'),
             Place('420526', '兴山县'),
             Place('420527', '秭归县'),
-            Place('420528', '长阳自治县'),
-            Place('420529', '五峰自治县'),
-            Place('420581', '宜都市'),
-            Place('420582', '当阳市'),
-            Place('420583', '枝江市'),
+            Place('420528', '长阳自治县', shorts=['长阳县']),
+            Place('420529', '五峰自治县', shorts=['五峰县']),
+            Place('420581', '宜都市', shorts=['宜都']),
+            Place('420582', '当阳市', shorts=['当阳']),
+            Place('420583', '枝江市', shorts=['枝江']),
         ]),
-        Place('4206', '襄阳市', CHILD_TYPE_COUNTY, [
+        Place('4206', '襄阳市', shorts=['襄阳'], children_type=TYPE_COUNTY, children=[
             Place('420602', '襄城区'),
             Place('420606', '樊城区'),
             Place('420607', '襄州区'),
             Place('420624', '南漳县'),
             Place('420625', '谷城县'),
             Place('420626', '保康县'),
-            Place('420682', '老河口市'),
-            Place('420683', '枣阳市'),
-            Place('420684', '宜城市'),
+            Place('420682', '老河口市', shorts=['老河口']),
+            Place('420683', '枣阳市', shorts=['枣阳']),
+            Place('420684', '宜城市', shorts=['宜城']),
         ]),
-        Place('4207', '鄂州市', CHILD_TYPE_COUNTY, [
+        Place('4207', '鄂州市', shorts=['鄂州'], children_type=TYPE_COUNTY, children=[
             Place('420702', '梁子湖区'),
             Place('420703', '华容区'),
             Place('420704', '鄂城区'),
         ]),
-        Place('4208', '荆门市', CHILD_TYPE_COUNTY, [
+        Place('4208', '荆门市', shorts=['荆门'], children_type=TYPE_COUNTY, children=[
             Place('420802', '东宝区'),
             Place('420804', '掇刀区'),
             Place('420821', '京山县'),
             Place('420822', '沙洋县'),
-            Place('420881', '钟祥市'),
+            Place('420881', '钟祥市', shorts=['钟祥']),
             Place('420882', '京山市'),
         ]),
-        Place('4209', '孝感市', CHILD_TYPE_COUNTY, [
+        Place('4209', '孝感市', shorts=['孝感'], children_type=TYPE_COUNTY, children=[
             Place('420902', '孝南区'),
             Place('420921', '孝昌县'),
             Place('420922', '大悟县'),
             Place('420923', '云梦县'),
-            Place('420981', '应城市'),
-            Place('420982', '安陆市'),
-            Place('420984', '汉川市'),
+            Place('420981', '应城市', shorts=['应城']),
+            Place('420982', '安陆市', shorts=['安陆']),
+            Place('420984', '汉川市', shorts=['汉川']),
         ]),
-        Place('4210', '荆州市', CHILD_TYPE_COUNTY, [
+        Place('4210', '荆州市', shorts=['荆州'], children_type=TYPE_COUNTY, children=[
             Place('421002', '沙市区'),
             Place('421003', '荆州区'),
             Place('421022', '公安县'),
             Place('421023', '监利县'),
             Place('421024', '江陵县'),
             Place('421071', '荆州经济技术开发区'),
-            Place('421081', '石首市'),
-            Place('421083', '洪湖市'),
-            Place('421087', '松滋市'),
+            Place('421081', '石首市', shorts=['石首']),
+            Place('421083', '洪湖市', shorts=['洪湖']),
+            Place('421087', '松滋市', shorts=['松滋']),
         ]),
-        Place('4211', '黄冈市', CHILD_TYPE_COUNTY, [
+        Place('4211', '黄冈市', shorts=['黄冈'], children_type=TYPE_COUNTY, children=[
             Place('421102', '黄州区'),
             Place('421121', '团风县'),
             Place('421122', '红安县'),
@@ -2277,26 +2284,26 @@ PLACES = [
             Place('421125', '浠水县'),
             Place('421126', '蕲春县'),
             Place('421127', '黄梅县'),
-            Place('421171', '龙感湖管理区'),
-            Place('421181', '麻城市'),
-            Place('421182', '武穴市'),
+            Place('421171', '龙感湖管理区', shorts=['龙感湖']),
+            Place('421181', '麻城市', shorts=['麻城']),
+            Place('421182', '武穴市', shorts=['武穴']),
         ]),
-        Place('4212', '咸宁市', CHILD_TYPE_COUNTY, [
+        Place('4212', '咸宁市', shorts=['咸宁'], children_type=TYPE_COUNTY, children=[
             Place('421202', '咸安区'),
             Place('421221', '嘉鱼县'),
             Place('421222', '通城县'),
             Place('421223', '崇阳县'),
             Place('421224', '通山县'),
-            Place('421281', '赤壁市'),
+            Place('421281', '赤壁市', shorts=['赤壁']),
         ]),
-        Place('4213', '随州市', CHILD_TYPE_COUNTY, [
+        Place('4213', '随州市', shorts=['随州'], children_type=TYPE_COUNTY, children=[
             Place('421303', '曾都区'),
             Place('421321', '随县'),
-            Place('421381', '广水市'),
+            Place('421381', '广水市', shorts=['广水']),
         ]),
-        Place('4228', '恩施自治州', CHILD_TYPE_COUNTY, [
+        Place('4228', '恩施土家族苗族自治州', shorts=['恩施'], children_type=TYPE_COUNTY, children=[
             Place('422801', '恩施市'),
-            Place('422802', '利川市'),
+            Place('422802', '利川市', shorts=['利川']),
             Place('422822', '建始县'),
             Place('422823', '巴东县'),
             Place('422825', '宣恩县'),
@@ -2304,26 +2311,26 @@ PLACES = [
             Place('422827', '来凤县'),
             Place('422828', '鹤峰县'),
         ]),
-        Place('429004', '仙桃市'),
-        Place('429005', '潜江市'),
-        Place('429006', '天门市'),
+        Place('429004', '仙桃市', shorts=['仙桃']),
+        Place('429005', '潜江市', shorts=['潜江']),
+        Place('429006', '天门市', shorts=['天门']),
         Place('429021', '神农架'),
     ]),
-    Place('43', '湖南', CHILD_TYPE_CITY, [
-        Place('4301', '长沙市', CHILD_TYPE_COUNTY, [
+    Place('43', '湖南省', shorts=['湖南'], children_type=TYPE_CITY, children=[
+        Place('4301', '长沙市', shorts=['长沙'], children_type=TYPE_COUNTY, children=[
             Place('430102', '芙蓉区'),
             Place('430103', '天心区'),
             Place('430104', '岳麓区'),
             Place('430105', '开福区'),
             Place('430111', '雨花区'),
             Place('430112', '望城区'),
-            Place('430121', '长沙县'),
+            Place('430121', '长沙县', enabled=False),
             Place('430181', '浏阳市'),
-            Place('430182', '宁乡市'),
+            Place('430182', '宁乡市', shorts=['宁乡']),
             Place('430122', '望城县'),
-            Place('430124', '宁乡县'),
+            Place('430124', '宁乡县', enabled=False),
         ]),
-        Place('4302', '株洲市', CHILD_TYPE_COUNTY, [
+        Place('4302', '株洲市', shorts=['株洲'], children_type=TYPE_COUNTY, children=[
             Place('430202', '荷塘区'),
             Place('430203', '芦淞区'),
             Place('430204', '石峰区'),
@@ -2332,21 +2339,21 @@ PLACES = [
             Place('430223', '攸县'),
             Place('430224', '茶陵县'),
             Place('430225', '炎陵县'),
-            Place('430271', '云龙'),
-            Place('430281', '醴陵市'),
+            Place('430271', '云龙区'),
+            Place('430281', '醴陵市', shorts=['醴陵']),
             Place('430212', '渌口区'),
         ]),
-        Place('4303', '湘潭市', CHILD_TYPE_COUNTY, [
+        Place('4303', '湘潭市', shorts=['湘潭'], children_type=TYPE_COUNTY, children=[
             Place('430302', '雨湖区'),
             Place('430304', '岳塘区'),
             Place('430321', '湘潭县'),
             Place('430371', '湘潭高新技术产业园区'),
             Place('430372', '湘潭昭山示范区'),
             Place('430373', '湘潭九华示范区'),
-            Place('430381', '湘乡市'),
-            Place('430382', '韶山市'),
+            Place('430381', '湘乡市', shorts=['湘乡']),
+            Place('430382', '韶山市', shorts=['韶山']),
         ]),
-        Place('4304', '衡阳市', CHILD_TYPE_COUNTY, [
+        Place('4304', '衡阳市', shorts=['衡阳'], children_type=TYPE_COUNTY, children=[
             Place('430405', '珠晖区'),
             Place('430406', '雁峰区'),
             Place('430407', '石鼓区'),
@@ -2359,11 +2366,11 @@ PLACES = [
             Place('430426', '祁东县'),
             Place('430471', '衡阳综合保税区'),
             Place('430472', '衡阳高新技术产业园区'),
-            Place('430473', '松木经济开发区'),
-            Place('430481', '耒阳市'),
-            Place('430482', '常宁市'),
+            Place('430473', '松木经济开发区', shorts=['松木开发区']),
+            Place('430481', '耒阳市', shorts=['耒阳']),
+            Place('430482', '常宁市', shorts=['常宁']),
         ]),
-        Place('4305', '邵阳市', CHILD_TYPE_COUNTY, [
+        Place('4305', '邵阳市', shorts=['邵阳'], children_type=TYPE_COUNTY, children=[
             Place('430502', '双清区'),
             Place('430503', '大祥区'),
             Place('430511', '北塔区'),
@@ -2374,23 +2381,23 @@ PLACES = [
             Place('430525', '洞口县'),
             Place('430527', '绥宁县'),
             Place('430528', '新宁县'),
-            Place('430529', '城步自治县'),
-            Place('430581', '武冈市'),
-            Place('430582', '邵东市'),
+            Place('430529', '城步自治县', shorts=['城步县']),
+            Place('430581', '武冈市', shorts=['武冈']),
+            Place('430582', '邵东市', shorts=['邵东']),
         ]),
-        Place('4306', '岳阳市', CHILD_TYPE_COUNTY, [
-            Place('430602', '岳阳楼区'),
+        Place('4306', '岳阳市', shorts=['岳阳'], children_type=TYPE_COUNTY, children=[
+            Place('430602', '岳阳楼区', shorts=['岳阳楼']),
             Place('430603', '云溪区'),
             Place('430611', '君山区'),
             Place('430621', '岳阳县'),
             Place('430623', '华容县'),
             Place('430624', '湘阴县'),
             Place('430626', '平江县'),
-            Place('430671', '岳阳市屈原管理区'),
-            Place('430681', '汨罗市'),
-            Place('430682', '临湘市'),
+            Place('430671', '岳阳市屈原管理区', shorts=['屈原管理区', '屈原区']),
+            Place('430681', '汨罗市', shorts=['汨罗']),
+            Place('430682', '临湘市', shorts=['临湘']),
         ]),
-        Place('4307', '常德市', CHILD_TYPE_COUNTY, [
+        Place('4307', '常德市', shorts=['常德'], children_type=TYPE_COUNTY, children=[
             Place('430702', '武陵区'),
             Place('430703', '鼎城区'),
             Place('430721', '安乡县'),
@@ -2399,26 +2406,26 @@ PLACES = [
             Place('430724', '临澧县'),
             Place('430725', '桃源县'),
             Place('430726', '石门县'),
-            Place('430771', '西洞庭管理区'),
-            Place('430781', '津市市'),
+            Place('430771', '西洞庭管理区', shorts=['西洞庭区']),
+            Place('430781', '津市市', shorts=['津市']),
         ]),
-        Place('4308', '张家界市', CHILD_TYPE_COUNTY, [
+        Place('4308', '张家界市', shorts=['张家界'], children_type=TYPE_COUNTY, children=[
             Place('430802', '永定区'),
-            Place('430811', '武陵源区'),
+            Place('430811', '武陵源区', shorts=['武陵源']),
             Place('430821', '慈利县'),
             Place('430822', '桑植县'),
         ]),
-        Place('4309', '益阳市', CHILD_TYPE_COUNTY, [
+        Place('4309', '益阳市', shorts=['益阳'], children_type=TYPE_COUNTY, children=[
             Place('430902', '资阳区'),
             Place('430903', '赫山区'),
             Place('430921', '南县'),
             Place('430922', '桃江县'),
             Place('430923', '安化县'),
-            Place('430971', '大通湖管理区'),
+            Place('430971', '大通湖管理区', shorts=['大通湖区']),
             Place('430972', '益阳高新技术产业园区'),
-            Place('430981', '沅江市'),
+            Place('430981', '沅江市', shorts=['沅江']),
         ]),
-        Place('4310', '郴州市', CHILD_TYPE_COUNTY, [
+        Place('4310', '郴州市', shorts=['郴州'], children_type=TYPE_COUNTY, children=[
             Place('431002', '北湖区'),
             Place('431003', '苏仙区'),
             Place('431021', '桂阳县'),
@@ -2429,11 +2436,11 @@ PLACES = [
             Place('431026', '汝城县'),
             Place('431027', '桂东县'),
             Place('431028', '安仁县'),
-            Place('431081', '资兴市'),
+            Place('431081', '资兴市', shorts=['资兴']),
         ]),
-        Place('4311', '永州市', CHILD_TYPE_COUNTY, [
+        Place('4311', '永州市', shorts=['永州'], children_type=TYPE_COUNTY, children=[
             Place('431102', '零陵区'),
-            Place('431103', '冷水滩区'),
+            Place('431103', '冷水滩区', shorts=['冷水滩']),
             Place('431121', '祁阳县'),
             Place('431122', '东安县'),
             Place('431123', '双牌县'),
@@ -2442,48 +2449,48 @@ PLACES = [
             Place('431126', '宁远县'),
             Place('431127', '蓝山县'),
             Place('431128', '新田县'),
-            Place('431129', '江华瑶族自治县'),
+            Place('431129', '江华瑶族自治县', shorts=['江华自治县', '江华县']),
             Place('431171', '永州经济技术开发区'),
-            Place('431172', '金洞管理区'),
-            Place('431173', '回龙圩管理区'),
+            Place('431172', '金洞管理区', shorts=['金洞区']),
+            Place('431173', '回龙圩管理区', shorts=['回龙圩']),
         ]),
-        Place('4312', '怀化市', CHILD_TYPE_COUNTY, [
+        Place('4312', '怀化市', shorts=['怀化'], children_type=TYPE_COUNTY, children=[
             Place('431202', '鹤城区'),
             Place('431221', '中方县'),
             Place('431222', '沅陵县'),
             Place('431223', '辰溪县'),
             Place('431224', '溆浦县'),
             Place('431225', '会同县'),
-            Place('431226', '麻阳自治县'),
-            Place('431227', '新晃自治县'),
-            Place('431228', '芷江自治县'),
-            Place('431229', '靖州自治县'),
-            Place('431230', '通道自治县'),
-            Place('431271', '洪江管理区'),
-            Place('431281', '洪江市'),
+            Place('431226', '麻阳自治县', shorts=['麻阳县']),
+            Place('431227', '新晃自治县', shorts=['新晃县']),
+            Place('431228', '芷江自治县', shorts=['芷江县']),
+            Place('431229', '靖州自治县', shorts=['靖州县']),
+            Place('431230', '通道自治县', shorts=['通道县']),
+            Place('431271', '洪江管理区', shorts=['洪江区'], enabled=False),
+            Place('431281', '洪江市', shorts=['洪江']),
         ]),
-        Place('4313', '娄底市', CHILD_TYPE_COUNTY, [
+        Place('4313', '娄底市', shorts=['娄底'], children_type=TYPE_COUNTY, children=[
             Place('431302', '娄星区'),
             Place('431321', '双峰县'),
             Place('431322', '新化县'),
-            Place('431381', '冷水江市'),
-            Place('431382', '涟源市'),
+            Place('431381', '冷水江市', shorts=['冷水江']),
+            Place('431382', '涟源市', shorts=['涟源']),
         ]),
-        Place('4331', '湘西自治州', CHILD_TYPE_COUNTY, [
-            Place('433101', '吉首市'),
+        Place('4331', '湘西土家族苗族自治州', shorts=['湘西'], children_type=TYPE_COUNTY, children=[
+            Place('433101', '吉首市', shorts=['吉首']),
             Place('433122', '泸溪县'),
             Place('433123', '凤凰县'),
             Place('433124', '花垣县'),
             Place('433125', '保靖县'),
             Place('433126', '古丈县'),
-            Place('433127', '永顺县'),
+            Place('433127', '永顺县', enabled=False),
             Place('433130', '龙山县'),
             Place('433172', '吉首经济开发区'),
-            Place('433173', '永顺经济开发区'),
+            Place('433173', '永顺经济开发区', shorts=['永顺开发区', '永顺区']),
         ]),
     ]),
-    Place('44', '广东', CHILD_TYPE_CITY, [
-        Place('4401', '广州市', CHILD_TYPE_COUNTY, [
+    Place('44', '广东省', shorts=['广东'], children_type=TYPE_CITY, children=[
+        Place('4401', '广州市', shorts=['广州'], children_type=TYPE_COUNTY, children=[
             Place('440103', '荔湾区'),
             Place('440104', '越秀区'),
             Place('440105', '海珠区'),
@@ -2496,22 +2503,22 @@ PLACES = [
             Place('440117', '从化区'),
             Place('440118', '增城区'),
             Place('440116', '萝岗区'),
-            Place('440183', '增城市'),
-            Place('440184', '从化市'),
+            Place('440183', '增城市', shorts=['增城']),
+            Place('440184', '从化市', shorts=['从化']),
         ]),
-        Place('4402', '韶关市', CHILD_TYPE_COUNTY, [
+        Place('4402', '韶关市', shorts=['韶关'], children_type=TYPE_COUNTY, children=[
             Place('440203', '武江区'),
             Place('440204', '浈江区'),
             Place('440205', '曲江区'),
             Place('440222', '始兴县'),
             Place('440224', '仁化县'),
             Place('440229', '翁源县'),
-            Place('440232', '乳源自治县'),
+            Place('440232', '乳源自治县', shorts=['乳源县']),
             Place('440233', '新丰县'),
-            Place('440281', '乐昌市'),
-            Place('440282', '南雄市'),
+            Place('440281', '乐昌市', shorts=['乐昌']),
+            Place('440282', '南雄市', shorts=['南雄']),
         ]),
-        Place('4403', '深圳市', CHILD_TYPE_COUNTY, [
+        Place('4403', '深圳市', shorts=['深圳'], children_type=TYPE_COUNTY, children=[
             Place('440303', '罗湖区'),
             Place('440304', '福田区'),
             Place('440305', '南山区'),
@@ -2522,12 +2529,12 @@ PLACES = [
             Place('440310', '坪山区'),
             Place('440311', '光明区'),
         ]),
-        Place('4404', '珠海市', CHILD_TYPE_COUNTY, [
+        Place('4404', '珠海市', shorts=['珠海'], children_type=TYPE_COUNTY, children=[
             Place('440402', '香洲区'),
             Place('440403', '斗门区'),
             Place('440404', '金湾区'),
         ]),
-        Place('4405', '汕头市', CHILD_TYPE_COUNTY, [
+        Place('4405', '汕头市', shorts=['汕头'], children_type=TYPE_COUNTY, children=[
             Place('440507', '龙湖区'),
             Place('440511', '金平区'),
             Place('440512', '濠江区'),
@@ -2536,43 +2543,43 @@ PLACES = [
             Place('440515', '澄海区'),
             Place('440523', '南澳县'),
         ]),
-        Place('4406', '佛山市', CHILD_TYPE_COUNTY, [
+        Place('4406', '佛山市', shorts=['佛山'], children_type=TYPE_COUNTY, children=[
             Place('440604', '禅城区'),
             Place('440605', '南海区'),
             Place('440606', '顺德区'),
             Place('440607', '三水区'),
             Place('440608', '高明区'),
         ]),
-        Place('4407', '江门市', CHILD_TYPE_COUNTY, [
+        Place('4407', '江门市', shorts=['江门'], children_type=TYPE_COUNTY, children=[
             Place('440703', '蓬江区'),
             Place('440704', '江海区'),
             Place('440705', '新会区'),
-            Place('440781', '台山市'),
-            Place('440783', '开平市'),
-            Place('440784', '鹤山市'),
-            Place('440785', '恩平市'),
+            Place('440781', '台山市', shorts=['台山']),
+            Place('440783', '开平市', shorts=['开平']),
+            Place('440784', '鹤山市', shorts=['鹤山']),
+            Place('440785', '恩平市', shorts=['恩平']),
         ]),
-        Place('4408', '湛江市', CHILD_TYPE_COUNTY, [
+        Place('4408', '湛江市', shorts=['湛江'], children_type=TYPE_COUNTY, children=[
             Place('440802', '赤坎区'),
             Place('440803', '霞山区'),
             Place('440804', '坡头区'),
             Place('440811', '麻章区'),
             Place('440823', '遂溪县'),
             Place('440825', '徐闻县'),
-            Place('440881', '廉江市'),
-            Place('440882', '雷州市'),
-            Place('440883', '吴川市'),
+            Place('440881', '廉江市', shorts=['廉江']),
+            Place('440882', '雷州市', shorts=['雷州']),
+            Place('440883', '吴川市', shorts=['吴川']),
         ]),
-        Place('4409', '茂名市', CHILD_TYPE_COUNTY, [
+        Place('4409', '茂名市', shorts=['茂名'], children_type=TYPE_COUNTY, children=[
             Place('440902', '茂南区'),
             Place('440904', '电白区'),
-            Place('440981', '高州市'),
-            Place('440982', '化州市'),
-            Place('440983', '信宜市'),
+            Place('440981', '高州市', shorts=['高州']),
+            Place('440982', '化州市', shorts=['化州']),
+            Place('440983', '信宜市', shorts=['信宜']),
             Place('440903', '茂港区'),
             Place('440923', '电白县'),
         ]),
-        Place('4412', '肇庆市', CHILD_TYPE_COUNTY, [
+        Place('4412', '肇庆市', shorts=['肇庆'], children_type=TYPE_COUNTY, children=[
             Place('441202', '端州区'),
             Place('441203', '鼎湖区'),
             Place('441204', '高要区'),
@@ -2580,17 +2587,17 @@ PLACES = [
             Place('441224', '怀集县'),
             Place('441225', '封开县'),
             Place('441226', '德庆县'),
-            Place('441284', '四会市'),
-            Place('441283', '高要市'),
+            Place('441284', '四会市', shorts=['四会']),
+            Place('441283', '高要市', shorts=['高要']),
         ]),
-        Place('4413', '惠州市', CHILD_TYPE_COUNTY, [
+        Place('4413', '惠州市', shorts=['惠州'], children_type=TYPE_COUNTY, children=[
             Place('441302', '惠城区'),
             Place('441303', '惠阳区'),
             Place('441322', '博罗县'),
             Place('441323', '惠东县'),
             Place('441324', '龙门县'),
         ]),
-        Place('4414', '梅州市', CHILD_TYPE_COUNTY, [
+        Place('4414', '梅州市', shorts=['梅州'], children_type=TYPE_COUNTY, children=[
             Place('441402', '梅江区'),
             Place('441403', '梅县区'),
             Place('441422', '大埔县'),
@@ -2598,15 +2605,15 @@ PLACES = [
             Place('441424', '五华县'),
             Place('441426', '平远县'),
             Place('441427', '蕉岭县'),
-            Place('441481', '兴宁市'),
-            Place('441421', '梅县'),
+            Place('441481', '兴宁市', shorts=['兴宁']),
+            Place('441421', '梅县', enabled=False),
         ]),
-        Place('4415', '汕尾市', CHILD_TYPE_COUNTY, [
+        Place('4415', '汕尾市', shorts=['汕尾'], children_type=TYPE_COUNTY, children=[
             Place('441521', '海丰县'),
             Place('441523', '陆河县'),
-            Place('441581', '陆丰市'),
+            Place('441581', '陆丰市', shorts=['陆丰']),
         ]),
-        Place('4416', '河源市', CHILD_TYPE_COUNTY, [
+        Place('4416', '河源市', children_type=TYPE_COUNTY, children=[
             Place('441602', '源城区'),
             Place('441621', '紫金县'),
             Place('441622', '龙川县'),
@@ -2614,55 +2621,55 @@ PLACES = [
             Place('441624', '和平县'),
             Place('441625', '东源县'),
         ]),
-        Place('4417', '阳江市', CHILD_TYPE_COUNTY, [
+        Place('4417', '阳江市', shorts=['阳江'], children_type=TYPE_COUNTY, children=[
             Place('441702', '江城区'),
             Place('441704', '阳东区'),
             Place('441721', '阳西县'),
-            Place('441781', '阳春市'),
+            Place('441781', '阳春市', shorts=['阳春']),
             Place('441723', '阳东县'),
         ]),
-        Place('4418', '清远市', CHILD_TYPE_COUNTY, [
+        Place('4418', '清远市', shorts=['清远'], children_type=TYPE_COUNTY, children=[
             Place('441802', '清城区'),
             Place('441803', '清新区'),
             Place('441821', '佛冈县'),
             Place('441823', '阳山县'),
-            Place('441825', '连山自治县'),
-            Place('441826', '连南自治县'),
-            Place('441881', '英德市'),
-            Place('441882', '连州市'),
+            Place('441825', '连山自治县', shorts=['连山县']),
+            Place('441826', '连南自治县', shorts=['连南县']),
+            Place('441881', '英德市', shorts=['英德']),
+            Place('441882', '连州市', shorts=['连州']),
             Place('441827', '清新县'),
         ]),
-        Place('4419', '东莞市'),
+        Place('4419', '东莞市', shorts=['东莞']),
         Place('4420', '中山市'),
-        Place('4451', '潮州市', CHILD_TYPE_COUNTY, [
+        Place('4451', '潮州市', shorts=['潮州'], children_type=TYPE_COUNTY, children=[
             Place('445102', '湘桥区'),
             Place('445103', '潮安区'),
             Place('445122', '饶平县'),
             Place('445121', '潮安县'),
         ]),
-        Place('4452', '揭阳市', CHILD_TYPE_COUNTY, [
+        Place('4452', '揭阳市', shorts=['揭阳'], children_type=TYPE_COUNTY, children=[
             Place('445202', '榕城区'),
             Place('445203', '揭东区'),
             Place('445222', '揭西县'),
             Place('445224', '惠来县'),
-            Place('445281', '普宁市'),
+            Place('445281', '普宁市', shorts=['普宁']),
             Place('445221', '揭东县'),
         ]),
-        Place('4453', '云浮市', CHILD_TYPE_COUNTY, [
+        Place('4453', '云浮市', shorts=['云浮'], children_type=TYPE_COUNTY, children=[
             Place('445302', '云城区'),
             Place('445303', '云安区'),
             Place('445321', '新兴县'),
             Place('445322', '郁南县'),
-            Place('445381', '罗定市'),
+            Place('445381', '罗定市', shorts=['罗定']),
             Place('445323', '云安县'),
         ]),
     ]),
-    Place('45', '广西', CHILD_TYPE_CITY, [
-        Place('4501', '南宁市', CHILD_TYPE_COUNTY, [
+    Place('45', '广西省', shorts=['广西'], children_type=TYPE_CITY, children=[
+        Place('4501', '南宁市', shorts=['南宁'], children_type=TYPE_COUNTY, children=[
             Place('450102', '兴宁区'),
             Place('450103', '青秀区'),
             Place('450105', '江南区'),
-            Place('450107', '西乡塘区'),
+            Place('450107', '西乡塘区', shorts=['西乡塘']),
             Place('450108', '良庆区'),
             Place('450109', '邕宁区'),
             Place('450110', '武鸣区'),
@@ -2673,7 +2680,7 @@ PLACES = [
             Place('450127', '横县'),
             Place('450122', '武鸣县'),
         ]),
-        Place('4502', '柳州市', CHILD_TYPE_COUNTY, [
+        Place('4502', '柳州市', shorts=['柳州'], children_type=TYPE_COUNTY, children=[
             Place('450202', '城中区'),
             Place('450203', '鱼峰区'),
             Place('450204', '柳南区'),
@@ -2682,11 +2689,11 @@ PLACES = [
             Place('450222', '柳城县'),
             Place('450223', '鹿寨县'),
             Place('450224', '融安县'),
-            Place('450225', '融水自治县'),
-            Place('450226', '三江自治县'),
+            Place('450225', '融水自治县', shorts=['融水县']),
+            Place('450226', '三江自治县', shorts=['三江县']),
             Place('450221', '柳江县'),
         ]),
-        Place('4503', '桂林市', CHILD_TYPE_COUNTY, [
+        Place('4503', '桂林市', shorts=['桂林'], children_type=TYPE_COUNTY, children=[
             Place('450302', '秀峰区'),
             Place('450303', '叠彩区'),
             Place('450304', '象山区'),
@@ -2699,59 +2706,59 @@ PLACES = [
             Place('450325', '兴安县'),
             Place('450326', '永福县'),
             Place('450327', '灌阳县'),
-            Place('450328', '龙胜自治县'),
+            Place('450328', '龙胜自治县', shorts=['龙胜县']),
             Place('450329', '资源县'),
             Place('450330', '平乐县'),
             Place('450331', '荔浦县'),
-            Place('450332', '恭城自治县'),
+            Place('450332', '恭城自治县', shorts=['恭城县']),
             Place('450322', '临桂县'),
-            Place('450381', '荔浦市'),
+            Place('450381', '荔浦市', shorts=['荔浦']),
         ]),
-        Place('4504', '梧州市', CHILD_TYPE_COUNTY, [
+        Place('4504', '梧州市', shorts=['梧州'], children_type=TYPE_COUNTY, children=[
             Place('450403', '万秀区'),
             Place('450405', '长洲区'),
             Place('450406', '龙圩区'),
             Place('450421', '苍梧县'),
             Place('450422', '藤县'),
             Place('450423', '蒙山县'),
-            Place('450481', '岑溪市'),
+            Place('450481', '岑溪市', shorts=['岑溪']),
             Place('450404', '蝶山区'),
         ]),
-        Place('4505', '北海市', CHILD_TYPE_COUNTY, [
+        Place('4505', '北海市', children_type=TYPE_COUNTY, children=[
             Place('450502', '海城区'),
             Place('450503', '银海区'),
             Place('450512', '铁山港区'),
             Place('450521', '合浦县'),
         ]),
-        Place('4506', '防城港市', CHILD_TYPE_COUNTY, [
+        Place('4506', '防城港市', shorts=['防城港'], children_type=TYPE_COUNTY, children=[
             Place('450602', '港口区'),
             Place('450603', '防城区'),
             Place('450621', '上思县'),
             Place('450681', '东兴市'),
         ]),
-        Place('4507', '钦州市', CHILD_TYPE_COUNTY, [
+        Place('4507', '钦州市', shorts=['钦州'], children_type=TYPE_COUNTY, children=[
             Place('450702', '钦南区'),
             Place('450703', '钦北区'),
             Place('450721', '灵山县'),
             Place('450722', '浦北县'),
         ]),
-        Place('4508', '贵港市', CHILD_TYPE_COUNTY, [
+        Place('4508', '贵港市', shorts=['贵港'], children_type=TYPE_COUNTY, children=[
             Place('450802', '港北区'),
             Place('450803', '港南区'),
             Place('450804', '覃塘区'),
             Place('450821', '平南县'),
-            Place('450881', '桂平市'),
+            Place('450881', '桂平市', shorts=['桂平']),
         ]),
-        Place('4509', '玉林市', CHILD_TYPE_COUNTY, [
+        Place('4509', '玉林市', shorts=['玉林'], children_type=TYPE_COUNTY, children=[
             Place('450902', '玉州区'),
             Place('450903', '福绵区'),
             Place('450921', '容县'),
             Place('450922', '陆川县'),
             Place('450923', '博白县'),
             Place('450924', '兴业县'),
-            Place('450981', '北流市'),
+            Place('450981', '北流市', shorts=['北流']),
         ]),
-        Place('4510', '百色市', CHILD_TYPE_COUNTY, [
+        Place('4510', '百色市', children_type=TYPE_COUNTY, children=[
             Place('451002', '右江区'),
             Place('451021', '田阳县'),
             Place('451022', '田东县'),
@@ -2763,94 +2770,94 @@ PLACES = [
             Place('451029', '田林县'),
             Place('451030', '西林县'),
             Place('451031', '隆林自治县'),
-            Place('451081', '靖西市'),
+            Place('451081', '靖西市', shorts=['靖西']),
             Place('451025', '靖西县'),
             Place('451003', '田阳区'),
-            Place('451082', '平果市'),
+            Place('451082', '平果市', shorts=['平果']),
         ]),
-        Place('4511', '贺州市', CHILD_TYPE_COUNTY, [
+        Place('4511', '贺州市', shorts=['贺州'], children_type=TYPE_COUNTY, children=[
             Place('451102', '八步区'),
             Place('451103', '平桂区'),
             Place('451121', '昭平县'),
             Place('451122', '钟山县'),
-            Place('451123', '富川自治县'),
+            Place('451123', '富川自治县', shorts=['富川县']),
         ]),
-        Place('4512', '河池市', CHILD_TYPE_COUNTY, [
+        Place('4512', '河池市', shorts=['河池'], children_type=TYPE_COUNTY, children=[
             Place('451202', '金城江区'),
-            Place('451203', '宜州区'),
+            Place('451203', '宜州区', enabled=False),
             Place('451221', '南丹县'),
             Place('451222', '天峨县'),
             Place('451223', '凤山县'),
             Place('451224', '东兰县'),
-            Place('451225', '罗城仫佬族自治县'),
-            Place('451226', '环江毛南族自治县'),
-            Place('451227', '巴马瑶族自治县'),
-            Place('451228', '都安瑶族自治县'),
-            Place('451229', '大化瑶族自治县'),
-            Place('451281', '宜州市'),
+            Place('451225', '罗城仫佬族自治县', shorts=['罗城自治县', '罗城县']),
+            Place('451226', '环江毛南族自治县', shorts=['环江自治县', '环江县']),
+            Place('451227', '巴马瑶族自治县', shorts=['巴马自治县', '巴马县']),
+            Place('451228', '都安瑶族自治县', shorts=['都安自治县', '都安县']),
+            Place('451229', '大化瑶族自治县', shorts=['大化自治县', '大化县']),
+            Place('451281', '宜州市', shorts=['宜州']),
         ]),
-        Place('4513', '来宾市', CHILD_TYPE_COUNTY, [
+        Place('4513', '来宾市', shorts=['来宾'], children_type=TYPE_COUNTY, children=[
             Place('451302', '兴宾区'),
             Place('451321', '忻城县'),
             Place('451322', '象州县'),
             Place('451323', '武宣县'),
-            Place('451324', '金秀瑶族自治县'),
-            Place('451381', '合山市'),
+            Place('451324', '金秀瑶族自治县', shorts=['金秀自治县', '金秀县']),
+            Place('451381', '合山市', shorts=['合山']),
         ]),
-        Place('4514', '崇左市', CHILD_TYPE_COUNTY, [
+        Place('4514', '崇左市', shorts=['崇左'], children_type=TYPE_COUNTY, children=[
             Place('451402', '江州区'),
             Place('451421', '扶绥县'),
             Place('451422', '宁明县'),
             Place('451423', '龙州县'),
             Place('451424', '大新县'),
             Place('451425', '天等县'),
-            Place('451481', '凭祥市'),
+            Place('451481', '凭祥市', shorts=['凭祥']),
         ]),
     ]),
-    Place('46', '海南', CHILD_TYPE_CITY, [
-        Place('4601', '海口市', CHILD_TYPE_COUNTY, [
+    Place('46', '海南省', shorts=['海南'], children_type=TYPE_CITY, children=[
+        Place('4601', '海口市', shorts=['海口'], children_type=TYPE_COUNTY, children=[
             Place('460105', '秀英区'),
             Place('460106', '龙华区'),
             Place('460107', '琼山区'),
             Place('460108', '美兰区'),
         ]),
-        Place('4602', '三亚市', CHILD_TYPE_COUNTY, [
+        Place('4602', '三亚市', shorts=['三亚'], children_type=TYPE_COUNTY, children=[
             Place('460202', '海棠区'),
             Place('460203', '吉阳区'),
             Place('460204', '天涯区'),
             Place('460205', '崖州区'),
         ]),
-        Place('4603', '三沙市', CHILD_TYPE_COUNTY, [
+        Place('4603', '三沙市', shorts=['三沙'], children_type=TYPE_COUNTY, children=[
             Place('460321', '西沙群岛'),
             Place('460322', '南沙群岛'),
-            Place('460323', '中沙群岛的岛礁及其海域'),
+            Place('460323', '中沙群岛的岛礁及其海域', shorts=['中沙群岛']),
         ]),
-        Place('4604', '儋州市'),
-        Place('469001', '五指山市'),
-        Place('469002', '琼海市'),
-        Place('469005', '文昌市'),
+        Place('4604', '儋州市', shorts=['儋州']),
+        Place('469001', '五指山市', shorts=['五指山']),
+        Place('469002', '琼海市', shorts=['琼海']),
+        Place('469005', '文昌市', shorts=['文昌']),
         Place('469006', '万宁市'),
         Place('469007', '东方市'),
         Place('469021', '定安县'),
         Place('469022', '屯昌县'),
         Place('469023', '澄迈县'),
         Place('469024', '临高县'),
-        Place('469025', '白沙自治县'),
-        Place('469026', '昌江自治县'),
-        Place('469027', '乐东自治县'),
-        Place('469028', '陵水自治县'),
-        Place('469029', '保亭自治县'),
-        Place('469030', '琼中自治县'),
+        Place('469025', '白沙自治县', shorts=['白沙县']),
+        Place('469026', '昌江自治县', shorts=['昌江县']),
+        Place('469027', '乐东自治县', shorts=['乐东县']),
+        Place('469028', '陵水自治县', shorts=['陵水县']),
+        Place('469029', '保亭自治县', shorts=['保亭县']),
+        Place('469030', '琼中自治县', shorts=['琼中县']),
     ]),
-    Place('50', '重庆', CHILD_TYPE_DIRECT, [
-        Place('5001', '重庆市', CHILD_TYPE_COUNTY, [
+    Place('50', '重庆市', shorts=['重庆'], children_type=TYPE_DIRECT, children=[
+        Place('5001', '重庆市', children_type=TYPE_COUNTY, children=[
             Place('500101', '万州区'),
             Place('500102', '涪陵区'),
             Place('500103', '渝中区'),
-            Place('500104', '大渡口区'),
+            Place('500104', '大渡口区', shorts=['大渡口']),
             Place('500105', '江北区'),
-            Place('500106', '沙坪坝区'),
-            Place('500107', '九龙坡区'),
+            Place('500106', '沙坪坝区', shorts=['沙坪坝']),
+            Place('500107', '九龙坡区', shorts=['九龙坡']),
             Place('500108', '南岸区'),
             Place('500109', '北碚区'),
             Place('500110', '綦江区'),
@@ -2878,10 +2885,10 @@ PLACES = [
             Place('500236', '奉节县'),
             Place('500237', '巫山县'),
             Place('500238', '巫溪县'),
-            Place('500240', '石柱土家族自治县'),
-            Place('500241', '秀山土家族苗族自治县'),
-            Place('500242', '酉阳土家族苗族自治县'),
-            Place('500243', '彭水苗族土家族自治县'),
+            Place('500240', '石柱土家族自治县', shorts=['石柱自治县', '石柱县']),
+            Place('500241', '秀山土家族苗族自治县', shorts=['秀山自治县', '秀山县']),
+            Place('500242', '酉阳土家族苗族自治县', shorts=['酉阳自治县', '酉阳县']),
+            Place('500243', '彭水苗族土家族自治县', shorts=['彭水自治县', '彭水县']),
             Place('500110', '万盛区'),
         ]),
         Place('500222', '綦江县'),
@@ -2894,15 +2901,15 @@ PLACES = [
         Place('500232', '武隆县'),
         Place('500234', '开县'),
     ]),
-    Place('51', '四川', CHILD_TYPE_CITY, [
-        Place('5101', '成都', CHILD_TYPE_COUNTY, [
+    Place('51', '四川省', shorts=['四川'], children_type=TYPE_CITY, children=[
+        Place('5101', '成都市', shorts=['成都'], children_type=TYPE_COUNTY, children=[
             Place('510104', '锦江区'),
             Place('510105', '青羊区'),
             Place('510106', '金牛区'),
             Place('510107', '武侯区'),
             Place('510108', '成华区'),
-            Place('510112', '龙泉驿区'),
-            Place('510113', '青白江区'),
+            Place('510112', '龙泉驿区', shorts=['龙泉驿']),
+            Place('510113', '青白江区', shorts=['青白江']),
             Place('510114', '新都区'),
             Place('510115', '温江区'),
             Place('510116', '双流区'),
@@ -2911,16 +2918,16 @@ PLACES = [
             Place('510129', '大邑县'),
             Place('510131', '蒲江县'),
             Place('510132', '新津县'),
-            Place('510181', '都江堰市'),
-            Place('510182', '彭州市'),
-            Place('510183', '邛崃市'),
-            Place('510184', '崇州市'),
-            Place('510185', '简阳市'),
-            Place('510122', '双流县'),
+            Place('510181', '都江堰市', shorts=['都江堰']),
+            Place('510182', '彭州市', shorts=['彭州']),
+            Place('510183', '邛崃市', shorts=['邛崃']),
+            Place('510184', '崇州市', shorts=['崇州']),
+            Place('510185', '简阳市', shorts=['简阳']),
+            Place('510122', '双流县', enabled=False),
             Place('510124', '郫县'),
             Place('510118', '新津区'),
         ]),
-        Place('5103', '自贡市', CHILD_TYPE_COUNTY, [
+        Place('5103', '自贡市', shorts=['自贡'], children_type=TYPE_COUNTY, children=[
             Place('510302', '自流井区'),
             Place('510303', '贡井区'),
             Place('510304', '大安区'),
@@ -2928,44 +2935,44 @@ PLACES = [
             Place('510321', '荣县'),
             Place('510322', '富顺县'),
         ]),
-        Place('5104', '攀枝花市', CHILD_TYPE_COUNTY, [
+        Place('5104', '攀枝花市', shorts=['攀枝花'], children_type=TYPE_COUNTY, children=[
             Place('510402', '东区'),
             Place('510403', '西区'),
             Place('510411', '仁和区'),
             Place('510421', '米易县'),
             Place('510422', '盐边县'),
         ]),
-        Place('5105', '泸州市', CHILD_TYPE_COUNTY, [
+        Place('5105', '泸州市', shorts=['泸州'], children_type=TYPE_COUNTY, children=[
             Place('510502', '江阳区'),
             Place('510503', '纳溪区'),
-            Place('510504', '龙马潭区'),
+            Place('510504', '龙马潭区', shorts=['龙马潭']),
             Place('510521', '泸县'),
             Place('510522', '合江县'),
             Place('510524', '叙永县'),
             Place('510525', '古蔺县'),
         ]),
-        Place('5106', '德阳市', CHILD_TYPE_COUNTY, [
+        Place('5106', '德阳市', shorts=['德阳'], children_type=TYPE_COUNTY, children=[
             Place('510603', '旌阳区'),
             Place('510604', '罗江区'),
             Place('510623', '中江县'),
-            Place('510681', '广汉市'),
-            Place('510682', '什邡市'),
-            Place('510683', '绵竹市'),
-            Place('510626', '罗江县'),
+            Place('510681', '广汉市', shorts=['广汉']),
+            Place('510682', '什邡市', shorts=['什邡']),
+            Place('510683', '绵竹市', shorts=['绵竹']),
+            Place('510626', '罗江县', shorts=['罗江']),
         ]),
-        Place('5107', '绵阳市', CHILD_TYPE_COUNTY, [
+        Place('5107', '绵阳市', shorts=['绵阳'], children_type=TYPE_COUNTY, children=[
             Place('510703', '涪城区'),
             Place('510704', '游仙区'),
             Place('510705', '安州区'),
             Place('510722', '三台县'),
             Place('510723', '盐亭县'),
             Place('510725', '梓潼县'),
-            Place('510726', '北川自治县'),
+            Place('510726', '北川自治县', shorts=['北川县']),
             Place('510727', '平武县'),
-            Place('510781', '江油市'),
+            Place('510781', '江油市', shorts=['江油']),
             Place('510724', '安县'),
         ]),
-        Place('5108', '广元市', CHILD_TYPE_COUNTY, [
+        Place('5108', '广元市', shorts=['广元'], children_type=TYPE_COUNTY, children=[
             Place('510802', '利州区'),
             Place('510811', '昭化区'),
             Place('510812', '朝天区'),
@@ -2975,37 +2982,37 @@ PLACES = [
             Place('510824', '苍溪县'),
             Place('510811', '元坝区'),
         ]),
-        Place('5109', '遂宁市', CHILD_TYPE_COUNTY, [
+        Place('5109', '遂宁市', shorts=['遂宁'], children_type=TYPE_COUNTY, children=[
             Place('510903', '船山区'),
             Place('510904', '安居区'),
             Place('510921', '蓬溪县'),
-            Place('510922', '射洪县'),
+            Place('510922', '射洪县', enabled=False),
             Place('510923', '大英县'),
-            Place('510981', '射洪市'),
+            Place('510981', '射洪市', shorts=['射洪']),
         ]),
-        Place('5110', '内江市', CHILD_TYPE_COUNTY, [
+        Place('5110', '内江市', shorts=['内江'], children_type=TYPE_COUNTY, children=[
             Place('511002', '市中区'),
             Place('511011', '东兴区'),
             Place('511024', '威远县'),
             Place('511025', '资中县'),
             Place('511071', '内江经济开发区'),
-            Place('511083', '隆昌市'),
-            Place('511028', '隆昌县'),
+            Place('511083', '隆昌市', shorts=['隆昌']),
+            Place('511028', '隆昌县', enabled=False),
         ]),
-        Place('5111', '乐山市', CHILD_TYPE_COUNTY, [
+        Place('5111', '乐山市', shorts=['乐山'], children_type=TYPE_COUNTY, children=[
             Place('511102', '市中区'),
             Place('511111', '沙湾区'),
-            Place('511112', '五通桥区'),
-            Place('511113', '金口河区'),
+            Place('511112', '五通桥区', shorts=['五通桥']),
+            Place('511113', '金口河区', shorts=['金口河']),
             Place('511123', '犍为县'),
             Place('511124', '井研县'),
             Place('511126', '夹江县'),
             Place('511129', '沐川县'),
-            Place('511132', '峨边彝族自治县'),
-            Place('511133', '马边彝族自治县'),
-            Place('511181', '峨眉山市'),
+            Place('511132', '峨边彝族自治县', shorts=['峨边自治县', '峨边县']),
+            Place('511133', '马边彝族自治县', shorts=['马边自治县', '马边县']),
+            Place('511181', '峨眉山市', shorts=['峨眉山']),
         ]),
-        Place('5113', '南充市', CHILD_TYPE_COUNTY, [
+        Place('5113', '南充市', shorts=['南充'], children_type=TYPE_COUNTY, children=[
             Place('511302', '顺庆区'),
             Place('511303', '高坪区'),
             Place('511304', '嘉陵区'),
@@ -3014,9 +3021,9 @@ PLACES = [
             Place('511323', '蓬安县'),
             Place('511324', '仪陇县'),
             Place('511325', '西充县'),
-            Place('511381', '阆中市'),
+            Place('511381', '阆中市', shorts=['阆中']),
         ]),
-        Place('5114', '眉山市', CHILD_TYPE_COUNTY, [
+        Place('5114', '眉山市', shorts=['眉山'], children_type=TYPE_COUNTY, children=[
             Place('511402', '东坡区'),
             Place('511403', '彭山区'),
             Place('511421', '仁寿县'),
@@ -3025,7 +3032,7 @@ PLACES = [
             Place('511425', '青神县'),
             Place('511422', '彭山县'),
         ]),
-        Place('5115', '宜宾市', CHILD_TYPE_COUNTY, [
+        Place('5115', '宜宾市', shorts=['宜宾'], children_type=TYPE_COUNTY, children=[
             Place('511502', '翠屏区'),
             Place('511503', '南溪区'),
             Place('511521', '宜宾县'),
@@ -3039,15 +3046,15 @@ PLACES = [
             Place('511522', '南溪县'),
             Place('511504', '叙州区'),
         ]),
-        Place('5116', '广安市', CHILD_TYPE_COUNTY, [
+        Place('5116', '广安市', shorts=['广安'], children_type=TYPE_COUNTY, children=[
             Place('511602', '广安区'),
             Place('511603', '前锋区'),
             Place('511621', '岳池县'),
             Place('511622', '武胜县'),
             Place('511623', '邻水县'),
-            Place('511681', '华蓥市'),
+            Place('511681', '华蓥市', shorts=['华蓥']),
         ]),
-        Place('5117', '达州市', CHILD_TYPE_COUNTY, [
+        Place('5117', '达州市', shorts=['达州'], children_type=TYPE_COUNTY, children=[
             Place('511702', '通川区'),
             Place('511703', '达川区'),
             Place('511722', '宣汉县'),
@@ -3055,10 +3062,10 @@ PLACES = [
             Place('511724', '大竹县'),
             Place('511725', '渠县'),
             Place('511771', '达州经济开发区'),
-            Place('511781', '万源市'),
+            Place('511781', '万源市', shorts=['万源']),
             Place('511721', '达县'),
         ]),
-        Place('5118', '雅安市', CHILD_TYPE_COUNTY, [
+        Place('5118', '雅安市', shorts=['雅安'], children_type=TYPE_COUNTY, children=[
             Place('511802', '雨城区'),
             Place('511803', '名山区'),
             Place('511822', '荥经县'),
@@ -3069,7 +3076,7 @@ PLACES = [
             Place('511827', '宝兴县'),
             Place('511821', '名山县'),
         ]),
-        Place('5119', '巴中市', CHILD_TYPE_COUNTY, [
+        Place('5119', '巴中市', shorts=['巴中'], children_type=TYPE_COUNTY, children=[
             Place('511902', '巴州区'),
             Place('511903', '恩阳区'),
             Place('511921', '通江县'),
@@ -3077,29 +3084,29 @@ PLACES = [
             Place('511923', '平昌县'),
             Place('511971', '巴中经济开发区'),
         ]),
-        Place('5120', '资阳市', CHILD_TYPE_COUNTY, [
+        Place('5120', '资阳市', shorts=['资阳'], children_type=TYPE_COUNTY, children=[
             Place('512002', '雁江区'),
             Place('512021', '安岳县'),
             Place('512022', '乐至县'),
         ]),
-        Place('5132', '阿坝自治州', CHILD_TYPE_COUNTY, [
-            Place('513201', '马尔康市'),
-            Place('513221', '汶川县'),
+        Place('5132', '阿坝藏族羌族自治州', shorts=['阿坝'], children_type=TYPE_COUNTY, children=[
+            Place('513201', '马尔康市', shorts=['马尔康']),
+            Place('513221', '汶川县', shorts=['汶川']),
             Place('513222', '理县'),
             Place('513223', '茂县'),
             Place('513224', '松潘县'),
-            Place('513225', '九寨沟县'),
+            Place('513225', '九寨沟县', shorts=['九寨沟']),
             Place('513226', '金川县'),
             Place('513227', '小金县'),
             Place('513228', '黑水县'),
             Place('513230', '壤塘县'),
             Place('513231', '阿坝县'),
-            Place('513232', '若尔盖县'),
+            Place('513232', '若尔盖县', shorts=['若尔盖']),
             Place('513233', '红原县'),
-            Place('513229', '马尔康县'),
+            Place('513229', '马尔康县', shorts=['马尔康']),
         ]),
-        Place('5133', '甘孜自治州', CHILD_TYPE_COUNTY, [
-            Place('513301', '康定市'),
+        Place('5133', '甘孜藏族自治州', shorts=['甘孜'], children_type=TYPE_COUNTY, children=[
+            Place('513301', '康定市', shorts=['康定']),
             Place('513322', '泸定县'),
             Place('513323', '丹巴县'),
             Place('513324', '九龙县'),
@@ -3117,11 +3124,11 @@ PLACES = [
             Place('513336', '乡城县'),
             Place('513337', '稻城县'),
             Place('513338', '得荣县'),
-            Place('513321', '康定县'),
+            Place('513321', '康定县', enabled=False),
         ]),
-        Place('5134', '凉山自治州', CHILD_TYPE_COUNTY, [
-            Place('513401', '西昌市'),
-            Place('513422', '木里自治县'),
+        Place('5134', '凉山彝族自治州', shorts=['凉山'], children_type=TYPE_COUNTY, children=[
+            Place('513401', '西昌市', shorts=['西昌']),
+            Place('513422', '木里自治县', shorts=['木里县']),
             Place('513423', '盐源县'),
             Place('513424', '德昌县'),
             Place('513425', '会理县'),
@@ -3139,8 +3146,8 @@ PLACES = [
             Place('513437', '雷波县'),
         ]),
     ]),
-    Place('52', '贵州', CHILD_TYPE_CITY, [
-        Place('5201', '贵阳市', CHILD_TYPE_COUNTY, [
+    Place('52', '贵州省', shorts=['贵州'], children_type=TYPE_CITY, children=[
+        Place('5201', '贵阳市', shorts=['贵阳'], children_type=TYPE_COUNTY, children=[
             Place('520102', '南明区'),
             Place('520103', '云岩区'),
             Place('520111', '花溪区'),
@@ -3150,66 +3157,66 @@ PLACES = [
             Place('520121', '开阳县'),
             Place('520122', '息烽县'),
             Place('520123', '修文县'),
-            Place('520181', '清镇市'),
+            Place('520181', '清镇市', shorts=['清镇']),
             Place('520114', '小河区'),
         ]),
-        Place('5202', '六盘水市', CHILD_TYPE_COUNTY, [
+        Place('5202', '六盘水市', shorts=['六盘水'], children_type=TYPE_COUNTY, children=[
             Place('520201', '钟山区'),
-            Place('520203', '六枝特区'),
+            Place('520203', '六枝特区', shorts=['六枝区']),
             Place('520221', '水城县'),
-            Place('520281', '盘州市'),
+            Place('520281', '盘州市', shorts=['盘州']),
             Place('520222', '盘县'),
         ]),
-        Place('5203', '遵义市', CHILD_TYPE_COUNTY, [
-            Place('520302', '红花岗区'),
+        Place('5203', '遵义市', shorts=['遵义'], children_type=TYPE_COUNTY, children=[
+            Place('520302', '红花岗区', shorts=['红花岗']),
             Place('520303', '汇川区'),
             Place('520304', '播州区'),
             Place('520322', '桐梓县'),
             Place('520323', '绥阳县'),
             Place('520324', '正安县'),
-            Place('520325', '道真自治县'),
-            Place('520326', '务川自治县'),
+            Place('520325', '道真自治县', shorts=['道真县']),
+            Place('520326', '务川自治县', shorts=['务川县']),
             Place('520327', '凤冈县'),
             Place('520328', '湄潭县'),
             Place('520329', '余庆县'),
             Place('520330', '习水县'),
-            Place('520381', '赤水市'),
-            Place('520382', '仁怀市'),
-            Place('520321', '遵义县'),
+            Place('520381', '赤水市', shorts=['赤水']),
+            Place('520382', '仁怀市', shorts=['仁怀']),
+            Place('520321', '遵义县', enabled=False),
         ]),
-        Place('5204', '安顺市', CHILD_TYPE_COUNTY, [
+        Place('5204', '安顺市', shorts=['安顺'], children_type=TYPE_COUNTY, children=[
             Place('520402', '西秀区'),
             Place('520403', '平坝区'),
             Place('520422', '普定县'),
-            Place('520423', '镇宁自治县'),
-            Place('520424', '关岭自治县'),
-            Place('520425', '紫云自治县'),
+            Place('520423', '镇宁自治县', shorts=['镇宁县']),
+            Place('520424', '关岭自治县', shorts=['关岭县']),
+            Place('520425', '紫云自治县', shorts=['紫云县']),
             Place('520421', '平坝县'),
         ]),
-        Place('5205', '毕节市', CHILD_TYPE_COUNTY, [
-            Place('520502', '七星关区'),
+        Place('5205', '毕节市', shorts=['毕节'], children_type=TYPE_COUNTY, children=[
+            Place('520502', '七星关区', shorts=['七星关']),
             Place('520521', '大方县'),
             Place('520522', '黔西县'),
             Place('520523', '金沙县'),
             Place('520524', '织金县'),
             Place('520525', '纳雍县'),
-            Place('520526', '威宁自治县'),
+            Place('520526', '威宁自治县', shorts=['威宁县']),
             Place('520527', '赫章县'),
         ]),
-        Place('5206', '铜仁市', CHILD_TYPE_COUNTY, [
+        Place('5206', '铜仁市', shorts=['铜仁'], children_type=TYPE_COUNTY, children=[
             Place('520602', '碧江区'),
             Place('520603', '万山区'),
             Place('520621', '江口县'),
-            Place('520622', '玉屏自治县'),
+            Place('520622', '玉屏自治县', shorts=['玉屏县']),
             Place('520623', '石阡县'),
             Place('520624', '思南县'),
-            Place('520625', '印江自治县'),
+            Place('520625', '印江自治县', shorts=['印江县']),
             Place('520626', '德江县'),
-            Place('520627', '沿河自治县'),
-            Place('520628', '松桃自治县'),
+            Place('520627', '沿河自治县', shorts=['沿河县']),
+            Place('520628', '松桃自治县', shorts=['松桃县']),
         ]),
-        Place('5223', '黔西南自治州', CHILD_TYPE_COUNTY, [
-            Place('522301', '兴义市'),
+        Place('5223', '黔西南布依族苗族自治州', shorts=['黔西南'], children_type=TYPE_COUNTY, children=[
+            Place('522301', '兴义市', shorts=['兴义']),
             Place('522322', '兴仁县'),
             Place('522323', '普安县'),
             Place('522324', '晴隆县'),
@@ -3217,10 +3224,10 @@ PLACES = [
             Place('522326', '望谟县'),
             Place('522327', '册亨县'),
             Place('522328', '安龙县'),
-            Place('522302', '兴仁市'),
+            Place('522302', '兴仁市', shorts=['兴仁']),
         ]),
-        Place('5226', '黔东南自治州', CHILD_TYPE_COUNTY, [
-            Place('522601', '凯里市'),
+        Place('5226', '黔东南苗族侗族自治州', shorts=['黔东南'], children_type=TYPE_COUNTY, children=[
+            Place('522601', '凯里市', shorts=['凯里']),
             Place('522622', '黄平县'),
             Place('522623', '施秉县'),
             Place('522624', '三穗县'),
@@ -3237,9 +3244,9 @@ PLACES = [
             Place('522635', '麻江县'),
             Place('522636', '丹寨县'),
         ]),
-        Place('5227', '黔南自治州', CHILD_TYPE_COUNTY, [
-            Place('522701', '都匀市'),
-            Place('522702', '福泉市'),
+        Place('5227', '黔南布依族苗族自治州', shorts=['黔南'], children_type=TYPE_COUNTY, children=[
+            Place('522701', '都匀市', shorts=['都匀']),
+            Place('522702', '福泉市', shorts=['福泉']),
             Place('522722', '荔波县'),
             Place('522723', '贵定县'),
             Place('522725', '瓮安县'),
@@ -3249,15 +3256,11 @@ PLACES = [
             Place('522729', '长顺县'),
             Place('522730', '龙里县'),
             Place('522731', '惠水县'),
-            Place('522732', '三都自治县'),
+            Place('522732', '三都自治县', shorts=['三都县']),
         ]),
-        Place('5222', '铜仁地区', CHILD_TYPE_COUNTY, [
-            Place('522230', '万山特区'),
-        ]),
-        Place('5224', '毕节地区'),
     ]),
-    Place('53', '云南', CHILD_TYPE_CITY, [
-        Place('5301', '昆明市', CHILD_TYPE_COUNTY, [
+    Place('53', '云南省', shorts=['云南'], children_type=TYPE_CITY, children=[
+        Place('5301', '昆明市', shorts=['昆明'], children_type=TYPE_COUNTY, children=[
             Place('530102', '五华区'),
             Place('530103', '盘龙区'),
             Place('530111', '官渡区'),
@@ -3267,15 +3270,15 @@ PLACES = [
             Place('530115', '晋宁区'),
             Place('530124', '富民县'),
             Place('530125', '宜良县'),
-            Place('530126', '石林自治县'),
+            Place('530126', '石林自治县', shorts=['石林县']),
             Place('530127', '嵩明县'),
-            Place('530128', '禄劝自治县'),
-            Place('530129', '寻甸自治县'),
-            Place('530181', '安宁市'),
+            Place('530128', '禄劝自治县', shorts=['禄劝县']),
+            Place('530129', '寻甸自治县', shorts=['寻甸县']),
+            Place('530181', '安宁市', shorts=['安宁']),
             Place('530121', '呈贡县'),
             Place('530122', '晋宁县'),
         ]),
-        Place('5303', '曲靖市', CHILD_TYPE_COUNTY, [
+        Place('5303', '曲靖市', shorts=['曲靖'], children_type=TYPE_COUNTY, children=[
             Place('530302', '麒麟区'),
             Place('530303', '沾益区'),
             Place('530321', '马龙县'),
@@ -3284,32 +3287,32 @@ PLACES = [
             Place('530324', '罗平县'),
             Place('530325', '富源县'),
             Place('530326', '会泽县'),
-            Place('530381', '宣威市'),
+            Place('530381', '宣威市', shorts=['宣威']),
             Place('530328', '沾益县'),
             Place('530304', '马龙区'),
         ]),
-        Place('5304', '玉溪市', CHILD_TYPE_COUNTY, [
+        Place('5304', '玉溪市', shorts=['玉溪'], children_type=TYPE_COUNTY, children=[
             Place('530402', '红塔区'),
             Place('530403', '江川区'),
             Place('530422', '澄江县'),
             Place('530423', '通海县'),
             Place('530424', '华宁县'),
             Place('530425', '易门县'),
-            Place('530426', '峨山自治县'),
-            Place('530427', '新平自治县'),
-            Place('530428', '元江自治县'),
+            Place('530426', '峨山自治县', shorts=['峨山县']),
+            Place('530427', '新平自治县', shorts=['新平县']),
+            Place('530428', '元江自治县', shorts=['元江县']),
             Place('530421', '江川县'),
-            Place('530481', '澄江市'),
+            Place('530481', '澄江市', shorts=['澄江']),
         ]),
-        Place('5305', '保山市', CHILD_TYPE_COUNTY, [
+        Place('5305', '保山市', shorts=['保山'], children_type=TYPE_COUNTY, children=[
             Place('530502', '隆阳区'),
             Place('530521', '施甸县'),
             Place('530523', '龙陵县'),
             Place('530524', '昌宁县'),
-            Place('530581', '腾冲市'),
-            Place('530522', '腾冲县'),
+            Place('530581', '腾冲市', shorts=['腾冲']),
+            Place('530522', '腾冲县', enabled=False),
         ]),
-        Place('5306', '昭通市', CHILD_TYPE_COUNTY, [
+        Place('5306', '昭通市', shorts=['昭通'], children_type=TYPE_COUNTY, children=[
             Place('530602', '昭阳区'),
             Place('530621', '鲁甸县'),
             Place('530622', '巧家县'),
@@ -3320,39 +3323,39 @@ PLACES = [
             Place('530627', '镇雄县'),
             Place('530628', '彝良县'),
             Place('530629', '威信县'),
-            Place('530630', '水富县'),
-            Place('530681', '水富市'),
+            Place('530630', '水富县', enabled=False),
+            Place('530681', '水富市', shorts=['水富']),
         ]),
-        Place('5307', '丽江市', CHILD_TYPE_COUNTY, [
+        Place('5307', '丽江市', shorts=['丽江'], children_type=TYPE_COUNTY, children=[
             Place('530702', '古城区'),
-            Place('530721', '玉龙自治县'),
+            Place('530721', '玉龙自治县', shorts=['玉龙县']),
             Place('530722', '永胜县'),
             Place('530723', '华坪县'),
-            Place('530724', '宁蒗自治县'),
+            Place('530724', '宁蒗自治县', shorts=['宁蒗县']),
         ]),
-        Place('5308', '普洱市', CHILD_TYPE_COUNTY, [
+        Place('5308', '普洱市', children_type=TYPE_COUNTY, children=[
             Place('530802', '思茅区'),
-            Place('530821', '宁洱自治县'),
-            Place('530822', '墨江自治县'),
-            Place('530823', '景东自治县'),
-            Place('530824', '景谷自治县'),
-            Place('530825', '镇沅自治县'),
-            Place('530826', '江城自治县'),
-            Place('530827', '孟连自治县'),
-            Place('530828', '澜沧自治县'),
-            Place('530829', '西盟自治县'),
+            Place('530821', '宁洱自治县', shorts=['宁洱县']),
+            Place('530822', '墨江自治县', shorts=['墨江县']),
+            Place('530823', '景东自治县', shorts=['景东县']),
+            Place('530824', '景谷自治县', shorts=['景谷县']),
+            Place('530825', '镇沅自治县', shorts=['镇沅县']),
+            Place('530826', '江城自治县', shorts=['江城县']),
+            Place('530827', '孟连自治县', shorts=['孟连县']),
+            Place('530828', '澜沧自治县', shorts=['澜沧县']),
+            Place('530829', '西盟自治县', shorts=['西盟县']),
         ]),
-        Place('5309', '临沧市', CHILD_TYPE_COUNTY, [
+        Place('5309', '临沧市', shorts=['临沧'], children_type=TYPE_COUNTY, children=[
             Place('530902', '临翔区'),
             Place('530921', '凤庆县'),
             Place('530922', '云县'),
             Place('530923', '永德县'),
             Place('530924', '镇康县'),
-            Place('530925', '双江自治县'),
-            Place('530926', '耿马自治县'),
-            Place('530927', '沧源自治县'),
+            Place('530925', '双江自治县', shorts=['双江县']),
+            Place('530926', '耿马自治县', shorts=['耿马县']),
+            Place('530927', '沧源自治县', shorts=['沧源县']),
         ]),
-        Place('5323', '楚雄自治州', CHILD_TYPE_COUNTY, [
+        Place('5323', '楚雄彝族自治州', shorts=['楚雄'], children_type=TYPE_COUNTY, children=[
             Place('532301', '楚雄市'),
             Place('532322', '双柏县'),
             Place('532323', '牟定县'),
@@ -3364,23 +3367,23 @@ PLACES = [
             Place('532329', '武定县'),
             Place('532331', '禄丰县'),
         ]),
-        Place('5325', '红河自治州', CHILD_TYPE_COUNTY, [
-            Place('532501', '个旧市'),
-            Place('532502', '开远市'),
+        Place('5325', '红河哈尼族彝族自治州', shorts=['红河'], children_type=TYPE_COUNTY, children=[
+            Place('532501', '个旧市', shorts=['个旧']),
+            Place('532502', '开远市', shorts=['开远']),
             Place('532503', '蒙自市'),
-            Place('532504', '弥勒市'),
-            Place('532523', '屏边自治县'),
+            Place('532504', '弥勒市', shorts=['弥勒']),
+            Place('532523', '屏边自治县', shorts=['屏边县']),
             Place('532524', '建水县'),
             Place('532525', '石屏县'),
             Place('532527', '泸西县'),
             Place('532528', '元阳县'),
             Place('532529', '红河县'),
-            Place('532530', '金平自治县'),
+            Place('532530', '金平自治县', shorts=['金平县']),
             Place('532531', '绿春县'),
-            Place('532532', '河口自治县'),
-            Place('532526', '弥勒县'),
+            Place('532532', '河口自治县', shorts=['河口县']),
+            Place('532526', '弥勒县', enabled=False),
         ]),
-        Place('5326', '文山自治州', CHILD_TYPE_COUNTY, [
+        Place('5326', '文山壮族苗族自治州', shorts=['文山'], children_type=TYPE_COUNTY, children=[
             Place('532601', '文山市'),
             Place('532622', '砚山县'),
             Place('532623', '西畴县'),
@@ -3390,72 +3393,72 @@ PLACES = [
             Place('532627', '广南县'),
             Place('532628', '富宁县'),
         ]),
-        Place('5328', '西双版纳自治州', CHILD_TYPE_COUNTY, [
-            Place('532801', '景洪市'),
+        Place('5328', '西双版纳傣族自治州', shorts=['西双版纳'], children_type=TYPE_COUNTY, children=[
+            Place('532801', '景洪市', shorts=['景洪']),
             Place('532822', '勐海县'),
             Place('532823', '勐腊县'),
         ]),
-        Place('5329', '大理自治州', CHILD_TYPE_COUNTY, [
+        Place('5329', '大理白族自治州', shorts=['大理自治州', '大理州'], children_type=TYPE_COUNTY, children=[
             Place('532901', '大理市'),
-            Place('532922', '漾濞自治县'),
+            Place('532922', '漾濞自治县', shorts=['漾濞县']),
             Place('532923', '祥云县'),
             Place('532924', '宾川县'),
             Place('532925', '弥渡县'),
-            Place('532926', '南涧自治县'),
-            Place('532927', '巍山自治县'),
+            Place('532926', '南涧自治县', shorts=['南涧县']),
+            Place('532927', '巍山自治县', shorts=['巍山县']),
             Place('532928', '永平县'),
             Place('532929', '云龙县'),
             Place('532930', '洱源县'),
             Place('532931', '剑川县'),
             Place('532932', '鹤庆县'),
         ]),
-        Place('5331', '德宏自治州', CHILD_TYPE_COUNTY, [
-            Place('533102', '瑞丽市'),
+        Place('5331', '德宏傣族景颇族自治州', shorts=['德宏'], children_type=TYPE_COUNTY, children=[
+            Place('533102', '瑞丽市', shorts=['瑞丽']),
             Place('533103', '芒市'),
             Place('533122', '梁河县'),
             Place('533123', '盈江县'),
             Place('533124', '陇川县'),
         ]),
-        Place('5333', '怒江自治州', CHILD_TYPE_COUNTY, [
-            Place('533301', '泸水市'),
+        Place('5333', '怒江傈僳族自治州', shorts=['怒江'], children_type=TYPE_COUNTY, children=[
+            Place('533301', '泸水市', shorts=['泸水']),
             Place('533323', '福贡县'),
             Place('533324', '贡山自治县'),
             Place('533325', '兰坪自治县'),
-            Place('533321', '泸水县'),
+            Place('533321', '泸水县', enabled=False),
         ]),
-        Place('5334', '迪庆自治州', CHILD_TYPE_COUNTY, [
-            Place('533401', '香格里拉市'),
+        Place('5334', '迪庆藏族自治州', shorts=['迪庆'], children_type=TYPE_COUNTY, children=[
+            Place('533401', '香格里拉市', shorts=['香格里拉']),
             Place('533422', '德钦县'),
-            Place('533423', '维西自治县'),
-            Place('533421', '香格里拉县'),
+            Place('533423', '维西自治县', shorts=['维西县']),
+            Place('533421', '香格里拉县', enabled=False),
         ]),
     ]),
-    Place('54', '西藏', CHILD_TYPE_CITY, [
-        Place('5401', '拉萨市', CHILD_TYPE_COUNTY, [
+    Place('54', '西藏', children_type=TYPE_CITY, children=[
+        Place('5401', '拉萨市', shorts=['拉萨'], children_type=TYPE_COUNTY, children=[
             Place('540102', '城关区'),
-            Place('540103', '堆龙德庆区'),
+            Place('540103', '堆龙德庆区', shorts=['堆龙德庆']),
             Place('540121', '林周县'),
             Place('540122', '当雄县'),
             Place('540123', '尼木县'),
             Place('540124', '曲水县'),
             Place('540126', '达孜县'),
-            Place('540127', '墨竹工卡县'),
-            Place('540171', '格尔木藏青工业园区'),
+            Place('540127', '墨竹工卡县', shorts=['墨竹工卡']),
+            Place('540171', '格尔木藏青工业园区', shorts=['格尔木']),
             Place('540172', '拉萨经济技术开发区'),
             Place('540173', '西藏文化旅游创意园区'),
             Place('540174', '达孜工业园区'),
-            Place('540125', '堆龙德庆县'),
-            Place('540104', '达孜区'),
+            Place('540125', '堆龙德庆县', shorts=['堆龙德庆']),
+            Place('540104', '达孜区', shorts=['达孜']),
         ]),
-        Place('5402', '日喀则市', CHILD_TYPE_COUNTY, [
-            Place('540202', '桑珠孜区'),
+        Place('5402', '日喀则市', shorts=['日喀则'], children_type=TYPE_COUNTY, children=[
+            Place('540202', '桑珠孜区', shorts=['桑珠孜']),
             Place('540221', '南木林县'),
             Place('540222', '江孜县'),
             Place('540223', '定日县'),
             Place('540224', '萨迦县'),
             Place('540225', '拉孜县'),
             Place('540226', '昂仁县'),
-            Place('540227', '谢通门县'),
+            Place('540227', '谢通门县', shorts=['谢通门']),
             Place('540228', '白朗县'),
             Place('540229', '仁布县'),
             Place('540230', '康马县'),
@@ -3463,15 +3466,15 @@ PLACES = [
             Place('540232', '仲巴县'),
             Place('540233', '亚东县'),
             Place('540234', '吉隆县'),
-            Place('540235', '聂拉木县'),
+            Place('540235', '聂拉木县', shorts=['聂拉木']),
             Place('540236', '萨嘎县'),
             Place('540237', '岗巴县'),
         ]),
-        Place('5403', '昌都市', CHILD_TYPE_COUNTY, [
+        Place('5403', '昌都市', shorts=['昌都'], children_type=TYPE_COUNTY, children=[
             Place('540302', '卡若区'),
             Place('540321', '江达县'),
             Place('540322', '贡觉县'),
-            Place('540323', '类乌齐县'),
+            Place('540323', '类乌齐县', shorts=['类乌齐']),
             Place('540324', '丁青县'),
             Place('540325', '察雅县'),
             Place('540326', '八宿县'),
@@ -3480,16 +3483,16 @@ PLACES = [
             Place('540329', '洛隆县'),
             Place('540330', '边坝县'),
         ]),
-        Place('5404', '林芝市', CHILD_TYPE_COUNTY, [
+        Place('5404', '林芝市', shorts=['林芝'], children_type=TYPE_COUNTY, children=[
             Place('540402', '巴宜区'),
-            Place('540421', '工布江达县'),
+            Place('540421', '工布江达县', shorts=['工布江达']),
             Place('540422', '米林县'),
             Place('540423', '墨脱县'),
             Place('540424', '波密县'),
             Place('540425', '察隅县'),
             Place('540426', '朗县'),
         ]),
-        Place('5405', '山南市', CHILD_TYPE_COUNTY, [
+        Place('5405', '山南市', children_type=TYPE_COUNTY, children=[
             Place('540502', '乃东区'),
             Place('540521', '扎囊县'),
             Place('540522', '贡嘎县'),
@@ -3501,9 +3504,9 @@ PLACES = [
             Place('540528', '加查县'),
             Place('540529', '隆子县'),
             Place('540530', '错那县'),
-            Place('540531', '浪卡子县'),
+            Place('540531', '浪卡子县', shorts=['浪卡子']),
         ]),
-        Place('5424', '那曲地区', CHILD_TYPE_COUNTY, [
+        Place('5424', '那曲市', shorts=['那曲'], children_type=TYPE_COUNTY, children=[
             Place('542421', '那曲县'),
             Place('542422', '嘉黎县'),
             Place('542423', '比如县'),
@@ -3515,8 +3518,9 @@ PLACES = [
             Place('542429', '巴青县'),
             Place('542430', '尼玛县'),
             Place('542431', '双湖县'),
+            Place('540602', '色尼区'),
         ]),
-        Place('5425', '阿里地区', CHILD_TYPE_COUNTY, [
+        Place('5425', '阿里地区', children_type=TYPE_COUNTY, children=[
             Place('542521', '普兰县'),
             Place('542522', '札达县'),
             Place('542523', '噶尔县'),
@@ -3525,32 +3529,9 @@ PLACES = [
             Place('542526', '改则县'),
             Place('542527', '措勤县'),
         ]),
-        Place('5421', '昌都地区', CHILD_TYPE_COUNTY, [
-            Place('542121', '昌都县'),
-        ]),
-        Place('5422', '山南地区', CHILD_TYPE_COUNTY, [
-            Place('542221', '乃东县'),
-        ]),
-        Place('5423', '日喀则地区'),
-        Place('5426', '林芝地区', CHILD_TYPE_COUNTY, [
-            Place('542621', '林芝县'),
-        ]),
-        Place('5406', '那曲市', CHILD_TYPE_COUNTY, [
-            Place('540621', '嘉黎县'),
-            Place('540622', '比如县'),
-            Place('540623', '聂荣县'),
-            Place('540624', '安多县'),
-            Place('540625', '申扎县'),
-            Place('540626', '索县'),
-            Place('540627', '班戈县'),
-            Place('540628', '巴青县'),
-            Place('540629', '尼玛县'),
-            Place('540630', '双湖县'),
-            Place('540602', '色尼区'),
-        ]),
     ]),
-    Place('61', '陕西', CHILD_TYPE_CITY, [
-        Place('6101', '西安市', CHILD_TYPE_COUNTY, [
+    Place('61', '陕西省', shorts=['陕西'], children_type=TYPE_CITY, children=[
+        Place('6101', '西安市', shorts=['西安'], children_type=TYPE_COUNTY, children=[
             Place('610102', '新城区'),
             Place('610103', '碑林区'),
             Place('610104', '莲湖区'),
@@ -3568,13 +3549,13 @@ PLACES = [
             Place('610125', '户县'),
             Place('610126', '高陵县'),
         ]),
-        Place('6102', '铜川市', CHILD_TYPE_COUNTY, [
+        Place('6102', '铜川市', shorts=['铜川'], children_type=TYPE_COUNTY, children=[
             Place('610202', '王益区'),
             Place('610203', '印台区'),
             Place('610204', '耀州区'),
             Place('610222', '宜君县'),
         ]),
-        Place('6103', '宝鸡市', CHILD_TYPE_COUNTY, [
+        Place('6103', '宝鸡市', shorts=['宝鸡'], children_type=TYPE_COUNTY, children=[
             Place('610302', '渭滨区'),
             Place('610303', '金台区'),
             Place('610304', '陈仓区'),
@@ -3588,7 +3569,7 @@ PLACES = [
             Place('610330', '凤县'),
             Place('610331', '太白县'),
         ]),
-        Place('6104', '咸阳市', CHILD_TYPE_COUNTY, [
+        Place('6104', '咸阳市', shorts=['咸阳'], children_type=TYPE_COUNTY, children=[
             Place('610402', '秦都区'),
             Place('610403', '杨陵区'),
             Place('610404', '渭城区'),
@@ -3602,10 +3583,10 @@ PLACES = [
             Place('610429', '旬邑县'),
             Place('610430', '淳化县'),
             Place('610431', '武功县'),
-            Place('610481', '兴平市'),
-            Place('610482', '彬州市'),
+            Place('610481', '兴平市', shorts=['兴平']),
+            Place('610482', '彬州市', shorts=['彬州']),
         ]),
-        Place('6105', '渭南市', CHILD_TYPE_COUNTY, [
+        Place('6105', '渭南市', shorts=['渭南'], children_type=TYPE_COUNTY, children=[
             Place('610502', '临渭区'),
             Place('610503', '华州区'),
             Place('610522', '潼关县'),
@@ -3615,11 +3596,11 @@ PLACES = [
             Place('610526', '蒲城县'),
             Place('610527', '白水县'),
             Place('610528', '富平县'),
-            Place('610581', '韩城市'),
-            Place('610582', '华阴市'),
+            Place('610581', '韩城市', shorts=['韩城']),
+            Place('610582', '华阴市', shorts=['华阴']),
             Place('610521', '华县'),
         ]),
-        Place('6106', '延安市', CHILD_TYPE_COUNTY, [
+        Place('6106', '延安市', shorts=['延安'], children_type=TYPE_COUNTY, children=[
             Place('610602', '宝塔区'),
             Place('610603', '安塞区'),
             Place('610621', '延长县'),
@@ -3634,9 +3615,9 @@ PLACES = [
             Place('610631', '黄龙县'),
             Place('610632', '黄陵县'),
             Place('610624', '安塞县'),
-            Place('610681', '子长市'),
+            Place('610681', '子长市', shorts=['子长']),
         ]),
-        Place('6107', '汉中市', CHILD_TYPE_COUNTY, [
+        Place('6107', '汉中市', shorts=['汉中'], children_type=TYPE_COUNTY, children=[
             Place('610702', '汉台区'),
             Place('610703', '南郑区'),
             Place('610722', '城固县'),
@@ -3650,7 +3631,7 @@ PLACES = [
             Place('610730', '佛坪县'),
             Place('610721', '南郑县'),
         ]),
-        Place('6108', '榆林市', CHILD_TYPE_COUNTY, [
+        Place('6108', '榆林市', shorts=['榆林'], children_type=TYPE_COUNTY, children=[
             Place('610802', '榆阳区'),
             Place('610803', '横山区'),
             Place('610822', '府谷县'),
@@ -3662,11 +3643,11 @@ PLACES = [
             Place('610829', '吴堡县'),
             Place('610830', '清涧县'),
             Place('610831', '子洲县'),
-            Place('610881', '神木市'),
+            Place('610881', '神木市', shorts=['神木']),
             Place('610821', '神木县'),
             Place('610823', '横山县'),
         ]),
-        Place('6109', '安康市', CHILD_TYPE_COUNTY, [
+        Place('6109', '安康市', shorts=['安康'], children_type=TYPE_COUNTY, children=[
             Place('610902', '汉滨区'),
             Place('610921', '汉阴县'),
             Place('610922', '石泉县'),
@@ -3678,7 +3659,7 @@ PLACES = [
             Place('610928', '旬阳县'),
             Place('610929', '白河县'),
         ]),
-        Place('6110', '商洛市', CHILD_TYPE_COUNTY, [
+        Place('6110', '商洛市', shorts=['商洛'], children_type=TYPE_COUNTY, children=[
             Place('611002', '商州区'),
             Place('611021', '洛南县'),
             Place('611022', '丹凤县'),
@@ -3688,8 +3669,8 @@ PLACES = [
             Place('611026', '柞水县'),
         ]),
     ]),
-    Place('62', '甘肃', CHILD_TYPE_CITY, [
-        Place('6201', '兰州市', CHILD_TYPE_COUNTY, [
+    Place('62', '甘肃省', shorts=['甘肃'], children_type=TYPE_CITY, children=[
+        Place('6201', '兰州市', shorts=['兰州'], children_type=TYPE_COUNTY, children=[
             Place('620102', '城关区'),
             Place('620103', '七里河区'),
             Place('620104', '西固区'),
@@ -3700,42 +3681,42 @@ PLACES = [
             Place('620123', '榆中县'),
             Place('620171', '兰州新区'),
         ]),
-        Place('6202', '嘉峪关市'),
-        Place('6203', '金昌市', CHILD_TYPE_COUNTY, [
+        Place('6202', '嘉峪关市', shorts=['嘉峪关']),
+        Place('6203', '金昌市', shorts=['金昌'], children_type=TYPE_COUNTY, children=[
             Place('620302', '金川区'),
             Place('620321', '永昌县'),
         ]),
-        Place('6204', '白银市', CHILD_TYPE_COUNTY, [
+        Place('6204', '白银市', children_type=TYPE_COUNTY, children=[
             Place('620402', '白银区'),
             Place('620403', '平川区'),
             Place('620421', '靖远县'),
             Place('620422', '会宁县'),
             Place('620423', '景泰县'),
         ]),
-        Place('6205', '天水市', CHILD_TYPE_COUNTY, [
+        Place('6205', '天水市', children_type=TYPE_COUNTY, children=[
             Place('620502', '秦州区'),
             Place('620503', '麦积区'),
             Place('620521', '清水县'),
             Place('620522', '秦安县'),
             Place('620523', '甘谷县'),
             Place('620524', '武山县'),
-            Place('620525', '张家川自治县'),
+            Place('620525', '张家川自治县', shorts=['张家川县']),
         ]),
-        Place('6206', '武威市', CHILD_TYPE_COUNTY, [
+        Place('6206', '武威市', shorts=['武威'], children_type=TYPE_COUNTY, children=[
             Place('620602', '凉州区'),
             Place('620621', '民勤县'),
             Place('620622', '古浪县'),
-            Place('620623', '天祝自治县'),
+            Place('620623', '天祝自治县', shorts=['天祝县']),
         ]),
-        Place('6207', '张掖市', CHILD_TYPE_COUNTY, [
+        Place('6207', '张掖市', children_type=TYPE_COUNTY, children=[
             Place('620702', '甘州区'),
-            Place('620721', '肃南裕自治县'),
+            Place('620721', '肃南裕自治县', shorts=['肃南裕县']),
             Place('620722', '民乐县'),
             Place('620723', '临泽县'),
             Place('620724', '高台县'),
             Place('620725', '山丹县'),
         ]),
-        Place('6208', '平凉市', CHILD_TYPE_COUNTY, [
+        Place('6208', '平凉市', shorts=['平凉'], children_type=TYPE_COUNTY, children=[
             Place('620802', '崆峒区'),
             Place('620821', '泾川县'),
             Place('620822', '灵台县'),
@@ -3744,18 +3725,18 @@ PLACES = [
             Place('620825', '庄浪县'),
             Place('620826', '静宁县'),
             Place('620871', '平凉工业园区'),
-            Place('620881', '华亭市'),
+            Place('620881', '华亭市', shorts=['华亭']),
         ]),
-        Place('6209', '酒泉市', CHILD_TYPE_COUNTY, [
+        Place('6209', '酒泉市', shorts=['酒泉'], children_type=TYPE_COUNTY, children=[
             Place('620902', '肃州区'),
             Place('620921', '金塔县'),
             Place('620922', '瓜州县'),
-            Place('620923', '肃北自治县'),
-            Place('620924', '阿克塞自治县'),
-            Place('620981', '玉门市'),
-            Place('620982', '敦煌市'),
+            Place('620923', '肃北自治县', shorts=['肃北县']),
+            Place('620924', '阿克塞自治县', shorts=['阿克塞']),
+            Place('620981', '玉门市', shorts=['玉门']),
+            Place('620982', '敦煌市', shorts=['敦煌']),
         ]),
-        Place('6210', '庆阳市', CHILD_TYPE_COUNTY, [
+        Place('6210', '庆阳市', shorts=['庆阳'], children_type=TYPE_COUNTY, children=[
             Place('621002', '西峰区'),
             Place('621021', '庆城县'),
             Place('621022', '环县'),
@@ -3765,7 +3746,7 @@ PLACES = [
             Place('621026', '宁县'),
             Place('621027', '镇原县'),
         ]),
-        Place('6211', '定西市', CHILD_TYPE_COUNTY, [
+        Place('6211', '定西市', shorts=['定西'], children_type=TYPE_COUNTY, children=[
             Place('621102', '安定区'),
             Place('621121', '通渭县'),
             Place('621122', '陇西县'),
@@ -3774,7 +3755,7 @@ PLACES = [
             Place('621125', '漳县'),
             Place('621126', '岷县'),
         ]),
-        Place('6212', '陇南市', CHILD_TYPE_COUNTY, [
+        Place('6212', '陇南市', shorts=['陇南'], children_type=TYPE_COUNTY, children=[
             Place('621202', '武都区'),
             Place('621221', '成县'),
             Place('621222', '文县'),
@@ -3785,17 +3766,17 @@ PLACES = [
             Place('621227', '徽县'),
             Place('621228', '两当县'),
         ]),
-        Place('6229', '临夏自治州', CHILD_TYPE_COUNTY, [
+        Place('6229', '临夏回族自治州', shorts=['临夏'], children_type=TYPE_COUNTY, children=[
             Place('622901', '临夏市'),
             Place('622921', '临夏县'),
             Place('622922', '康乐县'),
             Place('622923', '永靖县'),
             Place('622924', '广河县'),
             Place('622925', '和政县'),
-            Place('622926', '东乡族自治县'),
-            Place('622927', '积石山自治县'),
+            Place('622926', '东乡族自治县', shorts=['东乡自治县', '东乡县']),
+            Place('622927', '积石山自治县', shorts=['积石山县']),
         ]),
-        Place('6230', '甘南自治州', CHILD_TYPE_COUNTY, [
+        Place('6230', '甘南藏族自治州', shorts=['甘南'], children_type=TYPE_COUNTY, children=[
             Place('623001', '合作市'),
             Place('623021', '临潭县'),
             Place('623022', '卓尼县'),
@@ -3806,47 +3787,47 @@ PLACES = [
             Place('623027', '夏河县'),
         ]),
     ]),
-    Place('63', '青海', CHILD_TYPE_CITY, [
-        Place('6301', '西宁市', CHILD_TYPE_COUNTY, [
+    Place('63', '青海省', shorts=['青海'], children_type=TYPE_CITY, children=[
+        Place('6301', '西宁市', shorts=['西宁'], children_type=TYPE_COUNTY, children=[
             Place('630102', '城东区'),
             Place('630103', '城中区'),
             Place('630104', '城西区'),
             Place('630105', '城北区'),
-            Place('630121', '大通自治县'),
+            Place('630121', '大通自治县', shorts=['大通县']),
             Place('630122', '湟中县'),
             Place('630123', '湟源县'),
             Place('630106', '湟中区'),
         ]),
-        Place('6302', '海东市', CHILD_TYPE_COUNTY, [
+        Place('6302', '海东市', children_type=TYPE_COUNTY, children=[
             Place('630202', '乐都区'),
             Place('630203', '平安区'),
-            Place('630222', '民和自治县'),
-            Place('630223', '互助自治县'),
-            Place('630224', '化隆自治县'),
-            Place('630225', '循化自治县'),
+            Place('630222', '民和自治县', shorts=['民和县']),
+            Place('630223', '互助自治县', shorts=['互助县']),
+            Place('630224', '化隆自治县', shorts=['化隆县']),
+            Place('630225', '循化自治县', shorts=['循化县']),
             Place('630221', '平安县'),
         ]),
-        Place('6322', '海北', CHILD_TYPE_COUNTY, [
-            Place('632221', '门源自治县'),
+        Place('6322', '海北藏族自治州', shorts=['海北自治州', '海北州'], children_type=TYPE_COUNTY, children=[
+            Place('632221', '门源自治县', shorts=['门源县']),
             Place('632222', '祁连县'),
             Place('632223', '海晏县'),
             Place('632224', '刚察县'),
         ]),
-        Place('6323', '黄南', CHILD_TYPE_COUNTY, [
+        Place('6323', '黄南藏族自治州', shorts=['黄南自治州', '黄南州'], children_type=TYPE_COUNTY, children=[
             Place('632321', '同仁县'),
             Place('632322', '尖扎县'),
             Place('632323', '泽库县'),
-            Place('632324', '河南蒙古族自治县'),
-            Place('632301', '同仁市'),
+            Place('632324', '河南蒙古族自治县', shorts=['河南自治县', '河南县']),
+            Place('632301', '同仁市', shorts=['同仁']),
         ]),
-        Place('6325', '海南藏族自治州', CHILD_TYPE_COUNTY, [
+        Place('6325', '海南藏族自治州', shorts=['海南自治州', '海南州'], children_type=TYPE_COUNTY, children=[
             Place('632521', '共和县'),
             Place('632522', '同德县'),
             Place('632523', '贵德县'),
             Place('632524', '兴海县'),
             Place('632525', '贵南县'),
         ]),
-        Place('6326', '果洛', CHILD_TYPE_COUNTY, [
+        Place('6326', '果洛藏族自治州', shorts=['果洛'], children_type=TYPE_COUNTY, children=[
             Place('632621', '玛沁县'),
             Place('632622', '班玛县'),
             Place('632623', '甘德县'),
@@ -3854,121 +3835,118 @@ PLACES = [
             Place('632625', '久治县'),
             Place('632626', '玛多县'),
         ]),
-        Place('6327', '玉树', CHILD_TYPE_COUNTY, [
+        Place('6327', '玉树藏族自治州', shorts=['玉树'], children_type=TYPE_COUNTY, children=[
             Place('632701', '玉树市'),
             Place('632722', '杂多县'),
             Place('632723', '称多县'),
             Place('632724', '治多县'),
             Place('632725', '囊谦县'),
-            Place('632726', '曲麻莱县'),
-            Place('632721', '玉树县'),
+            Place('632726', '曲麻莱县', shorts=['曲麻莱']),
+            Place('632721', '玉树县', enabled=False),
         ]),
-        Place('6328', '海西', CHILD_TYPE_COUNTY, [
-            Place('632801', '格尔木市'),
-            Place('632802', '德令哈市'),
+        Place('6328', '海西蒙古族藏族自治州', shorts=['海西自治州', '海西州'], children_type=TYPE_COUNTY, children=[
+            Place('632801', '格尔木市', shorts=['格尔木']),
+            Place('632802', '德令哈市', shorts=['德令哈']),
             Place('632821', '乌兰县'),
             Place('632822', '都兰县'),
             Place('632823', '天峻县'),
-            Place('632857', '大柴旦行政委员会'),
-            Place('632858', '冷湖行政委员会'),
-            Place('632859', '茫崖行政委员会'),
+            Place('632857', '大柴旦行政委员会', shorts=['大柴旦']),
+            Place('632858', '冷湖行政委员会', shorts=['冷湖']),
+            Place('632859', '茫崖行政委员会', shorts=['茫崖']),
             Place('632803', '茫崖市'),
         ]),
-        Place('6321', '海东地区', CHILD_TYPE_COUNTY, [
-            Place('632123', '乐都县'),
-        ]),
     ]),
-    Place('64', '宁夏', CHILD_TYPE_CITY, [
-        Place('6401', '银川市', CHILD_TYPE_COUNTY, [
+    Place('64', '宁夏', children_type=TYPE_CITY, children=[
+        Place('6401', '银川市', shorts=['银川'], children_type=TYPE_COUNTY, children=[
             Place('640104', '兴庆区'),
             Place('640105', '西夏区'),
             Place('640106', '金凤区'),
             Place('640121', '永宁县'),
             Place('640122', '贺兰县'),
-            Place('640181', '灵武市'),
+            Place('640181', '灵武市', shorts=['灵武']),
         ]),
-        Place('6402', '石嘴山市', CHILD_TYPE_COUNTY, [
+        Place('6402', '石嘴山市', shorts=['石嘴山'], children_type=TYPE_COUNTY, children=[
             Place('640202', '大武口区'),
             Place('640205', '惠农区'),
             Place('640221', '平罗县'),
         ]),
-        Place('6403', '吴忠市', CHILD_TYPE_COUNTY, [
+        Place('6403', '吴忠市', shorts=['吴忠'], children_type=TYPE_COUNTY, children=[
             Place('640302', '利通区'),
-            Place('640303', '红寺堡区'),
+            Place('640303', '红寺堡区', shorts=['红寺堡']),
             Place('640323', '盐池县'),
             Place('640324', '同心县'),
-            Place('640381', '青铜峡市'),
+            Place('640381', '青铜峡市', shorts=['青铜峡']),
         ]),
-        Place('6404', '固原市', CHILD_TYPE_COUNTY, [
+        Place('6404', '固原市', shorts=['固原'], children_type=TYPE_COUNTY, children=[
             Place('640402', '原州区'),
             Place('640422', '西吉县'),
             Place('640423', '隆德县'),
             Place('640424', '泾源县'),
             Place('640425', '彭阳县'),
         ]),
-        Place('6405', '中卫市', CHILD_TYPE_COUNTY, [
-            Place('640502', '沙坡头区'),
+        Place('6405', '中卫市', shorts=['中卫'], children_type=TYPE_COUNTY, children=[
+            Place('640502', '沙坡头区', shorts=['沙坡头']),
             Place('640521', '中宁县'),
             Place('640522', '海原县'),
         ]),
     ]),
-    Place('65', '新疆', CHILD_TYPE_CITY, [
-        Place('6501', '乌鲁木齐市', CHILD_TYPE_COUNTY, [
+    Place('65', '新疆', children_type=TYPE_CITY, children=[
+        Place('6501', '乌鲁木齐市', shorts=['乌鲁木齐'], children_type=TYPE_COUNTY, children=[
             Place('650102', '天山区'),
-            Place('650103', '沙依巴克区'),
+            Place('650103', '沙依巴克区', shorts=['沙依巴克']),
             Place('650104', '新市区'),
-            Place('650105', '水磨沟区'),
-            Place('650106', '头屯河区'),
-            Place('650107', '达坂城区'),
+            Place('650105', '水磨沟区', shorts=['水磨沟']),
+            Place('650106', '头屯河区', shorts=['头屯河']),
+            Place('650107', '达坂城区', shorts=['达坂城']),
             Place('650109', '米东区'),
             Place('650121', '乌鲁木齐县'),
             Place('650171', '乌鲁木齐经济技术开发区'),
             Place('650172', '乌鲁木齐高新技术产业开发区'),
         ]),
-        Place('6502', '克拉玛依市', CHILD_TYPE_COUNTY, [
-            Place('650202', '独山子区'),
+        Place('6502', '克拉玛依市', shorts=['克拉玛依'], children_type=TYPE_COUNTY, children=[
+            Place('650202', '独山子区', shorts=['独山子']),
             Place('650203', '克拉玛依区'),
-            Place('650204', '白碱滩区'),
-            Place('650205', '乌尔禾区'),
+            Place('650204', '白碱滩区', shorts=['白碱滩']),
+            Place('650205', '乌尔禾区', shorts=['乌尔禾']),
         ]),
-        Place('6504', '吐鲁番市', CHILD_TYPE_COUNTY, [
+        Place('6504', '吐鲁番市', shorts=['吐鲁番'], children_type=TYPE_COUNTY, children=[
             Place('650402', '高昌区'),
             Place('650421', '鄯善县'),
-            Place('650422', '托克逊县'),
+            Place('650422', '托克逊县', shorts=['托克逊']),
         ]),
-        Place('6505', '哈密市', CHILD_TYPE_COUNTY, [
+        Place('6505', '哈密市', shorts=['哈密'], children_type=TYPE_COUNTY, children=[
             Place('650502', '伊州区'),
-            Place('650521', '巴里坤自治县'),
+            Place('650521', '巴里坤自治县', shorts=['巴里坤']),
             Place('650522', '伊吾县'),
         ]),
-        Place('6523', '昌吉回族自治州', CHILD_TYPE_COUNTY, [
+        Place('6523', '昌吉回族自治州', shorts=['昌吉'], children_type=TYPE_COUNTY, children=[
             Place('652301', '昌吉市'),
             Place('652302', '阜康市'),
-            Place('652323', '呼图壁县'),
-            Place('652324', '玛纳斯县'),
+            Place('652323', '呼图壁县', shorts=['呼图壁']),
+            Place('652324', '玛纳斯县', shorts=['玛纳斯']),
             Place('652325', '奇台县'),
-            Place('652327', '吉木萨尔县'),
-            Place('652328', '木垒自治县'),
+            Place('652327', '吉木萨尔县', shorts=['吉木萨尔']),
+            Place('652328', '木垒自治县', shorts=['木垒县']),
         ]),
-        Place('6527', '博尔塔拉蒙古自治州', CHILD_TYPE_COUNTY, [
-            Place('652701', '博乐市'),
-            Place('652702', '阿拉山口市'),
+        Place('6527', '博尔塔拉蒙古自治州', shorts=['博尔塔拉'], children_type=TYPE_COUNTY, children=[
+            Place('652701', '博乐市', shorts=['博乐']),
+            Place('652702', '阿拉山口市', shorts=['阿拉山口']),
             Place('652722', '精河县'),
             Place('652723', '温泉县'),
         ]),
-        Place('6528', '巴音郭楞蒙古自治州', CHILD_TYPE_COUNTY, [
-            Place('652801', '库尔勒市'),
+        Place('6528', '巴音郭楞蒙古自治州', shorts=['巴音郭楞'], children_type=TYPE_COUNTY, children=[
+            Place('652801', '库尔勒市', shorts=['库尔勒']),
             Place('652822', '轮台县'),
             Place('652823', '尉犁县'),
             Place('652824', '若羌县'),
             Place('652825', '且末县'),
-            Place('652826', '焉耆自治县'),
+            Place('652826', '焉耆自治县', shorts=['焉耆县']),
             Place('652827', '和静县'),
             Place('652828', '和硕县'),
             Place('652829', '博湖县'),
             Place('652871', '库尔勒经济技术开发区'),
         ]),
-        Place('6529', '阿克苏', CHILD_TYPE_COUNTY, [
+        Place('6529', '阿克苏地区', shorts=['阿克苏'], children_type=TYPE_COUNTY, children=[
             Place('652901', '阿克苏市'),
             Place('652922', '温宿县'),
             Place('652923', '库车县'),
@@ -3976,33 +3954,33 @@ PLACES = [
             Place('652925', '新和县'),
             Place('652926', '拜城县'),
             Place('652927', '乌什县'),
-            Place('652928', '阿瓦提县'),
+            Place('652928', '阿瓦提县', shorts=['阿瓦提']),
             Place('652929', '柯坪县'),
             Place('652902', '库车市'),
         ]),
-        Place('6530', '克孜勒苏柯尔克孜自治州', CHILD_TYPE_COUNTY, [
-            Place('653001', '阿图什市'),
-            Place('653022', '阿克陶县'),
-            Place('653023', '阿合奇县'),
+        Place('6530', '克孜勒苏柯尔克孜自治州', shorts=['克孜勒苏柯尔克孜', '克州'], children_type=TYPE_COUNTY, children=[
+            Place('653001', '阿图什市', shorts=['阿图什']),
+            Place('653022', '阿克陶县', shorts=['阿克陶']),
+            Place('653023', '阿合奇县', shorts=['阿合奇']),
             Place('653024', '乌恰县'),
         ]),
-        Place('6531', '喀什', CHILD_TYPE_COUNTY, [
+        Place('6531', '喀什地区', shorts=['喀什'], children_type=TYPE_COUNTY, children=[
             Place('653101', '喀什市'),
             Place('653121', '疏附县'),
             Place('653122', '疏勒县'),
-            Place('653123', '英吉沙县'),
+            Place('653123', '英吉沙县', shorts=['英吉沙']),
             Place('653124', '泽普县'),
             Place('653125', '莎车县'),
             Place('653126', '叶城县'),
-            Place('653127', '麦盖提县'),
-            Place('653128', '岳普湖县'),
+            Place('653127', '麦盖提县', shorts=['麦盖提']),
+            Place('653128', '岳普湖县', shorts=['岳普湖']),
             Place('653129', '伽师县'),
             Place('653130', '巴楚县'),
-            Place('653131', '塔什库尔干塔吉克自治县'),
+            Place('653131', '塔什库尔干塔吉克自治县', shorts=['塔什库尔干']),
         ]),
-        Place('6532', '和田', CHILD_TYPE_COUNTY, [
+        Place('6532', '和田地区', shorts=['和田'], children_type=TYPE_COUNTY, children=[
             Place('653201', '和田市'),
-            Place('653221', '和田县'),
+            Place('653221', '和田县', enabled=False),
             Place('653222', '墨玉县'),
             Place('653223', '皮山县'),
             Place('653224', '洛浦县'),
@@ -4010,53 +3988,51 @@ PLACES = [
             Place('653226', '于田县'),
             Place('653227', '民丰县'),
         ]),
-        Place('6540', '伊犁哈萨克自治州', CHILD_TYPE_COUNTY, [
+        Place('6540', '伊犁哈萨克自治州', shorts=['伊犁'], children_type=TYPE_COUNTY, children=[
             Place('654002', '伊宁市'),
             Place('654003', '奎屯市'),
-            Place('654004', '霍尔果斯市'),
+            Place('654004', '霍尔果斯市', shorts=['霍尔果斯']),
             Place('654021', '伊宁县'),
-            Place('654022', '察布查尔锡伯自治县'),
+            Place('654022', '察布查尔锡伯自治县', shorts=['察布查尔锡伯']),
             Place('654023', '霍城县'),
             Place('654024', '巩留县'),
             Place('654025', '新源县'),
             Place('654026', '昭苏县'),
-            Place('654027', '特克斯县'),
-            Place('654028', '尼勒克县'),
+            Place('654027', '特克斯县', shorts=['特克斯']),
+            Place('654028', '尼勒克县', shorts=['尼勒克']),
         ]),
-        Place('6542', '塔城', CHILD_TYPE_COUNTY, [
+        Place('6542', '塔城地区', shorts=['塔城'], children_type=TYPE_COUNTY, children=[
             Place('654201', '塔城市'),
             Place('654202', '乌苏市'),
             Place('654221', '额敏县'),
             Place('654223', '沙湾县'),
             Place('654224', '托里县'),
             Place('654225', '裕民县'),
-            Place('654226', '和布克赛尔蒙古自治县'),
+            Place('654226', '和布克赛尔蒙古自治县', shorts=['和布克赛尔']),
         ]),
-        Place('6543', '阿勒泰', CHILD_TYPE_COUNTY, [
+        Place('6543', '阿勒泰地区', shorts=['阿勒泰'], children_type=TYPE_COUNTY, children=[
             Place('654301', '阿勒泰市'),
-            Place('654321', '布尔津县'),
+            Place('654321', '布尔津县', shorts=['布尔津']),
             Place('654322', '富蕴县'),
             Place('654323', '福海县'),
-            Place('654324', '哈巴河县'),
+            Place('654324', '哈巴河县', shorts=['哈巴河']),
             Place('654325', '青河县'),
-            Place('654326', '吉木乃县'),
+            Place('654326', '吉木乃县', shorts=['吉木乃']),
         ]),
-        Place('659001', '石河子市'),
-        Place('659002', '阿拉尔市'),
-        Place('659003', '图木舒克市'),
-        Place('659004', '五家渠市'),
-        Place('659006', '铁门关市'),
-        Place('6521', '吐鲁番地区'),
-        Place('6522', '哈密地区'),
-        Place('659005', '北屯市'),
-        Place('659007', '双河市'),
-        Place('659008', '可克达拉市'),
-        Place('659009', '昆玉市'),
-        Place('659010', '胡杨河市'),
+        Place('659001', '石河子市', shorts=['石河子']),
+        Place('659002', '阿拉尔市', shorts=['阿拉尔']),
+        Place('659003', '图木舒克市', shorts=['图木舒克']),
+        Place('659004', '五家渠市', shorts=['五家渠']),
+        Place('659006', '铁门关市', shorts=['铁门关']),
+        Place('659005', '北屯市', shorts=['北屯']),
+        Place('659007', '双河市', shorts=['双河']),
+        Place('659008', '可克达拉市', shorts=['可克达拉']),
+        Place('659009', '昆玉市', shorts=['昆玉']),
+        Place('659010', '胡杨河市', shorts=['胡杨河']),
     ]),
-    Place('81', '香港特别行政区'),
-    Place('82', '澳门特别行政区'),
-    Place('71', '台湾省', CHILD_TYPE_COUNTY, [
+    Place('81', '香港特别行政区', shorts=['香港']),
+    Place('82', '澳门特别行政区', shorts=['澳门']),
+    Place('71', '台湾省', children_type=TYPE_COUNTY, children=[
         Place('710001', '台北市'),
         Place('710002', '髙雄市'),
         Place('710003', '基隆市'),
@@ -4078,6 +4054,7 @@ PLACES = [
         Place('710019', '澎湖县'),
     ]),
 ]
+
 
 AREA_CODE_MAPPING = {
     '010': ['北京市'],
@@ -4297,7 +4274,7 @@ AREA_CODE_MAPPING = {
     '0953': ['吴忠市'],
     '0954': ['固原市'],
     '0955': ['中卫市'],
-    '0999': ['伊犁哈萨克自治州☆'],
+    '0999': ['伊犁哈萨克自治州'],
     '00852': ['香港特别行政区'],
     '00853': ['澳门特别行政区'],
     '00886': ['台湾省'],
