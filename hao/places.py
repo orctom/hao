@@ -3912,7 +3912,7 @@ PLACES = [
             Place('650172', '乌鲁木齐高新技术产业开发区'),
         ]),
         Place('6502', '克拉玛依市', shorts=['克拉玛依'], children_type=TYPE_COUNTY, children=[
-            Place('650202', '独山子区', shorts=['独山子']),
+            Place('650202', '独山子区'),
             Place('650203', '克拉玛依区'),
             Place('650204', '白碱滩区', shorts=['白碱滩']),
             Place('650205', '乌尔禾区', shorts=['乌尔禾']),
