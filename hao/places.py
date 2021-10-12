@@ -2677,7 +2677,7 @@ PLACES = [
             Place('445323', '云安县'),
         ]),
     ]),
-    Place('45', '广西壮族自治区', shorts=['广西'], children_type=TYPE_CITY, children=[
+    Place('45', '广西壮族自治区', shorts=['广西', '广西省'], children_type=TYPE_CITY, children=[
         Place('4501', '南宁市', shorts=['南宁'], children_type=TYPE_COUNTY, children=[
             Place('450102', '兴宁区'),
             Place('450103', '青秀区'),
