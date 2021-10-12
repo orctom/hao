@@ -1044,7 +1044,7 @@ PLACES = [
         ]),
     ]),
     Place('31', '上海市', children_type=TYPE_DIRECT, children=[
-        Place('3101', '上海', shorts=['上海'], children_type=TYPE_COUNTY, children=[
+        Place('3101', '上海市', shorts=['上海'], children_type=TYPE_COUNTY, children=[
             Place('310101', '黄浦区'),
             Place('310104', '徐汇区'),
             Place('310105', '长宁区'),
