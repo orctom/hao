@@ -45,10 +45,16 @@ class Place(object):
         child.set_parent(self)
 
     def __str__(self) -> str:
-        return self.name
+        if self.parent:
+            return f"[{self.id}] {self.name} > {self.parent}"
+        else:
+            return f"[{self.id}] {self.name}"
 
     def __repr__(self) -> str:
-        return self.name
+        return self.__str__()
+
+    def is_province(self) -> bool:
+        return self.name[-1] == '省' or '自治区' in self.name or self.parent is None
 
     def prettify(self):
         def get_children_type(children_type):
