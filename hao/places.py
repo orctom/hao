@@ -2677,7 +2677,7 @@ PLACES = [
             Place('445323', '云安县'),
         ]),
     ]),
-    Place('45', '广西省', shorts=['广西'], children_type=TYPE_CITY, children=[
+    Place('45', '广西壮族自治区', shorts=['广西'], children_type=TYPE_CITY, children=[
         Place('4501', '南宁市', shorts=['南宁'], children_type=TYPE_COUNTY, children=[
             Place('450102', '兴宁区'),
             Place('450103', '青秀区'),
@@ -3446,7 +3446,7 @@ PLACES = [
             Place('533421', '香格里拉县', enabled=False),
         ]),
     ]),
-    Place('54', '西藏', children_type=TYPE_CITY, children=[
+    Place('54', '西藏自治区', shorts=['西藏'], children_type=TYPE_CITY, children=[
         Place('5401', '拉萨市', shorts=['拉萨'], children_type=TYPE_COUNTY, children=[
             Place('540102', '城关区'),
             Place('540103', '堆龙德庆区', shorts=['堆龙德庆']),
@@ -3869,7 +3869,7 @@ PLACES = [
             Place('632803', '茫崖市'),
         ]),
     ]),
-    Place('64', '宁夏', children_type=TYPE_CITY, children=[
+    Place('64', '宁夏回族自治区', shorts=['宁夏'], children_type=TYPE_CITY, children=[
         Place('6401', '银川市', shorts=['银川'], children_type=TYPE_COUNTY, children=[
             Place('640104', '兴庆区'),
             Place('640105', '西夏区'),
@@ -3903,7 +3903,7 @@ PLACES = [
             Place('640522', '海原县'),
         ]),
     ]),
-    Place('65', '新疆', children_type=TYPE_CITY, children=[
+    Place('65', '新疆维吾尔自治区', shorts=['新疆'], children_type=TYPE_CITY, children=[
         Place('6501', '乌鲁木齐市', shorts=['乌鲁木齐'], children_type=TYPE_COUNTY, children=[
             Place('650102', '天山区'),
             Place('650103', '沙依巴克区', shorts=['沙依巴克']),
