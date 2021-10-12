@@ -75,8 +75,8 @@ class Place(object):
 
 
 PLACES = [
-    Place('11', '北京市', shorts=['北京'], children_type=TYPE_DIRECT, children=[
-        Place('1101', '北京市', children_type=TYPE_COUNTY, children=[
+    Place('11', '北京市', children_type=TYPE_DIRECT, children=[
+        Place('1101', '北京市', shorts=['北京'], children_type=TYPE_COUNTY, children=[
             Place('110101', '东城区'),
             Place('110102', '西城区'),
             Place('110105', '朝阳区', shorts=['朝阳']),
@@ -97,8 +97,8 @@ PLACES = [
         Place('110228', '密云县', enabled=False),
         Place('110229', '延庆县', enabled=False),
     ]),
-    Place('12', '天津市', shorts=['天津'], children_type=TYPE_DIRECT, children=[
-        Place('1201', '天津市', children_type=TYPE_COUNTY, children=[
+    Place('12', '天津市', children_type=TYPE_DIRECT, children=[
+        Place('1201', '天津市', shorts=['天津'], children_type=TYPE_COUNTY, children=[
             Place('120101', '和平区'),
             Place('120102', '河东区'),
             Place('120103', '河西区'),
@@ -1043,8 +1043,8 @@ PLACES = [
             Place('232701', '漠河市', shorts=['漠河']),
         ]),
     ]),
-    Place('31', '上海市', shorts=['上海'], children_type=TYPE_DIRECT, children=[
-        Place('3101', '上海', children_type=TYPE_COUNTY, children=[
+    Place('31', '上海市', children_type=TYPE_DIRECT, children=[
+        Place('3101', '上海', shorts=['上海'], children_type=TYPE_COUNTY, children=[
             Place('310101', '黄浦区'),
             Place('310104', '徐汇区'),
             Place('310105', '长宁区'),
@@ -2857,8 +2857,8 @@ PLACES = [
         Place('469029', '保亭自治县', shorts=['保亭县']),
         Place('469030', '琼中自治县', shorts=['琼中县']),
     ]),
-    Place('50', '重庆市', shorts=['重庆'], children_type=TYPE_DIRECT, children=[
-        Place('5001', '重庆市', children_type=TYPE_COUNTY, children=[
+    Place('50', '重庆市', children_type=TYPE_DIRECT, children=[
+        Place('5001', '重庆市', shorts=['重庆'], children_type=TYPE_COUNTY, children=[
             Place('500101', '万州区'),
             Place('500102', '涪陵区'),
             Place('500103', '渝中区'),
