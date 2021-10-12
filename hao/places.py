@@ -7,7 +7,7 @@ TYPE_COUNTY = 'county'
 
 
 class Place(object):
-    __slots__ = ['id', 'name', 'shorts', 'parent', 'children_type', 'children']
+    __slots__ = ['id', 'name', 'shorts', 'parent', 'children_type', 'children', 'enabled']
 
     def __init__(self,
                  _id: str,
@@ -47,6 +47,9 @@ class Place(object):
     def __str__(self) -> str:
         return self.name
 
+    def __repr__(self) -> str:
+        return self.name
+
     def prettify(self):
         def get_children_type(children_type):
             if children_type in ('CHILD_TYPE_CITY', 'city'):
@@ -63,7 +66,6 @@ class Place(object):
         if children:
             return f"{indent}Place('{self.id}', '{self.name}', {get_children_type(self.children_type)}, [\n{children}\n{indent}]),"
         return f"{indent}Place('{self.id}', '{self.name}'),"
-
 
 
 PLACES = [
@@ -542,7 +544,7 @@ PLACES = [
             Place('150424', '林西县'),
             Place('150425', '克什克腾旗', shorts=['克什克腾']),
             Place('150426', '翁牛特旗', shorts=['翁牛特']),
-            Place('150428', '喀喇沁旗', shorts=['喀喇沁']),
+            Place('150428', '喀喇沁旗'),
             Place('150429', '宁城县'),
             Place('150430', '敖汉旗'),
         ]),
@@ -757,7 +759,7 @@ PLACES = [
             Place('211303', '龙城区'),
             Place('211321', '朝阳县'),
             Place('211322', '建平县'),
-            Place('211324', '喀喇沁自治县', shorts=['喀喇沁']),
+            Place('211324', '喀喇沁自治县', shorts=['喀喇沁县']),
             Place('211381', '北票市', shorts=['北票']),
             Place('211382', '凌源市', shorts=['凌源']),
         ]),
@@ -783,21 +785,21 @@ PLACES = [
             Place('220171', '长春经济技术开发区', shorts=['长春经济开发区']),
             Place('220172', '净月高新技术产业开发区', shorts=['净月高新技术开发区', '净月高新产业开发区', '净月高新开发区', '净月开发区']),
             Place('220173', '长春高新技术产业开发区', shorts=['长春高新技术开发区', '长春高新产业开发区', '长春高新开发区']),
-            Place('220174', '长春汽车经济技术开发区', shorts=['长春汽车经济技术开发区', '长春汽车经济开发区', '长春汽车技术开发区', '长春汽车开发区']),
+            Place('220174', '长春汽车经济技术开发区', shorts=['长春汽车经济开发区', '长春汽车技术开发区', '长春汽车开发区']),
             Place('220182', '榆树市'),
             Place('220183', '德惠市'),
             Place('220181', '九台市', shorts=['九台']),
             Place('220184', '公主岭市', shorts=['公主岭']),
         ]),
-        Place('2202', '吉林市', shorts=['吉林'], children_type=TYPE_COUNTY, children=[
+        Place('2202', '吉林市', children_type=TYPE_COUNTY, children=[
             Place('220202', '昌邑区'),
             Place('220203', '龙潭区'),
             Place('220204', '船营区'),
             Place('220211', '丰满区'),
             Place('220221', '永吉县'),
-            Place('220271', '吉林经济开发区'),
-            Place('220272', '吉林高新技术产业开发区'),
-            Place('220273', '吉林中国新加坡食品区'),
+            Place('220271', '吉林经济开发区', shorts=['吉林开发区']),
+            Place('220272', '吉林高新技术产业开发区', shorts=['吉林高新技术开发区', '吉林高新产业开发区', '吉林高新开发区', '吉林高新区']),
+            Place('220273', '吉林中国新加坡食品区', shorts=['吉林中新食品区']),
             Place('220281', '蛟河市', shorts=['蛟河']),
             Place('220282', '桦甸市', shorts=['桦甸']),
             Place('220283', '舒兰市', shorts=['舒兰']),
@@ -1728,7 +1730,7 @@ PLACES = [
             Place('361027', '金溪县'),
             Place('361028', '资溪县'),
             Place('361030', '广昌县'),
-            Place('361029', '东乡县'),
+            Place('361029', '东乡县', enabled=False),
         ]),
         Place('3611', '上饶市', shorts=['上饶'], children_type=TYPE_COUNTY, children=[
             Place('361102', '信州区'),
@@ -1879,7 +1881,7 @@ PLACES = [
             Place('371103', '岚山区'),
             Place('371121', '五莲县'),
             Place('371122', '莒县'),
-            Place('371171', '日照经济技术开发区', shorts=['日照经济开发区', '日照经济开发区', '日照开发区']),
+            Place('371171', '日照经济技术开发区', shorts=['日照经济开发区', '日照开发区']),
             Place('371172', '日照国际海洋城', shorts=['日照海洋城']),
         ]),
         Place('3712', '莱芜市', shorts=['莱芜'], children_type=TYPE_COUNTY, children=[
@@ -3103,7 +3105,7 @@ PLACES = [
             Place('513231', '阿坝县'),
             Place('513232', '若尔盖县', shorts=['若尔盖']),
             Place('513233', '红原县'),
-            Place('513229', '马尔康县', shorts=['马尔康']),
+            Place('513229', '马尔康县', enabled=False),
         ]),
         Place('5133', '甘孜藏族自治州', shorts=['甘孜'], children_type=TYPE_COUNTY, children=[
             Place('513301', '康定市', shorts=['康定']),
@@ -3443,11 +3445,11 @@ PLACES = [
             Place('540124', '曲水县'),
             Place('540126', '达孜县'),
             Place('540127', '墨竹工卡县', shorts=['墨竹工卡']),
-            Place('540171', '格尔木藏青工业园区', shorts=['格尔木']),
+            Place('540171', '格尔木藏青工业园区', shorts=['格尔木藏青工业园', '格尔木工业园']),
             Place('540172', '拉萨经济技术开发区'),
             Place('540173', '西藏文化旅游创意园区'),
             Place('540174', '达孜工业园区'),
-            Place('540125', '堆龙德庆县', shorts=['堆龙德庆']),
+            Place('540125', '堆龙德庆县', enabled=False),
             Place('540104', '达孜区', shorts=['达孜']),
         ]),
         Place('5402', '日喀则市', shorts=['日喀则'], children_type=TYPE_COUNTY, children=[
