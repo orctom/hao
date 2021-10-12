@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import typing
 
+TYPE_PROVINCE = 'province'
 TYPE_CITY = 'city'
 TYPE_DIRECT = 'direct'
 TYPE_COUNTY = 'county'
@@ -43,6 +44,10 @@ class Place(object):
             self.children = []
         self.children.append(child)
         child.set_parent(self)
+
+    @property
+    def city_type(self):
+        return self.parent.children_type if self.parent else TYPE_PROVINCE
 
     def __str__(self) -> str:
         if self.parent:
