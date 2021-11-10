@@ -10,10 +10,8 @@ install:
 	pip install .
 	make clean
 
-reinstall:
-	make clean && make uninstall && make install
-
 build:
+	make clean
 	python setup.py sdist bdist_wheel
 
 upload:
