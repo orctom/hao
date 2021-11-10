@@ -1,29 +1,35 @@
 # -*- coding: utf-8 -*-
+import collections
 from multiprocessing import Lock
+
+_SINGLETON_INSTANCES = {}
+_SINGLETON_LOCKS = collections.defaultdict(Lock)
+_MULTITON_INSTANCES = {}
+_MULTITON_LOCKS = collections.defaultdict(Lock)
 
 
 class Singleton(type):
-    _instances = {}
-    _lock: Lock = Lock()
 
     def __call__(cls, *args, **kwargs):
-        with cls._lock:
-            instance = cls._instances.get(cls)
-            if not instance:
-                instance = super().__call__(*args, **kwargs)
-                cls._instances[cls] = instance
-            return instance
+        instance = _SINGLETON_INSTANCES.get(cls)
+        if instance is None:
+            with _SINGLETON_LOCKS[cls]:
+                instance = _SINGLETON_INSTANCES.get(cls)
+                if instance is None:
+                    instance = super().__call__(*args, **kwargs)
+                    _SINGLETON_INSTANCES[cls] = instance
+        return instance
 
 
 class Multiton(type):
-    _instances = {}
-    _lock: Lock = Lock()
 
     def __call__(cls, *args, **kwargs):
-        with cls._lock:
-            key = (list(args) + list(kwargs.values()) + [None])[0]
-            instance = cls._instances.get((cls, key))
-            if instance is None:
-                instance = super().__call__(*args, **kwargs)
-                cls._instances[(cls, key)] = instance
-            return instance
+        key = (list(args) + list(kwargs.values()) + [None])[0]
+        instance = _MULTITON_INSTANCES.get((cls, key))
+        if instance is None:
+            with _MULTITON_LOCKS[cls]:
+                instance = _MULTITON_INSTANCES.get((cls, key))
+                if instance is None:
+                    instance = super().__call__(*args, **kwargs)
+                    _MULTITON_INSTANCES[(cls, key)] = instance
+        return instance

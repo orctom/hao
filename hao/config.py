@@ -14,25 +14,22 @@ HOSTNAME = socket.gethostname()
 
 class Config(object, metaclass=singleton.Multiton):
 
-    def __init__(self, config_file_name=None) -> None:
+    def __init__(self, config_name='config') -> None:
         super().__init__()
-        self.config_file_name = config_file_name
+        self.config_name = config_name
         self.config_dir = get_config_dir() or os.getcwd()
         self.conf = self.read_conf()
 
     def read_conf(self):
         try:
-            if self.config_file_name is not None:
-                return self._conf_from(self.config_file_name)
-
             if ENV is not None:
-                for config_file_name in [f"config-{ENV}.yml", "config.yml"]:
+                for config_file_name in [f"{self.config_name}-{ENV}.yml", f"{self.config_name}.yml"]:
                     conf = self._conf_from(config_file_name)
                     if conf is not None:
                         return conf
 
             else:
-                for config_file_name in [f"config-{HOSTNAME}.yml", "config.yml"]:
+                for config_file_name in [f"{self.config_name}-{HOSTNAME}.yml", f"{self.config_name}.yml"]:
                     conf = self._conf_from(config_file_name)
                     if conf is not None:
                         return conf
@@ -49,10 +46,10 @@ class Config(object, metaclass=singleton.Multiton):
         if not os.path.exists(config_file):
             print(f"[config] from: {config_file}, not exist")
             return None
-        return self.load_config(config_file)
+        return self.config_from(config_file)
 
     @staticmethod
-    def load_config(config_file):
+    def config_from(config_file):
         with open(config_file, 'r') as stream:
             try:
                 conf = yaml.safe_load(stream)
@@ -118,14 +115,14 @@ def get_config_dir():
 
 
 def config_from(config_file_name):
-    return Config(config_file_name)
+    return Config.config_from(config_file_name)
 
 
 def get_config(config: typing.Optional[typing.Union[str, Config]] = None):
     if config is None:
         cfg = Config()
     elif isinstance(config, str):
-        cfg = Config(config)
+        cfg = Config(config.rstrip('.yml'))
     elif isinstance(config, Config):
         cfg = config
     else:
@@ -133,22 +130,18 @@ def get_config(config: typing.Optional[typing.Union[str, Config]] = None):
     return cfg
 
 
-_CONFIG: typing.Optional[Config] = None
-
-
 def check_configured(silent=False):
 
     def decorator(func):
         @functools.wraps(func)
         def check(*args, **kwargs):
-            global _CONFIG
-            if _CONFIG is None:
-                _CONFIG = Config()
-            if _CONFIG is None:
+            config = args[2] if len(args) >= 3 else kwargs.get('config')
+            cfg = get_config(config)
+            if cfg is None:
                 if silent:
-                    return args[1] if len(args) == 2 else None
-                else:
-                    raise ValueError('Failed to configure from "config.yml" in "conf" package')
+                    return args[0] if len(args) >= 2 else kwargs.get('default_value')
+                raise ValueError('Failed to configure from "config.yml" in "conf" package')
+
             return func(*args, **kwargs)
 
         return check
@@ -156,10 +149,10 @@ def check_configured(silent=False):
 
 
 @check_configured(silent=True)
-def get(name, default_value=None):
-    return _CONFIG.get(name, default_value)
+def get(name, default_value=None, config: typing.Optional[typing.Union[str, Config]] = None):
+    return get_config(config).get(name, default_value)
 
 
 @check_configured(silent=True)
-def get_path(name, default_value=None):
-    return _CONFIG.get_path(name, default_value)
+def get_path(name, default_value=None, config: typing.Optional[typing.Union[str, Config]] = None):
+    return get_config(config).get_path(name, default_value)
