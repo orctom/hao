@@ -83,6 +83,12 @@ class Mongo(object, metaclass=singleton.Multiton):
         self.client = connect(**self._conf)
         self.db = self.db()
 
+    def __str__(self) -> str:
+        return f"{self.client.address} [{self.db.name}]"
+
+    def __repr__(self):
+        return self.__str__()
+
     def db(self, name=None) -> Database:
         if name is None:
             name = self._conf.get('db')
@@ -101,11 +107,11 @@ class Mongo(object, metaclass=singleton.Multiton):
         _id = ensure_id_type(_id)
         return self.col(col_name).find_one({'_id': _id})
 
-    def find(self, col_name: str, query: typing.Optional[dict] = None, projection: typing.Optional[dict] = None, **kwargs):
-        return self.col(col_name).find(query or {}, projection, **kwargs)
-
     def find_one(self, col_name: str, query: typing.Optional[dict] = None, projection: typing.Optional[dict] = None, **kwargs):
         return self.col(col_name).find_one(query or {}, projection, **kwargs)
+
+    def find(self, col_name: str, query: typing.Optional[dict] = None, projection: typing.Optional[dict] = None, **kwargs):
+        return self.col(col_name).find(query or {}, projection, **kwargs)
 
     def save(self, col_name: str, data: dict):
         _id = data.pop('_id', None)
@@ -119,6 +125,20 @@ class Mongo(object, metaclass=singleton.Multiton):
             else:
                 return rt
 
+    def update_one(self, col_name: str, query: dict, data: dict):
+        data.pop('_id', None)
+        _id = ensure_id_type(query.pop('_id', None))
+        if _id:
+            query['_id'] = _id
+        return self.col(col_name).update_one(query, {"$set": data}).matched_count
+
+    def update(self, col_name: str, query: dict, data: dict):
+        data.pop('_id', None)
+        _id = ensure_id_type(query.pop('_id', None))
+        if _id:
+            query['_id'] = _id
+        return self.col(col_name).update_many(query, {"$set": data}).matched_count
+
     def delete_by_id(self, col_name: str, _id: typing.Union[str, bson.ObjectId]):
         _id = ensure_id_type(_id)
         return self.col(col_name).delete_one({'_id': _id})
@@ -129,5 +149,23 @@ class Mongo(object, metaclass=singleton.Multiton):
     def delete(self, col_name: str, query: dict):
         return self.col(col_name).delete_many(query)
 
+    def bulk(self, col_name: str, batch: list, ordered=True, bypass_document_validation=False):
+        return self.col(col_name).bulk_write(batch, ordered=ordered, bypass_document_validation=bypass_document_validation)
+
     def agg(self, col_name: str, pipeline: dict):
         return self.col(col_name).aggregate(pipeline)
+
+    def drop(self, col_name):
+        return self.col(col_name).drop()
+
+    def print_collections_size(self):
+        total = 0
+        with self.client.start_session() as session:
+            collection_names = list(sorted(self.db.list_collection_names()))
+            max_len = max([len(col_name) for col_name in collection_names]) + 1
+            print(f"collections:")
+            for col_name in collection_names:
+                size = self.db.command({"collstats": col_name, 'scale': 1024 * 1024}, session=session).get('size')
+                print(f"{col_name: <{max_len}}: {size} MB")
+                total += size
+        print(f"total: {total} MB")

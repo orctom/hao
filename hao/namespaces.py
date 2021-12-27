@@ -157,12 +157,14 @@ def from_args(_cls=None,
     def _get_arg_name(self, _name):
         return f'{prefix}_{_name}' if prefix else _name
 
-    def prettify(self, align='>', width=38, fill=' '):
-        values = '\n\t'.join([
-            "{k:{fill}{align}{width}}: {v}".format(k=k, fill=fill, align=align, width=width, v=v)
-            for k, v in self.as_dict().items()
-        ])
-        return f"[{self.__class__.__name__}]\n\t{values}"
+    def prettify(self, align='<', fill=' '):
+        attributes = self.as_dict()
+        width = max([len(k) for k, _ in attributes.items()]) + 1
+        values = '\n\t'.join([f"{k:{fill}{align}{width}}: {v}" for k, v in attributes.items()])
+        if len(attributes) <= 1:
+            return f"[{self.__class__.__name__}]\t{values}"
+        else:
+            return f"[{self.__class__.__name__}]\n\t{values}"
 
     def __repr__(self) -> str:
         return self.prettify()

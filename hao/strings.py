@@ -51,7 +51,7 @@ def normalize(
         controls: bool = True,
         specials: bool = True,
         emoji: bool = True,
-        unicode: bool = False,
+        unicode: bool = True,
         encoding: str = None
 ):
     if text is None:
@@ -70,7 +70,10 @@ def normalize(
     if emoji:
         text = remove_emoji(text)
     if unicode:
-        text = codecs.decode(codecs.encode(text, 'latin-1', 'backslashreplace'), 'unicode-escape')
+        try:
+            text = codecs.decode(codecs.encode(text, 'latin-1', 'backslashreplace'), 'unicode-escape')
+        except UnicodeDecodeError:
+            pass
     if encoding:
         try:
             text = text.encode(encoding, 'ignore').decode(encoding, 'ignore')
@@ -367,12 +370,8 @@ def pad(text: str, width: int, align: str = '<', fill: str = ' '):
     :param fill: char to fill the padding
     :return:
     """
-    return '{text:{fill}{align}{width}}'.format(
-        text=text or '',
-        fill=fill,
-        align=align,
-        width=width,
-    )
+    assert align in ('<', '^', '>')
+    return f"{text:{fill}{align}{width}}"
 
 
 def random(n: int) -> str:

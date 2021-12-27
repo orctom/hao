@@ -33,18 +33,18 @@ class Stopwatch(object):
         self.start()
 
     def start(self):
-        self._start_time = time.time()
+        self._start_time = time.perf_counter()
         self._lap_time = self._start_time
         self._stop_time = None
 
     def stop(self):
         if self._stop_time is None:
-            self._stop_time = time.time()
+            self._stop_time = time.perf_counter()
             self._lap_time = self._stop_time
 
     def restart(self):
         _elapsed = self.elapsed()
-        self._start_time = time.time()
+        self._start_time = time.perf_counter()
         self._lap_time = self._start_time
         self._stop_time = None
         return _elapsed
@@ -66,7 +66,7 @@ class Stopwatch(object):
         if self._stop_time is not None:
             return self._stop_time - self._lap_time
         else:
-            now = time.time()
+            now = time.perf_counter()
             lap_time = now - self._lap_time
             self._lap_time = now
             return lap_time
@@ -94,7 +94,7 @@ class Stopwatch(object):
         if self._stop_time is not None:
             return self._stop_time - self._start_time
         else:
-            return time.time() - self._start_time
+            return time.perf_counter() - self._start_time
 
     def lap(self):
         _lap = self._lap()

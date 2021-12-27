@@ -16,12 +16,15 @@ class Config(object, metaclass=singleton.Multiton):
 
     def __init__(self, config_name='config') -> None:
         super().__init__()
-        self.config_name = config_name
+        self.config_name = config_name or 'config'  # force not none
         self.config_dir = get_config_dir() or os.getcwd()
         self.conf = self.read_conf()
 
     def read_conf(self):
         try:
+            if self.config_name.endswith('.yml'):
+                return self._conf_from(self.config_name)
+
             if ENV is not None:
                 for config_file_name in [f"{self.config_name}-{ENV}.yml", f"{self.config_name}.yml"]:
                     conf = self._conf_from(config_file_name)
@@ -41,15 +44,15 @@ class Config(object, metaclass=singleton.Multiton):
             print(f"[config] {e}")
             traceback.print_exc()
 
-    def _conf_from(self, config_file_name=None):
-        config_file = os.path.join(self.config_dir, config_file_name)
+    def _conf_from(self, config_file):
+        if config_file[0] in ('/', '~', '$'):
+            config_file = paths.expand(config_file)
+        else:
+            config_file = os.path.join(self.config_dir, config_file)
+
         if not os.path.exists(config_file):
             print(f"[config] from: {config_file}, not exist")
             return None
-        return self.config_from(config_file)
-
-    @staticmethod
-    def config_from(config_file):
         with open(config_file, 'r') as stream:
             try:
                 conf = yaml.safe_load(stream)
@@ -115,14 +118,14 @@ def get_config_dir():
 
 
 def config_from(config_file_name):
-    return Config.config_from(config_file_name)
+    return get_config(config_file_name)
 
 
 def get_config(config: typing.Optional[typing.Union[str, Config]] = None):
     if config is None:
         cfg = Config()
     elif isinstance(config, str):
-        cfg = Config(config.rstrip('.yml'))
+        cfg = Config(config)
     elif isinstance(config, Config):
         cfg = config
     else:
@@ -131,7 +134,6 @@ def get_config(config: typing.Optional[typing.Union[str, Config]] = None):
 
 
 def check_configured(silent=False):
-
     def decorator(func):
         @functools.wraps(func)
         def check(*args, **kwargs):
@@ -145,6 +147,7 @@ def check_configured(silent=False):
             return func(*args, **kwargs)
 
         return check
+
     return decorator
 
 

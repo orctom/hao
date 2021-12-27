@@ -48,7 +48,14 @@ def _get_handlers():
                 print(f'logging to: {log_path} [{handler_name}]')
     else:
         if log_filename_arg:
-            log_path = paths.get(_LOGGER_DIR, log_filename_arg)
+            from datetime import datetime
+            params = {
+                'date': datetime.now().strftime('%y%m%d'),
+                'datehour': datetime.now().strftime('%y%m%d-%H'),
+                'datetime': datetime.now().strftime('%y%m%d-%H%M%S')
+            }
+            log_filename = log_filename_arg.format(**params)
+            log_path = paths.get(_LOGGER_DIR, log_filename)
             handler = logging.FileHandler(log_path)
             handler.setFormatter(LOGGER_FORMATTER)
             _HANDLERS.append(handler)

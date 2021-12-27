@@ -227,8 +227,6 @@ class Rabbit(object):
             pass
         except (BrokenPipeError, ConnectionResetError, OSError):
             self.reconnect()
-        except Exception as e:
-            LOGGER.exception(e)
 
     def consume(self, queue_id: str = None, timeout=1, block=True) -> typing.Generator[Message, None, None]:
         queue, queue_id = self.get_queue(queue_id)
@@ -243,8 +241,6 @@ class Rabbit(object):
             pass
         except (BrokenPipeError, ConnectionResetError, OSError):
             self.reconnect()
-        except Exception as e:
-            LOGGER.exception(e)
 
     @staticmethod
     def queue_size(queue_id: str = None):
