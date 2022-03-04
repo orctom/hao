@@ -1,0 +1,54 @@
+[tool.poetry]
+name = "hao"
+version = "3.6.0"
+description = "conf, logs, namespace, etc"
+authors = ["orctom <orctom@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.7"
+PyYAML = "*"
+chardet = "*"
+requests = "*"
+python-fity3 = "*"
+pytz = "*"
+regex = "*"
+ldap3 = "*"
+passlib = "*"
+oss2 = "*"
+tqdm = "*"
+decorator = "*"
+pydantic = "*"
+
+[tool.poetry.dev-dependencies]
+pytest = "~=7.0.0"
+elasticsearch = ">=7.0.0, <8"
+pymongo = "*"
+kafka-python = "*"
+pymysql = "*"
+DBUtils = "*"
+mysql-client = "*"
+psycopg2-binary = "*"
+kombu = ">=4.6.0"
+redis = "*"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 135
+target-version = ['py38']
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+  | data
+)/
+'''

@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-import functools
 import os
 import socket
 import traceback
-import typing
+from importlib.resources import open_text
+from typing import Optional, Union
+
 import yaml
 
 from . import paths, singleton
@@ -14,14 +15,18 @@ HOSTNAME = socket.gethostname()
 
 class Config(object, metaclass=singleton.Multiton):
 
-    def __init__(self, config_name='config') -> None:
+    def __init__(self, config_name='config', module=None) -> None:
         super().__init__()
         self.config_name = config_name or 'config'  # force not none
+        self.module = module
         self.config_dir = get_config_dir() or os.getcwd()
         self.conf = self.read_conf()
 
     def read_conf(self):
         try:
+            if self.module is not None:
+                return self._conf_from_module()
+
             if self.config_name.endswith('.yml'):
                 return self._conf_from(self.config_name)
 
@@ -53,7 +58,7 @@ class Config(object, metaclass=singleton.Multiton):
         if not os.path.exists(config_file):
             print(f"[config] from: {config_file}, not exist")
             return None
-        with open(config_file, 'r') as stream:
+        with open(config_file, 'rb') as stream:
             try:
                 conf = yaml.safe_load(stream)
                 print(f"[config] from: {config_file}, loaded")
@@ -63,7 +68,17 @@ class Config(object, metaclass=singleton.Multiton):
                 traceback.print_exc()
                 return {}
 
-    def get(self, name, default_value=None):
+    def _conf_from_module(self):
+        try:
+            conf = yaml.safe_load(open_text(self.module, self.config_name))
+            print(f"[config] from: {self.module}/{self.config_name}, loaded")
+            return conf or {}
+        except yaml.YAMLError as e:
+            print(f"[config] failed to load from: {self.module}/{self.config_name}, due to: {e}")
+            traceback.print_exc()
+            return {}
+
+    def get(self, name, default_value=None, ):
         if name is None:
             return default_value
         cfg = self.conf
@@ -117,15 +132,15 @@ def get_config_dir():
     return os.path.join(root_path, 'conf')
 
 
-def config_from(config_file_name):
-    return get_config(config_file_name)
+def config_from(config_file_name, module: Optional[str] = None):
+    return get_config(config_file_name, module)
 
 
-def get_config(config: typing.Optional[typing.Union[str, Config]] = None):
+def get_config(config: Optional[Union[str, Config]] = None, module: Optional[str] = None):
     if config is None:
         cfg = Config()
     elif isinstance(config, str):
-        cfg = Config(config)
+        cfg = Config(config, module)
     elif isinstance(config, Config):
         cfg = config
     else:
@@ -133,29 +148,15 @@ def get_config(config: typing.Optional[typing.Union[str, Config]] = None):
     return cfg
 
 
-def check_configured(silent=False):
-    def decorator(func):
-        @functools.wraps(func)
-        def check(*args, **kwargs):
-            config = args[2] if len(args) >= 3 else kwargs.get('config')
-            cfg = get_config(config)
-            if cfg is None:
-                if silent:
-                    return args[0] if len(args) >= 2 else kwargs.get('default_value')
-                raise ValueError('Failed to configure from "config.yml" in "conf" package')
-
-            return func(*args, **kwargs)
-
-        return check
-
-    return decorator
+def get(name,
+        default_value=None,
+        config: Optional[Union[str, Config]] = None,
+        module: Optional[str] = None):
+    return get_config(config, module).get(name, default_value)
 
 
-@check_configured(silent=True)
-def get(name, default_value=None, config: typing.Optional[typing.Union[str, Config]] = None):
-    return get_config(config).get(name, default_value)
-
-
-@check_configured(silent=True)
-def get_path(name, default_value=None, config: typing.Optional[typing.Union[str, Config]] = None):
-    return get_config(config).get_path(name, default_value)
+def get_path(name,
+             default_value=None,
+             config: Optional[Union[str, Config]] = None,
+             module: Optional[str] = None):
+    return get_config(config, module).get_path(name, default_value)

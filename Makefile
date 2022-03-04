@@ -1,22 +1,22 @@
+deps:
+	poetry install --no-root -vvv
+
 clean:
 	rm -rf build dist *.egg-info
 
-uninstall:
-	pip uninstall hao -y
-
-install:
-	make clean
-	make uninstall
-	pip install .
-	make clean
-
 build:
 	make clean
-	python setup.py sdist bdist_wheel
+	poetry build
 
-upload:
-	twine upload -r pypi dist/*
+publish:
+	poetry publish -r pypi
 
 release:
-	git tag `cat VERSION`
-	git push origin --tags
+	git tag `poetry version -s`
+	git push origin `poetry version -s`
+
+release-again:
+	git tag -d `poetry version -s`
+	git push -d origin `poetry version -s`
+	git tag `poetry version -s`
+	git push origin `poetry version -s`

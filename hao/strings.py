@@ -51,7 +51,7 @@ def normalize(
         controls: bool = True,
         specials: bool = True,
         emoji: bool = True,
-        unicode: bool = True,
+        unicode: bool = False,
         encoding: str = None
 ):
     if text is None:
@@ -60,13 +60,15 @@ def normalize(
     for p, sub in SUB_NORMALIZE:
         text = p.sub(sub, text)
     try:
-        text = json.loads(f'"{text}"')
+        val = json.loads(f'"{text}"')
+        if isinstance(val, str):
+            text = val
     except json.JSONDecodeError:
         pass
     if controls:
         text = remove_control_chars(text)
     if specials:
-        text = unicodedata.normalize('NFKD', text)
+        text = unicodedata.normalize('NFD', text)
     if emoji:
         text = remove_emoji(text)
     if unicode:

@@ -139,7 +139,7 @@ class Rabbit(object):
         self.close()
         self.ensure_connection()
 
-    def get_queue(self, queue_id: str = None) -> (typing.Optional[SimpleQueue], str):
+    def get_queue(self, queue_id: str = None) -> typing.Tuple[typing.Optional[SimpleQueue], str]:
         self.ensure_connection()
         if queue_id is None:
             queue_id = list(self._queue_options)[0]
@@ -162,6 +162,7 @@ class Rabbit(object):
             queue_name,
             queue_opts=options.get('opts'),
             queue_args=options.get('args'),
+            exchange_opts=options.get('exchange_opts'),
             channel=channel
         )
 
@@ -185,7 +186,8 @@ class Rabbit(object):
                 queue_id: str = None,
                 prior: bool = False,
                 retry: bool = True,
-                verbose: bool = True):
+                verbose: bool = True,
+                **kwargs):
         if message is None:
             if verbose:
                 LOGGER.warning(f"[rabbit] empty message: {message}")
@@ -202,12 +204,12 @@ class Rabbit(object):
             if isinstance(message, list):
                 for msg in message:
                     msg = msg if isinstance(msg, str) else jsons.dumps(msg)
-                    queue.put(msg, retry=retry, retry_policy=RETRY_POLICY, priority=priority)
+                    queue.put(msg, retry=retry, retry_policy=RETRY_POLICY, priority=priority, **kwargs)
                 if verbose:
                     LOGGER.info(f'[rabbit] [{queue_id}] added: {len(message)} tasks, prior: {prior}, priority: {priority}')
             else:
                 msg = message if isinstance(message, str) else jsons.dumps(message)
-                queue.put(msg, retry=retry, retry_policy=RETRY_POLICY, priority=priority)
+                queue.put(msg, retry=retry, retry_policy=RETRY_POLICY, priority=priority, **kwargs)
 
                 if verbose:
                     LOGGER.info(f'[rabbit] [{queue_id}] added: {msg}, prior: {prior}, priority: {priority}')
@@ -248,3 +250,10 @@ class Rabbit(object):
             queue, queue_id = rabbit.get_queue(queue_id)
             queue_size = queue.qsize() if queue else -1
         return str(queue_size)
+
+    def __str__(self) -> str:
+        conf = config.get(f"rabbit.{self.profile}")
+        return f"{conf.get('user')}:***@{conf.get('host')}:{conf.get('port', 5672)}/{conf.get('vhost', '')}"
+
+    def __repr__(self) -> str:
+        return self.__str__()
