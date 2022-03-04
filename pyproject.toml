@@ -35,6 +35,8 @@ tqdm = "*"
 decorator = "*"
 pydantic = "*"
 
+# CVE-2020-26116, CVE-2021-33503
+urllib3 = ">=1.26.5"
 
 [tool.poetry.dev-dependencies]
 pytest = "~=7.0.0"
