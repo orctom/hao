@@ -10,7 +10,7 @@ _VERSION = None
 def get_version():
     global _VERSION
     if _VERSION is None:
-        _VERSION = _get_from_version_file() or _get_git_version() or ''
+        _VERSION = _get_from_version_file() or _get_from_poetry() or _get_git_version() or ''
     return _VERSION
 
 
@@ -22,6 +22,14 @@ def _get_from_version_file():
     if os.path.exists(version_file_path):
         return open(version_file_path, 'r').read().strip()
     return None
+
+
+def _get_from_poetry():
+    try:
+        version = subprocess.check_output(['poetry', 'version', '--short'], stderr=subprocess.DEVNULL)
+        return version.decode().strip()
+    except:
+        return None
 
 
 def _get_git_version():

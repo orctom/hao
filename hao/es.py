@@ -57,7 +57,7 @@ es_client.bulk(actions)
 
 from elasticsearch import Elasticsearch, NotFoundError, helpers
 
-from . import config, logs, slacks, invoker, jsons
+from . import config, invoker, jsons, logs, slacks
 
 LOGGER = logs.get_logger(__name__)
 
@@ -137,21 +137,22 @@ class EsClient(object):
                 body=query,
                 request_timeout=timeout
             )
-            hits = data['hits']['hits']
-            for hit in hits:
-                yield hit
-
             sid = data['_scroll_id']
-            scroll_size = len(data['hits']['hits'])
-            while scroll_size > 0:
-                data = self.client.scroll(scroll_id=sid, scroll=scroll)
+            hits = data['hits']['hits']
+            try:
+                while sid and hits:
+                    for hit in hits:
+                        yield hit
 
-                hits = data['hits']['hits']
-                for hit in hits:
-                    yield hit
-
-                sid = data['_scroll_id']
-                scroll_size = len(data['hits']['hits'])
+                    data = self.client.scroll(scroll_id=sid, scroll=scroll)
+                    sid = data['_scroll_id']
+                    hits = data['hits']['hits']
+            finally:
+                self.client.clear_scroll(
+                    scroll_id=sid,
+                    ignore=(404,),
+                    params={"__elastic_client_meta": (("h", "s"),)}
+                )
 
     def aggs(self, query: dict, index=None, timeout=15):
         if query is None or len(query) == 0:

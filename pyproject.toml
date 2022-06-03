@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "hao"
-version = "3.6.0"
+version = "3.6.8"
 description = "conf, logs, namespace, etc"
 authors = ["orctom <orctom@gmail.com>"]
 
@@ -25,15 +25,9 @@ python = ">=3.7,<4"
 PyYAML = "*"
 chardet = "*"
 requests = "*"
-python-fity3 = "*"
-pytz = "*"
 regex = "*"
-ldap3 = "*"
-passlib = "*"
-oss2 = "*"
 tqdm = "*"
 decorator = "*"
-pydantic = "*"
 
 # CVE-2020-26116, CVE-2021-33503
 urllib3 = ">=1.26.5"
@@ -49,10 +43,17 @@ mysql-client = "*"
 psycopg2-binary = "*"
 kombu = ">=4.6.0"
 redis = "*"
+oss2 = "*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+h-oss-init = "hao.oss:init"
+h-oss-download = "hao.oss:download"
+h-oss-upload = "hao.oss:upload"
+h-run = "hao.cli:run"
 
 [tool.black]
 line-length = 135

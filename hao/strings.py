@@ -148,7 +148,7 @@ def sha1(text: str, hexical: bool = True):
     if hexical:
         return hashlib.sha1(unique_key).hexdigest()
     else:
-        return base64.b64encode(hashlib.sha1(unique_key).digest())
+        return base64.b64encode(hashlib.sha1(unique_key).digest()).decode()
 
 
 def md5(text: str, hexical: bool = True):
@@ -159,7 +159,7 @@ def md5(text: str, hexical: bool = True):
     if hexical:
         return hashlib.md5(unique_key).hexdigest()
     else:
-        return base64.b64encode(hashlib.md5(unique_key).digest())
+        return base64.b64encode(hashlib.md5(unique_key).digest()).decode()
 
 
 def sim(a, b):
@@ -353,7 +353,7 @@ def is_invalid_chinese(text: str):
     :return: True if is Chinese is invalid
     """
     try:
-        text.encode('gb2312')
+        text.encode('gbk')
         return False
     except UnicodeEncodeError:
         return True
