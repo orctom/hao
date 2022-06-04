@@ -9,7 +9,7 @@ build:
 	poetry build
 
 publish:
-	poetry publish -r pypi
+	poetry publish
 
 release:
 	git tag `poetry version -s`
