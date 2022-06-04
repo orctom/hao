@@ -12,12 +12,13 @@ pip install hao
 
 The folder contained any of the following files (searched in this very order) will be treated as **project root path**.
 
+- pyproject.toml
 - requirements.txt
-- VERSION
-- conf
 - setup.py
+- LICENSE
 - .idea
 - .git
+- .vscode
 
 **If your project structure does NOT conform to this, it will not work as expected.**
 

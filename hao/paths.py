@@ -10,7 +10,7 @@ from glob import glob
 
 import regex
 
-FILES_IN_ROOT = ('requirements.txt', 'VERSION', 'conf', 'setup.py', '.idea', '.git')
+FILES_IN_ROOT = ('pyproject.toml', 'requirements.txt', 'setup.py', 'LICENSE', '.git', '.idea', '.vscode')
 _ROOT_PATH = None
 
 
@@ -21,7 +21,6 @@ def expand(path):
 
 
 def package_root(module: types.ModuleType):
-    """获取module的目录"""
     root, _ = os.path.split(os.path.abspath(module.__file__))
     return root
 
@@ -32,10 +31,16 @@ def project_root_path():
         return _ROOT_PATH
     path = pathlib.Path(os.getcwd())
     while True:
-        if any([path.joinpath(f).exists() for f in FILES_IN_ROOT]):
+        if str(path) == str(path.parent).replace('-', '_'):
+            _ROOT_PATH = str(path.parent)
+            break
+
+        if any(path.joinpath(f).exists() for f in FILES_IN_ROOT):
             _ROOT_PATH = str(path)
             break
+
         path = path.parent
+
         if str(path) == '/':
             _ROOT_PATH = os.getcwd()
             break
