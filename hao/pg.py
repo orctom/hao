@@ -34,7 +34,7 @@ pg:
 ####################################################
 ###########          usage              ############
 ####################################################
-from spanner.pg import PG
+from hao.pg import PG
 with PG() as db:
     db.cursor.execute('select * from t_dummy_table')
     records = db.cursor.fetchall()

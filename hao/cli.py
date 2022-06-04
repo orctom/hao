@@ -15,12 +15,12 @@ def run():
     argv = sys.argv
     n_args = len(argv)
     if n_args == 1:
-        LOGGER.warn(f'Usage: spanner-cli module.func [params]')
+        LOGGER.warn(f'Usage: h-run module.func [params]')
         return
 
     try:
         func = _get_function(argv)
-        parser = argparse.ArgumentParser(prog=f"spanner-run {argv[1]}")
+        parser = argparse.ArgumentParser(prog=f"h-run {argv[1]}")
         signature = inspect.signature(func)
         for name, param in signature.parameters.items():
             params = {}
