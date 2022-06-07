@@ -48,16 +48,15 @@ def run():
 def _get_function(args: list):
     sys.path.insert(0, project_root_path())
     module_and_func = args[1]
-    splits = module_and_func.split('.')
-    if len(splits) == 1:
+    module_name, _, func_name = module_and_func.rpartition('.')
+    if len(module_name) == 0:
         module = globals()
-        func_name = module_and_func
     else:
         try:
-            module = importlib.import_module('.'.join(splits[:-1]))
+            module = importlib.import_module(module_name))
         except ModuleNotFoundError as e:
             raise ValueError(e.msg)
-        func_name = splits[-1]
+
     if not hasattr(module, func_name):
         raise ValueError(f"No function named: {func_name}")
     return getattr(module, func_name)
