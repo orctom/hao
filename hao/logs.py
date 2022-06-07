@@ -3,10 +3,10 @@ import argparse
 import logging
 import os
 import sys
-from logging import handlers as logging_handlers
 import typing
+from logging import handlers as logging_handlers
 
-from . import paths, config, invoker
+from . import config, invoker, paths
 
 LOGGER_FORMAT = config.get('logger.format', "%(asctime)s %(levelname)-7s %(name)s:%(lineno)-4d - %(message)s")
 LOGGER_FORMATTER = logging.Formatter(LOGGER_FORMAT)
@@ -92,9 +92,9 @@ def _updated_handler_args(handler_args: dict, log_filename_arg: str, log_filenam
 
 def _get_logger_filename_arg():
     parser = argparse.ArgumentParser(prog='logs', add_help=False)
-    parser.add_argument('--log_filename', required=False)
+    parser.add_argument('--log-to', dest='log_to' required=False)
     args, _ = parser.parse_known_args()
-    return args.log_filename
+    return args.log_to
 
 
 def _get_logger_filename_fallback():
@@ -114,7 +114,7 @@ def get_logger(name=None, level=None):
         logger.setLevel(level)
 
     # update other modules that newly imported
-    for _name in logging.root.manager.loggerDict:
+    for _name in list(logging.root.manager.loggerDict):
         if _name not in _LOGGERS:
             _LOGGERS[_name] = _get_logger(_name)
 
