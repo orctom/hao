@@ -39,15 +39,25 @@ import typing
 import bson
 from pymongo import MongoClient
 from pymongo.collection import Collection
-from pymongo.common import KW_VALIDATORS, URI_OPTIONS_VALIDATOR_MAP, NONSPEC_OPTIONS_VALIDATOR_MAP, URI_OPTIONS_ALIAS_MAP, \
-    INTERNAL_URI_OPTION_NAME_MAP, URI_OPTIONS_DEPRECATION_MAP, TIMEOUT_OPTIONS, WRITE_CONCERN_OPTIONS
+from pymongo.common import (
+    INTERNAL_URI_OPTION_NAME_MAP,
+    KW_VALIDATORS,
+    NONSPEC_OPTIONS_VALIDATOR_MAP,
+    TIMEOUT_OPTIONS,
+    URI_OPTIONS_ALIAS_MAP,
+    URI_OPTIONS_DEPRECATION_MAP,
+    URI_OPTIONS_VALIDATOR_MAP,
+    WRITE_CONCERN_OPTIONS,
+)
 from pymongo.database import Database
 
 from . import config, singleton
 
-
 PARAMS = list(KW_VALIDATORS) + list(URI_OPTIONS_VALIDATOR_MAP) + list(NONSPEC_OPTIONS_VALIDATOR_MAP) + list(URI_OPTIONS_ALIAS_MAP) + \
          list(INTERNAL_URI_OPTION_NAME_MAP) + list(URI_OPTIONS_DEPRECATION_MAP) + list(TIMEOUT_OPTIONS) + list(WRITE_CONCERN_OPTIONS)
+
+
+UPDATE_OPS = ('$currentDate', '$inc', '$min', '$max', '$mul', '$rename', '$set', '$setOnInsert', '$unset')
 
 
 def connect(host=None,
@@ -126,18 +136,14 @@ class Mongo(object, metaclass=singleton.Multiton):
                 return rt
 
     def update_one(self, col_name: str, query: dict, data: dict):
-        data.pop('_id', None)
-        _id = ensure_id_type(query.pop('_id', None))
-        if _id:
-            query['_id'] = _id
-        return self.col(col_name).update_one(query, {"$set": data}).matched_count
+        if not any(op in data for op in UPDATE_OPS):
+            data = {'$set': data}
+        return self.col(col_name).update_one(query, data).matched_count
 
     def update(self, col_name: str, query: dict, data: dict):
-        data.pop('_id', None)
-        _id = ensure_id_type(query.pop('_id', None))
-        if _id:
-            query['_id'] = _id
-        return self.col(col_name).update_many(query, {"$set": data}).matched_count
+        if not any(op in data for op in UPDATE_OPS):
+            data = {'$set': data}
+        return self.col(col_name).update_many(query, data).matched_count
 
     def delete_by_id(self, col_name: str, _id: typing.Union[str, bson.ObjectId]):
         _id = ensure_id_type(_id)
