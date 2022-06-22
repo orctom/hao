@@ -5,7 +5,7 @@ import typing
 
 import requests
 
-from . import logs, config
+from . import config, logs
 
 LOGGER = logs.get_logger(__name__)
 
@@ -86,7 +86,7 @@ class SimpleMetrics(object):
 
     def _report_meters(self):
         self._n_cycle += 1
-        for key, counter in self._meters.copy().items():
+        for key, counter in self._meters.items():
             delta = counter.delta()
             rate = delta / self._interval
             total = counter.get()
@@ -95,7 +95,7 @@ class SimpleMetrics(object):
             self._report_to_prometheus(key, rate)
 
     def _report_gauges(self):
-        for key, gauge in self._gauges.copy():
+        for key, gauge in self._gauges.items():
             try:
                 value = gauge()
                 self._logger.info(f"[{key}] gauge: {value}")

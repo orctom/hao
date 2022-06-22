@@ -59,9 +59,9 @@ for msg in consumer:
 import typing
 
 from kafka import KafkaConsumer, KafkaProducer
-from kafka.errors import NoBrokersAvailable, KafkaTimeoutError
+from kafka.errors import KafkaTimeoutError, NoBrokersAvailable
 
-from . import logs, config, jsons
+from . import config, jsons, logs
 
 LOGGER = logs.get_logger(__name__)
 
@@ -75,6 +75,12 @@ class Kafka(object):
         if self._conf is None:
             raise ValueError(f'no config found for kafka, expecting: `kafka.{self.profile}`')
         self._producer = None
+
+    def __str__(self) -> str:
+        return f"hosts: {self._conf.get('hosts')}, group_id: {self._conf.get('group_id')}"
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
     def get_consumer(self,
                      topic: typing.Union[str, list],

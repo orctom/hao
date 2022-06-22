@@ -92,7 +92,7 @@ def _updated_handler_args(handler_args: dict, log_filename_arg: str, log_filenam
 
 def _get_logger_filename_arg():
     parser = argparse.ArgumentParser(prog='logs', add_help=False)
-    parser.add_argument('--log-to', dest='log_to' required=False)
+    parser.add_argument('--log-to', dest='log_to', required=False)
     args, _ = parser.parse_known_args()
     return args.log_to
 

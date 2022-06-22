@@ -9,7 +9,7 @@ import typing
 
 from decorator import decorator
 
-from . import logs, asyncs, exceptions
+from . import asyncs, exceptions, logs
 from .stopwatch import Stopwatch
 
 LOGGER = logs.get_logger(__name__)
@@ -22,12 +22,10 @@ def retry(func, exceptions=Exception, tries=2, delay=2, backoff=2, logger=LOGGER
 
     Args:
         func: wrapper function
-        exceptions: The exception to check. may be a tuple of
-            exceptions to check.
+        exceptions: The exception to check. may be a tuple of exceptions to check.
         tries: Number of times to try (not retry) before giving up.
         delay: Initial delay between retries in seconds.
-        backoff: Backoff multiplier (e.g. value of 2 will double the delay
-            each retry).
+        backoff: Backoff multiplier (e.g. value of 2 will double the delay each retry).
         logger: Logger to use. If None, print.
     """
 
