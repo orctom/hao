@@ -1403,7 +1403,7 @@ PLACES = [
             Place('340421', '凤台县'),
             Place('340422', '寿县'),
         ]),
-        Place('3405', '马鞍山市', children_type=TYPE_COUNTY, children=[
+        Place('3405', '马鞍山市', shorts=['马鞍山'], children_type=TYPE_COUNTY, children=[
             Place('340503', '花山区'),
             Place('340504', '雨山区'),
             Place('340506', '博望区'),
