@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "hao"
-version = "22.06.22"
+version = "22.07.02"
 description = "conf, logs, namespace, etc"
 authors = ["orctom <orctom@gmail.com>"]
 

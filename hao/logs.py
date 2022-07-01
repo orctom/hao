@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-import argparse
 import logging
 import os
 import sys
 import typing
 from logging import handlers as logging_handlers
 
-from . import config, invoker, paths
+from . import args, config, invoker, paths
 
 LOGGER_FORMAT = config.get('logger.format', "%(asctime)s %(levelname)-7s %(name)s:%(lineno)-4d - %(message)s")
 LOGGER_FORMATTER = logging.Formatter(LOGGER_FORMAT)
@@ -56,6 +55,7 @@ def _get_handlers():
             }
             log_filename = log_filename_arg.format(**params)
             log_path = paths.get(_LOGGER_DIR, log_filename)
+            paths.make_parent_dirs(log_path)
             handler = logging.FileHandler(log_path)
             handler.setFormatter(LOGGER_FORMATTER)
             _HANDLERS.append(handler)
@@ -91,10 +91,7 @@ def _updated_handler_args(handler_args: dict, log_filename_arg: str, log_filenam
 
 
 def _get_logger_filename_arg():
-    parser = argparse.ArgumentParser(prog='logs', add_help=False)
-    parser.add_argument('--log-to', dest='log_to', required=False)
-    args, _ = parser.parse_known_args()
-    return args.log_to
+    return args.get_arg('log-to', help='abstract path or relative path to `{project-root}/data/logs`')
 
 
 def _get_logger_filename_fallback():

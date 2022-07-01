@@ -26,13 +26,10 @@ mongo:
 ###########          usage              ############
 ####################################################
 from hao.mongo import Mongo
-from bson import ObjectId
 mongo = Mongo()
-mongo = Mongo('some-other')
-item = mongo.db.collection_name.find_one({'_id': ObjectId(_id)})
-
-collection = mongo.db['collection_name']
-
+mongo_other = Mongo('some-other')
+item1 = mongo.find_by_id('col_name', _id)
+item2 = mongo.find_one('col_name', {'field': 'val'})
 """
 import typing
 
@@ -138,12 +135,12 @@ class Mongo(object, metaclass=singleton.Multiton):
     def update_one(self, col_name: str, query: dict, data: dict):
         if not any(op in data for op in UPDATE_OPS):
             data = {'$set': data}
-        return self.col(col_name).update_one(query, data).matched_count
+        return self.col(col_name).update_one(query, data)
 
     def update(self, col_name: str, query: dict, data: dict):
         if not any(op in data for op in UPDATE_OPS):
             data = {'$set': data}
-        return self.col(col_name).update_many(query, data).matched_count
+        return self.col(col_name).update_many(query, data)
 
     def delete_by_id(self, col_name: str, _id: typing.Union[str, bson.ObjectId]):
         _id = ensure_id_type(_id)

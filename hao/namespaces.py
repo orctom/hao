@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
 import argparse
-import os
+import sys
+from typing import Optional, Union
 
-import typing
-
-from . import logs, strings
-from .config import get_config, Config
-
-LOGGER = logs.get_logger(__name__)
+from . import args, envs, strings
+from .config import Config, get_config
 
 
 class Attr(object):
@@ -31,7 +28,7 @@ def from_args(_cls=None,
               prefix=None,
               adds=None,
               env: bool = True,
-              config: typing.Optional[typing.Union[str, Config]] = None):
+              config: Optional[Union[str, Config]] = None):
     """
     resolves args from: command line / constructor / env / config / defaults (by order).
     also supports arg resolving according attributes declared upper
@@ -45,11 +42,11 @@ def from_args(_cls=None,
     :return: the object with value populated
     """
 
-    def __init__(self, *args, **kwargs):
-        if len(args) > 0 and _cls is not None:
+    def __init__(self, *a, **kw):
+        if len(a) > 0 and _cls is not None:
             raise ValueError('@from_args() not allowed arg: "_cls"')
         cfg = get_config(config)
-        parser = argparse.ArgumentParser(conflict_handler='resolve')
+        parser = args.add_argument_group(self.__class__.__name__)
 
         if adds is not None:
             if isinstance(adds, list):
@@ -85,7 +82,6 @@ def from_args(_cls=None,
 
         for _name, _attr in attrs.items():
             arg_name = f'--{self._get_arg_name(_name)}'
-            LOGGER.debug(f"[from_args] add argument: {arg_name}")
 
             if _attr.type is list or isinstance(_attr.type, list):
                 _attr.kwargs['nargs'] = '*'
@@ -94,27 +90,35 @@ def from_args(_cls=None,
                 _attr.kwargs['nargs'] = '*'
                 _attr.type = getattr(_attr.type, '__args__')[0]
 
+            desc = ' '.join(filter(None, [
+                '[required]' if _attr.required else '[optional]',
+                _attr.help,
+                f"(default: {_attr.default})" if _attr.default else None
+            ]))
             if 'action' in _attr.kwargs:
-                parser.add_argument(arg_name, help=_attr.help, **_attr.kwargs)
+                parser.add_argument(arg_name, help=desc, default=_attr.default, **_attr.kwargs)
             else:
                 attr_type = _attr.type if _attr.type != bool else lambda x: strings.boolean(x)
-                parser.add_argument(arg_name, type=attr_type, help=_attr.help, **_attr.kwargs)
+                parser.add_argument(arg_name, type=attr_type, help=desc, default=_attr.default, **_attr.kwargs)
 
-        args, _ = parser.parse_known_args()
+        ns, _ = args.parse_known_args()
         values = {}
 
         # constructor
-        for _name, _value in kwargs.items():
+        for _name, _value in kw.items():
             setattr(self, _name, _value)
 
         # adds
         for _name, _default in fields_adds.items():
+            _attr = attrs.get(_name)
+            if _attr is None:
+                continue
             arg_name = self._get_arg_name(_name)
-            _value = getattr(args, arg_name)                   # namespace
+            _value = getattr(ns, arg_name)                   # namespace
             if _value is None:                                 # constructor
-                _value = kwargs.get(_name)
+                _value = kw.get(_name)
             if _value is None:                                 # env / default
-                _value = os.getenv(arg_name, _default) if env else _default
+                _value = envs.get_of_type(arg_name, _attr.type) if env else _default
             setattr(self, _name, _value)
             values[_name] = _value
 
@@ -126,19 +130,20 @@ def from_args(_cls=None,
         # attrs
         for _name, _attr in attrs.items():
             arg_name = self._get_arg_name(_name)
-            _value = getattr(args, arg_name, None)  # namespace
-            if _value is None and _name in kwargs:
-                _value = kwargs.get(_name)
+            _value = getattr(ns, arg_name, None)  # namespace
+            if _value is None and _name in kw:
+                _value = kw.get(_name)
             if _value is None and env:
-                _value = os.getenv(arg_name)
+                _value = envs.get_of_type(arg_name, _attr.type)
             if _value is None:  # 0 or 2 -> 2
                 if _attr.key:
-                    _value = kwargs.get(_name, cfg.get(_attr.key.format(**values), _attr.default))
+                    _value = kw.get(_name, cfg.get(_attr.key.format(**values), _attr.default))
                 else:
                     _value = _attr.default
             if _value is None and _attr.required:
-                parser.print_usage()
-                raise ValueError(f'missing arg: --{self._get_arg_name(_name)}')
+                args.print_help()
+                print(f'MISSING: --{self._get_arg_name(_name)}')
+                sys.exit(0)
 
             try:
                 if _value is not None and isinstance(_value, str):
@@ -177,7 +182,6 @@ def from_args(_cls=None,
 
     def from_dict(cls, data: dict):
         def populate(_o, _d):
-            print('populating', _o, 'x with x', _d)
             for k, v in _d.items():
                 if type(v) == dict:
                     setattr(_o, k, populate(type(k, (), {})(), v))
