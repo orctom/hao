@@ -48,26 +48,21 @@ def from_args(_cls=None,
         cfg = get_config(config)
         parser = args.add_argument_group(self.__class__.__name__)
 
-        if adds is not None:
-            if isinstance(adds, list):
-                for add in adds:
-                    parser = add(parser)
-            elif callable(adds):
-                parser = adds(parser)
+        _adds = args.add_by_function(adds)
 
         # add any action/parser defaults that aren't present
         fields_adds = {
-            **{action.dest: action.default for action in parser._actions
+            **{action.dest: action.default for action in getattr(parser, '_actions')
                if not hasattr(self, action.dest) and action.dest != argparse.SUPPRESS and action.default != argparse.SUPPRESS},
-            **{_attr: _default for _attr, _default in parser._defaults.items()
+            **{_attr: _default for _attr, _default in getattr(parser, '_defaults').items()
                if not hasattr(self, _attr)}
         }
         # fields_adds = {**parser._defaults}
-        for action in parser._actions:
+        for action in getattr(parser, '_actions'):
             if not hasattr(self, action.dest) and action.dest != argparse.SUPPRESS and action.default != argparse.SUPPRESS:
                 if hasattr(action, 'default'):
                     action.default = None
-        parser._defaults.clear()
+        getattr(parser, '_defaults').clear()
 
         fields, attrs = {}, {}
         for cls in reversed(self.__class__.__mro__):
@@ -108,26 +103,13 @@ def from_args(_cls=None,
         for _name, _value in kw.items():
             setattr(self, _name, _value)
 
-        # adds
-        for _name, _default in fields_adds.items():
-            _attr = attrs.get(_name)
-            if _attr is None:
-                continue
-            arg_name = self._get_arg_name(_name)
-            _value = getattr(ns, arg_name)                   # namespace
-            if _value is None:                                 # constructor
-                _value = kw.get(_name)
-            if _value is None:                                 # env / default
-                _value = envs.get_of_type(arg_name, _attr.type) if env else _default
-            setattr(self, _name, _value)
-            values[_name] = _value
-
         # static fields
         for _name, _value in fields.items():
             setattr(self, _name, _value)
             values[_name] = _value
 
         # attrs
+        messages = []
         for _name, _attr in attrs.items():
             arg_name = self._get_arg_name(_name)
             _value = getattr(ns, arg_name, None)  # namespace
@@ -141,9 +123,8 @@ def from_args(_cls=None,
                 else:
                     _value = _attr.default
             if _value is None and _attr.required:
-                args.print_help()
-                print(f'MISSING: --{self._get_arg_name(_name)}')
-                sys.exit(0)
+                messages.append(f'MISSING: --{self._get_arg_name(_name)}')
+                continue
 
             try:
                 if _value is not None and isinstance(_value, str):
@@ -153,17 +134,39 @@ def from_args(_cls=None,
             setattr(self, _name, _value)
             values[_name] = _value
 
+        # adds
+        for _name, _default in fields_adds.items():
+            _attr = attrs.get(_name) or _adds.get(_name)
+            if _attr is None:
+                continue
+            arg_name = self._get_arg_name(_name)
+            _value = getattr(ns, arg_name)  # namespace
+            if _value is None:  # constructor
+                _value = kw.get(_name)
+            if _value is None:  # env / default
+                _value = envs.get_of_type(arg_name, _attr.type) if env else _default
+            setattr(self, _name, _value)
+            values[_name] = _value
+
         del values
 
         for k, v in list(vars(self).items()):
             if type(v) == classmethod:
                 delattr(self, k)
 
+        if len(messages) > 0:
+            args.print_help()
+            for msg in messages:
+                print(msg)
+            sys.exit(0)
+
     def _get_arg_name(self, _name):
         return f'{prefix}_{_name}' if prefix else _name
 
     def prettify(self, align='<', fill=' '):
         attributes = self.as_dict()
+        if len(attributes) == 0:
+            return f"[{self.__class__.__name__}]\t[-]"
         width = max([len(k) for k, _ in attributes.items()]) + 1
         values = '\n\t'.join([f"{k:{fill}{align}{width}}: {v}" for k, v in attributes.items()])
         if len(attributes) <= 1:

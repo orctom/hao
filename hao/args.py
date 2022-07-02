@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import argparse
+from typing import Callable, List, Optional, Union
 
 _PARSER = argparse.ArgumentParser(formatter_class=argparse.MetavarTypeHelpFormatter, add_help=False)
 
@@ -22,6 +23,18 @@ def add_argument_group(*args, **kwargs):
 
 def parse_known_args(args=None, namespace=None):
     return _PARSER.parse_known_args(args, namespace)
+
+
+def add_by_function(addon_fn: Optional[Union[List[Callable], Callable]]):
+    if addon_fn is None:
+        return {}
+    _names_before = set([action.dest for action in getattr(_PARSER, '_actions')])
+    if isinstance(addon_fn, list):
+        for add_fn in addon_fn:
+            add_fn(_PARSER)
+    elif callable(addon_fn):
+        addon_fn(_PARSER)
+    return {action.dest: action for action in getattr(_PARSER, '_actions') if action.dest not in _names_before}
 
 
 def print_help():
