@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import regex
+from charset_normalizer import from_bytes
 
 from . import lists
 
@@ -186,9 +187,5 @@ def get_declared_encodings(html_text, uniquify=False):
 
 def guess_encoding(html_text):
     text = regex.sub("<.*?>", " ", html_text)
-    try:
-        import cchardet as det
-    except ImportError:
-        import chardet as det
-    enc = det.detect(text.encode()).get('encoding') or 'utf-8'
-    return fix_encoding_name(enc)
+    encodding = from_bytes(text.encode()).best()
+    return fix_encoding_name(encodding)

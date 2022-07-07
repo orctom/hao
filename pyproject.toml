@@ -24,8 +24,8 @@ classifiers = [
 [tool.poetry.dependencies]
 python = ">=3.7,<4"
 PyYAML = "*"
-chardet = "*"
 requests = "*"
+charset-normalizer = "*"
 regex = "*"
 tqdm = "*"
 decorator = "*"
@@ -55,6 +55,11 @@ h-oss-init = "hao.oss:init"
 h-oss-download = "hao.oss:download"
 h-oss-upload = "hao.oss:upload"
 h-run = "hao.cli:run"
+
+[[tool.poetry.source]]
+name = "aliyun"
+url = "http://mirrors.aliyun.com/pypi/simple/"
+default = true
 
 [tool.black]
 line-length = 135
