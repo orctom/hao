@@ -34,7 +34,7 @@ item2 = mongo.find_one('col_name', {'field': 'val'})
 import typing
 
 import bson
-from pymongo import MongoClient
+from pymongo import MongoClient, ReturnDocument
 from pymongo.collection import Collection
 from pymongo.common import (
     INTERNAL_URI_OPTION_NAME_MAP,
@@ -81,14 +81,14 @@ def ensure_id_type(_id):
 
 class Mongo(object, metaclass=singleton.Multiton):
 
-    def __init__(self, profile='default') -> None:
+    def __init__(self, profile='default', db_name=None) -> None:
         super().__init__()
         self.profile = profile
         self._conf = config.get(f"mongo.{profile}")
         if self._conf is None:
             raise ValueError(f'no config found for mongodb, expecting: `mongo.{profile}')
         self.client = connect(**self._conf)
-        self.db = self.db()
+        self.db = self.get_db(db_name)
 
     def __str__(self) -> str:
         return f"{self.client.address} [{self.db.name}]"
@@ -96,7 +96,11 @@ class Mongo(object, metaclass=singleton.Multiton):
     def __repr__(self):
         return self.__str__()
 
-    def db(self, name=None) -> Database:
+    def switch_db(self, name=None):
+        self.db = self.get_db(name)
+        return self
+
+    def get_db(self, name=None) -> Database:
         if name is None:
             name = self._conf.get('db')
         return self.client[name]
@@ -161,14 +165,30 @@ class Mongo(object, metaclass=singleton.Multiton):
     def drop(self, col_name):
         return self.col(col_name).drop()
 
-    def print_collections_size(self):
+    def find_one_and_update(self, col_name: str, query: dict, update: dict, return_document=ReturnDocument.AFTER, **kwargs):
+        return self.col(col_name).find_one_and_update(query, update, return_document=return_document, **kwargs)
+
+    def find_one_and_replace(self, col_name: str, query: dict, replacement: dict, return_document=ReturnDocument.AFTER, **kwargs):
+        return self.col(col_name).find_one_and_replace(query, replacement, return_document=return_document, **kwargs)
+
+    def find_one_and_delete(self, col_name: str, query: dict, projection: typing.Optional[dict] = None, **kwargs):
+        return self.col(col_name).find_one_and_delete(query, projection=projection, **kwargs)
+
+    def get_collections_size(self):
         total = 0
+        sizes = {}
         with self.client.start_session() as session:
             collection_names = list(sorted(self.db.list_collection_names()))
-            max_len = max([len(col_name) for col_name in collection_names]) + 1
             print(f"collections:")
             for col_name in collection_names:
                 size = self.db.command({"collstats": col_name, 'scale': 1024 * 1024}, session=session).get('size')
-                print(f"{col_name: <{max_len}}: {size} MB")
+                sizes[col_name] = f"{size} MB"
                 total += size
-        print(f"total: {total} MB")
+        sizes['total'] = f"{total} MB"
+        return sizes
+
+    def print_collections_size(self):
+        sizes = self.get_collections_size()
+        pad_size = max([len(col_name) for col_name in sizes]) + 1
+        for col_name, size in sizes.items():
+            print(f"{col_name: <{pad_size}}: {size}")
