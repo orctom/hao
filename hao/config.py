@@ -71,7 +71,6 @@ class Config(object, metaclass=singleton.Multiton):
     def _conf_from_module(self):
         local_config_file = os.path.join(self.config_dir, self.module, self.config_name)
         if os.path.exists(local_config_file):
-            print(f"[config] load from local module config: {local_config_file}")
             return self._conf_from(local_config_file)
 
         try:

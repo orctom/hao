@@ -16,7 +16,6 @@ signal.signal(signal.SIGTERM, _on_exit)
 
 def on_exit(func, *a, **kw):
     _handlers.append((func, a, kw))
-    print('added func', func)
     return func
 
 

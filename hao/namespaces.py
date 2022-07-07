@@ -28,7 +28,9 @@ def from_args(_cls=None,
               prefix=None,
               adds=None,
               env: bool = True,
-              config: Optional[Union[str, Config]] = None):
+              config: Optional[Union[str, Config]] = None,
+              module: Optional[str] = None,
+              key: Optional[str] = None):
     """
     resolves args from: command line / constructor / env / config / defaults (by order).
     also supports arg resolving according attributes declared upper
@@ -45,7 +47,9 @@ def from_args(_cls=None,
     def __init__(self, *a, **kw):
         if len(a) > 0 and _cls is not None:
             raise ValueError('@from_args() not allowed arg: "_cls"')
-        cfg = get_config(config)
+        cfg = get_config(config, module)
+        if cfg and key:
+            cfg = cfg.get(key)
         parser = args.add_argument_group(self.__class__.__name__)
 
         _adds = args.add_by_function(adds)
@@ -119,7 +123,9 @@ def from_args(_cls=None,
                 _value = envs.get_of_type(arg_name, _attr.type)
             if _value is None:  # 0 or 2 -> 2
                 if _attr.key:
-                    _value = kw.get(_name, cfg.get(_attr.key.format(**values), _attr.default))
+                    _value = cfg.get(_attr.key.format(**values), _attr.default)
+                elif key:
+                    _value = cfg.get(_name, _attr.default)
                 else:
                     _value = _attr.default
             if _value is None and _attr.required:
