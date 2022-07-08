@@ -53,7 +53,7 @@ def _get_function(args: list):
         module = globals()
     else:
         try:
-            module = importlib.import_module(module_name))
+            module = importlib.import_module(module_name)
         except ModuleNotFoundError as e:
             raise ValueError(e.msg)
 
