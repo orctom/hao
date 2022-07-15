@@ -168,10 +168,11 @@ class Mongo(object, metaclass=singleton.Multiton):
     def copy_col(self, col_name_src: str, col_name_tgt: str, query: Optional[dict] = None):
         assert col_name_src is not None
         assert col_name_tgt is not None
-        assert col_name_tgt != col_name_tgt
+        assert col_name_src != col_name_tgt
         query = query or {}
         pipeline = [{"$match": query}, {"$out": col_name_tgt}]
-        return self.col(col_name_src).aggregate(pipeline)
+        self.col(col_name_src).aggregate(pipeline)
+        return self.count(col_name_tgt)
 
     def find_one_and_update(self, col_name: str, query: dict, update: dict, return_document=ReturnDocument.AFTER, **kwargs):
         return self.col(col_name).find_one_and_update(query, update, return_document=return_document, **kwargs)
@@ -181,6 +182,12 @@ class Mongo(object, metaclass=singleton.Multiton):
 
     def find_one_and_delete(self, col_name: str, query: dict, projection: Optional[dict] = None, **kwargs):
         return self.col(col_name).find_one_and_delete(query, projection=projection, **kwargs)
+
+    def list_collections(self, filter=None, count=False, session=None, **kwargs):
+        if filter and isinstance(filter, str):
+            filter = {"name": {"$regex": filter}}
+        col_names = self.db.list_collection_names(filter=filter, session=session, **kwargs)
+        return {col: self.count(col) for col in col_names} if count else col_names
 
     def get_collections_size(self):
         total = 0
