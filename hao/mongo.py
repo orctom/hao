@@ -31,7 +31,7 @@ mongo_other = Mongo('some-other')
 item1 = mongo.find_by_id('col_name', _id)
 item2 = mongo.find_one('col_name', {'field': 'val'})
 """
-import typing
+from typing import Optional, Union
 
 import bson
 from pymongo import MongoClient, ReturnDocument
@@ -111,17 +111,17 @@ class Mongo(object, metaclass=singleton.Multiton):
     def is_collection_exist(self, collection_name):
         return len(self.db.list_collection_names(filter={"name": collection_name})) > 0
 
-    def count(self, col_name: str, query: typing.Optional[dict] = None):
+    def count(self, col_name: str, query: Optional[dict] = None):
         return self.col(col_name).count_documents(query or {})
 
-    def find_by_id(self, col_name: str, _id: typing.Union[str, bson.ObjectId]):
+    def find_by_id(self, col_name: str, _id: Union[str, bson.ObjectId]):
         _id = ensure_id_type(_id)
         return self.col(col_name).find_one({'_id': _id})
 
-    def find_one(self, col_name: str, query: typing.Optional[dict] = None, projection: typing.Optional[dict] = None, **kwargs):
+    def find_one(self, col_name: str, query: Optional[dict] = None, projection: Optional[dict] = None, **kwargs):
         return self.col(col_name).find_one(query or {}, projection, **kwargs)
 
-    def find(self, col_name: str, query: typing.Optional[dict] = None, projection: typing.Optional[dict] = None, **kwargs):
+    def find(self, col_name: str, query: Optional[dict] = None, projection: Optional[dict] = None, **kwargs):
         return self.col(col_name).find(query or {}, projection, **kwargs)
 
     def save(self, col_name: str, data: dict):
@@ -146,7 +146,7 @@ class Mongo(object, metaclass=singleton.Multiton):
             data = {'$set': data}
         return self.col(col_name).update_many(query, data)
 
-    def delete_by_id(self, col_name: str, _id: typing.Union[str, bson.ObjectId]):
+    def delete_by_id(self, col_name: str, _id: Union[str, bson.ObjectId]):
         _id = ensure_id_type(_id)
         return self.col(col_name).delete_one({'_id': _id})
 
@@ -165,13 +165,21 @@ class Mongo(object, metaclass=singleton.Multiton):
     def drop(self, col_name):
         return self.col(col_name).drop()
 
+    def copy_col(self, col_name_src: str, col_name_tgt: str, query: Optional[dict] = None):
+        assert col_name_src is not None
+        assert col_name_tgt is not None
+        assert col_name_tgt != col_name_tgt
+        query = query or {}
+        pipeline = [{"$match": query}, {"$out": col_name_tgt}]
+        return self.col(col_name_src).aggregate(pipeline)
+
     def find_one_and_update(self, col_name: str, query: dict, update: dict, return_document=ReturnDocument.AFTER, **kwargs):
         return self.col(col_name).find_one_and_update(query, update, return_document=return_document, **kwargs)
 
     def find_one_and_replace(self, col_name: str, query: dict, replacement: dict, return_document=ReturnDocument.AFTER, **kwargs):
         return self.col(col_name).find_one_and_replace(query, replacement, return_document=return_document, **kwargs)
 
-    def find_one_and_delete(self, col_name: str, query: dict, projection: typing.Optional[dict] = None, **kwargs):
+    def find_one_and_delete(self, col_name: str, query: dict, projection: Optional[dict] = None, **kwargs):
         return self.col(col_name).find_one_and_delete(query, projection=projection, **kwargs)
 
     def get_collections_size(self):
