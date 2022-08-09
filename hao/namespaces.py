@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import argparse
 import sys
-from typing import Optional, Union
+from typing import Callable, Optional, Union
 
 from . import args, envs, strings
 from .config import Config, get_config
@@ -30,21 +30,28 @@ def from_args(_cls=None,
               env: bool = True,
               config: Optional[Union[str, Config]] = None,
               module: Optional[str] = None,
-              key: Optional[str] = None):
+              key: Optional[str] = None,
+              loader: Optional[Callable] = None):
     """
-    resolves args from: command line / constructor / env / config / defaults (by order).
-    also supports arg resolving according attributes declared upper
+    resolves args from: command line / constructor / env / config / loader / defaults (by order).
 
     :param _cls: do not pass in this param
     :param prefix: optional prefix for command line: {prefix}_attribute
     :param adds: optional one or more function to add more args to ArgumentParser()<br/>
         e.g. <pre> @from_args(adds=pytorch_lightning.Trainer.add_argparse_args) </pre>
     :param env: will try to resolve args from environment properties if True
-    :param config: None (default) / yml filename / Config
+    :param config: optional yaml config filename (path not included)
+    :param module: optional module name, will try to load from conf/{{module}}/config.yml or site-packages/{{module}}/config.yml
+    :param loader: optional function, which should return a dict populated with values
     :return: the object with value populated
     """
 
     def __init__(self, *a, **kw):
+        def from_loader():
+            if loader is None:
+                return None
+            return loader()
+
         if len(a) > 0 and _cls is not None:
             raise ValueError('@from_args() not allowed arg: "_cls"')
         cfg = get_config(config, module)
@@ -101,6 +108,7 @@ def from_args(_cls=None,
                 parser.add_argument(arg_name, type=attr_type, help=desc, default=_attr.default, **_attr.kwargs)
 
         ns, _ = args.parse_known_args()
+        loaded_values = from_loader()
         values = {}
 
         # constructor
@@ -126,6 +134,8 @@ def from_args(_cls=None,
                     _value = cfg.get(_attr.key.format(**values), _attr.default)
                 elif key:
                     _value = cfg.get(_name, _attr.default)
+                elif loaded_values:
+                    _value = loaded_values.get(_name, _attr.default)
                 else:
                     _value = _attr.default
             if _value is None and _attr.required:

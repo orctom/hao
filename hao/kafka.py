@@ -114,7 +114,7 @@ class Kafka(object):
             )
         return self._producer
 
-    def publish(self, topic, message, flush: bool = True):
+    def publish(self, topic, message, key=None, headers=None, partition=None, timestamp_ms=None, flush: bool = False):
         message_type = type(message)
         if message_type == str:
             payload = message.encode()
@@ -126,7 +126,7 @@ class Kafka(object):
         try:
             LOGGER.debug(f"sending payload: {payload}")
             producer = self.get_producer()
-            future = producer.send(topic, payload)
+            future = producer.send(topic, payload, key, headers, partition, timestamp_ms)
             if flush:
                 producer.flush(10)
             return future
