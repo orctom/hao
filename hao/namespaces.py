@@ -42,6 +42,7 @@ def from_args(_cls=None,
     :param env: will try to resolve args from environment properties if True
     :param config: optional yaml config filename (path not included)
     :param module: optional module name, will try to load from conf/{{module}}/config.yml or site-packages/{{module}}/config.yml
+    :param key: optional key name in config file, if config is specified
     :param loader: optional function, which should return a dict populated with values
     :return: the object with value populated
     """
@@ -52,21 +53,23 @@ def from_args(_cls=None,
                 return None
             return loader()
 
-        if len(a) > 0 and _cls is not None:
-            raise ValueError('@from_args() not allowed arg: "_cls"')
+        assert len(a) == 0 or _cls is None, '@from_args() not allowed arg: "_cls"'
+
         cfg = get_config(config, module)
         if cfg and key:
             cfg = cfg.get(key)
         parser = args.add_argument_group(self.__class__.__name__)
 
-        _adds = args.add_by_function(adds)
-
         # add any action/parser defaults that aren't present
         fields_adds = {
-            **{action.dest: action.default for action in getattr(parser, '_actions')
-               if not hasattr(self, action.dest) and action.dest != argparse.SUPPRESS and action.default != argparse.SUPPRESS},
-            **{_attr: _default for _attr, _default in getattr(parser, '_defaults').items()
-               if not hasattr(self, _attr)}
+            **{
+                action.dest: action.default for action in getattr(parser, '_actions')
+                if not hasattr(self, action.dest) and action.dest != argparse.SUPPRESS and action.default != argparse.SUPPRESS
+            },
+            **{
+                _attr: _default for _attr, _default in getattr(parser, '_defaults').items()
+                if not hasattr(self, _attr)
+            }
         }
         # fields_adds = {**parser._defaults}
         for action in getattr(parser, '_actions'):
@@ -111,14 +114,16 @@ def from_args(_cls=None,
         loaded_values = from_loader()
         values = {}
 
-        # constructor
-        for _name, _value in kw.items():
-            setattr(self, _name, _value)
-
         # static fields
         for _name, _value in fields.items():
             setattr(self, _name, _value)
             values[_name] = _value
+
+        # constructor
+        for _name, _value in kw.items():
+            _val = _value or values[_name]
+            setattr(self, _name, _val)
+            values[_name] = _val
 
         # attrs
         messages = []
@@ -151,12 +156,15 @@ def from_args(_cls=None,
             values[_name] = _value
 
         # adds
+        _adds = args.add_by_function(adds)
         for _name, _default in fields_adds.items():
+            if _name in values:
+                continue
             _attr = attrs.get(_name) or _adds.get(_name)
             if _attr is None:
                 continue
             arg_name = self._get_arg_name(_name)
-            _value = getattr(ns, arg_name)  # namespace
+            _value = getattr(ns, arg_name, None)  # namespace
             if _value is None:  # constructor
                 _value = kw.get(_name)
             if _value is None:  # env / default
@@ -180,7 +188,7 @@ def from_args(_cls=None,
         return f'{prefix}_{_name}' if prefix else _name
 
     def prettify(self, align='<', fill=' '):
-        attributes = self.as_dict()
+        attributes = self.to_dict()
         if len(attributes) == 0:
             return f"[{self.__class__.__name__}]\t[-]"
         width = max([len(k) for k, _ in attributes.items()]) + 1
@@ -193,7 +201,10 @@ def from_args(_cls=None,
     def __repr__(self) -> str:
         return self.prettify()
 
-    def as_dict(self):
+    def __str__(self) -> str:
+        return self.__repr__()
+
+    def to_dict(self):
         return {
             k: v for k, v in vars(self).items()
             if not k.startswith('_') and type(v) != classmethod
@@ -235,7 +246,7 @@ def from_args(_cls=None,
     def wrapper(cls):
         if getattr(cls, "__class__", None) is None:
             raise TypeError("Only works with new-style classes.")
-        for method in [_get_arg_name, __init__, as_dict, __repr__, prettify]:
+        for method in [_get_arg_name, __init__, to_dict, __repr__, __str__, prettify]:
             setattr(cls, method.__name__, _method(cls, method))
         for method in [from_dict]:
             setattr(cls, method.__name__, classmethod(method))
