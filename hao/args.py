@@ -2,7 +2,7 @@
 import argparse
 from typing import Callable, List, Optional, Union
 
-_PARSER = argparse.ArgumentParser(formatter_class=argparse.MetavarTypeHelpFormatter, add_help=False)
+_PARSER = argparse.ArgumentParser(formatter_class=argparse.MetavarTypeHelpFormatter, add_help=False, conflict_handler='resolve')
 
 
 def get_arg(name: str, type: type = str, help=None, required=False, default=None):
