@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
 import argparse
+import copy
 import sys
 from typing import Callable, Optional, Union
 
 from . import args, envs, strings
 from .config import Config, get_config
+
+
+_CACHE = {}
 
 
 class Attr(object):
@@ -31,7 +35,8 @@ def from_args(_cls=None,
               config: Optional[Union[str, Config]] = None,
               module: Optional[str] = None,
               key: Optional[str] = None,
-              loader: Optional[Callable] = None):
+              loader: Optional[Callable] = None,
+              cache: bool = False):
     """
     resolves args from: command line / constructor / env / config / loader / defaults (by order).
 
@@ -44,6 +49,7 @@ def from_args(_cls=None,
     :param module: optional module name, will try to load from conf/{{module}}/config.yml or site-packages/{{module}}/config.yml
     :param key: optional key name in config file, if config is specified
     :param loader: optional function, which should return a dict populated with values
+    :param cache: save to cache forever if True
     :return: the object with value populated
     """
 
@@ -184,6 +190,13 @@ def from_args(_cls=None,
                 print(msg)
             sys.exit(0)
 
+        post_init_fn = getattr(self, '__post__init__', None)
+        if post_init_fn:
+            post_init_fn()
+
+        if cache:
+            _CACHE[fqdn(self)] = self
+
     def _get_arg_name(self, _name):
         return f'{prefix}_{_name}' if prefix else _name
 
@@ -256,3 +269,13 @@ def from_args(_cls=None,
         return wrapper
     else:
         return wrapper(_cls)
+
+
+def get_cached() -> dict:
+    return copy.copy(_CACHE)
+
+
+def fqdn(obj: object) -> str:
+    module = obj.__class__.__module__
+    name = obj.__class__.__qualname__
+    return name if module in (None, str.__class__.__module__) else f"{module}.{name}"
