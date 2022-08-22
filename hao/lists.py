@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import itertools
+from typing import Union
 
 from . import dicts
 
@@ -99,6 +100,15 @@ def add_to_list(items, adding):
     else:
         items.append(adding)
     return True
+
+
+def add_list_of_list(target: list, adding: Union[list, tuple, set]):
+    if not isinstance(adding, (list, tuple, set)):
+        adding = [adding]
+    if len(target) == 0:
+        target.extend([[] for _ in range(len(adding))])
+    for items_target, items_adding in zip(target, adding):
+        add_to_list(items_target, items_adding)
 
 
 def remove_fields(items: list, fields: list, copy=False, remove_empty: bool = False, remove_private: bool = False) -> list:
