@@ -94,7 +94,7 @@ def add_to_list(items, adding):
         return False
     adding_type = type(adding)
     if adding_type in (list, tuple, set):
-        adding = list(filter(None, adding))
+        adding = [a for a in adding if a is not None]
         if len(adding) > 0:
             items.extend(adding)
     else:
@@ -102,9 +102,9 @@ def add_to_list(items, adding):
     return True
 
 
-def add_list_of_list(target: list, adding: Union[list, tuple, set]):
-    if not isinstance(adding, (list, tuple, set)):
-        adding = [adding]
+def add_tuple_to_list(target: list, adding: tuple):
+    if not isinstance(adding, tuple):
+        raise ValueError(f"expecting `adding` to be a tuple, actual: {type(adding)}")
     if len(target) == 0:
         target.extend([[] for _ in range(len(adding))])
     for items_target, items_adding in zip(target, adding):
