@@ -2,11 +2,11 @@
 import argparse
 import copy
 import sys
+from pprint import pformat
 from typing import Callable, Optional, Union
 
 from . import args, envs, strings
 from .config import Config, get_config
-
 
 _CACHE = {}
 
@@ -200,12 +200,17 @@ def from_args(_cls=None,
     def _get_arg_name(self, _name):
         return f'{prefix}_{_name}' if prefix else _name
 
-    def prettify(self, align='<', fill=' '):
+    def prettify(self, align='<', fill=' ', width=125):
+        def fmt_k(_k):
+            return f"{_k:{fill}{align}{indent}}"
+        def fmt_v(_v):
+            return pformat(_v, compact=True, width=width, sort_dicts=False) if isinstance(_v, dict) else _v
+
         attributes = self.to_dict()
         if len(attributes) == 0:
             return f"[{self.__class__.__name__}]\t[-]"
-        width = max([len(k) for k, _ in attributes.items()]) + 1
-        values = '\n\t'.join([f"{k:{fill}{align}{width}}: {v}" for k, v in attributes.items()])
+        indent = max([len(k) for k, _ in attributes.items()]) + 1
+        values = '\n\t'.join([f"{fmt_k(k)}: {fmt_v(v)}" for k, v in attributes.items()])
         if len(attributes) <= 1:
             return f"[{self.__class__.__name__}]\t{values}"
         else:
