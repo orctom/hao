@@ -14,7 +14,7 @@ def get_arg(name: str, type: type = str, help=None, required=False, default=None
     ]))
     parser.add_argument(f"--{name}", type=type, help=desc, required=required, default=default)
     ns, _ = _PARSER.parse_known_args()
-    return getattr(ns, name, default)
+    return getattr(ns, name.replace('-', '_'), default)
 
 
 def add_argument_group(*args, **kwargs):
