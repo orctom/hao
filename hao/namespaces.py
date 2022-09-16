@@ -204,7 +204,11 @@ def from_args(_cls=None,
         def fmt_k(_k):
             return f"{_k:{fill}{align}{indent}}"
         def fmt_v(_v):
-            return pformat(_v, compact=True, width=width, sort_dicts=False) if isinstance(_v, dict) else _v
+            if isinstance(_v, dict):
+                formatted = pformat(_v, compact=True, width=width, sort_dicts=False)
+                return f"\n\t{' ' * (indent + 2)}".join([l for l in formatted.splitlines()])
+            else:
+                return _v
 
         attributes = self.to_dict()
         if len(attributes) == 0:
