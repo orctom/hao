@@ -372,7 +372,7 @@ def init(key='oss.init',
     sw = Stopwatch()
 
     oss_args = cfg.get(oss_keys)
-    if 'access_id' in oss_args and 'access_secret' in oss_args:
+    if oss_args and 'access_id' in oss_args and 'access_secret' in oss_args:
         oss = OSS(**oss_args)
     else:
         oss = OSS.from_ossutilconfig()
