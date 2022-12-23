@@ -148,11 +148,10 @@ class EsClient(object):
                     sid = data['_scroll_id']
                     hits = data['hits']['hits']
             finally:
-                self.client.clear_scroll(
-                    scroll_id=sid,
-                    ignore=(404,),
-                    params={"__elastic_client_meta": (("h", "s"),)}
-                )
+                try:
+                    self.client.clear_scroll(scroll_id=sid, ignore=(404,))
+                except Exception as ignored:
+                    pass
 
     def aggs(self, query: dict, index=None, timeout=15):
         if query is None or len(query) == 0:
