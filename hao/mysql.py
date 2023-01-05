@@ -44,8 +44,12 @@ except ImportError:
 
 try:
     import pymysql as mysqlclient
+    from pymysql.connections import Connection
+    from pymysql.cursors import Cursor, DictCursor, SSCursor, SSDictCursor
 except ImportError:
     import MySQLdb as mysqlclient
+    from MySQLdb.connections import Connection
+    from MySQLdb.cursors import Cursor, DictCursor, SSCursor, SSDictCursor
 
 
 LOGGER = logs.get_logger(__name__)
@@ -54,10 +58,10 @@ LOGGER = logs.get_logger(__name__)
 class MySQL(object):
     _POOLS = {}
     _CURSOR_CLASSES = {
-        'default': mysqlclient.cursors.Cursor,
-        'ss': mysqlclient.cursors.SSCursor,
-        'dict': mysqlclient.cursors.DictCursor,
-        'ss-dict': mysqlclient.cursors.SSDictCursor,
+        'default': Cursor,
+        'ss': SSCursor,
+        'dict': DictCursor,
+        'ss-dict': SSDictCursor,
     }
 
     def __init__(self, profile='default', cursor_class='default') -> None:
@@ -67,7 +71,7 @@ class MySQL(object):
         self._ensure_pool()
 
     def _get_cursor_class(self):
-        return self._CURSOR_CLASSES.get(self.cursor_class, mysqlclient.cursors.Cursor)
+        return self._CURSOR_CLASSES.get(self.cursor_class, Cursor)
 
     def _ensure_pool(self):
         if self.profile in MySQL._POOLS:
@@ -84,7 +88,6 @@ class MySQL(object):
             'charset': "utf8",
             'cursorclass': self._get_cursor_class(),
             'autocommit': True,
-            'ssl': False
         }
         conf.update(conf_profile)
         LOGGER.debug(f"connecting [{self.profile}], host: {conf.get('host')}, db: {conf.get('db')}")
@@ -110,7 +113,7 @@ class MySQL(object):
         self.cursor = self.conn.cursor()
         return self
 
-    def connect(self) -> mysqlclient.connections.Connection:
+    def connect(self) -> Connection:
         return self._POOLS.get(self.profile).connection()
 
     def __exit__(self, _type, _value, _trace):
