@@ -63,9 +63,14 @@ class DB(metaclass=singleton.Multiton):
     def _create_session(self):
         return sessionmaker(self.engine)
 
-    def session(self, *, scoped: bool = False, ctx: bool = False) -> Session:
-        sess = scoped_session(self._session) if scoped else self._session()
-        return sess.begin() if ctx else sess
+    def session(self) -> Session:
+        return self._session()
+
+    def ctx_session(self) -> Session:
+        return self._session.begin()
+
+    def scoped_session(self) -> Session:
+        return scoped_session(self._session)
 
     def connection(self) -> Connection:
         return self.engine.connect()
