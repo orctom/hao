@@ -31,7 +31,7 @@ try:
 finally:
     session.close()
 
-with DB('db2').session(ctx=True) as session:
+with DB('db2').ctx_session() as session:
     session.add(some_object)
     session.add(some_other_object)
 # commits transaction, closes session
