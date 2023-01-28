@@ -155,7 +155,7 @@ def get_config(config: Optional[Union[str, Config]] = None, module: Optional[str
 def get(name,
         default_value=None,
         config: Optional[Union[str, Config]] = None,
-        module: Optional[str] = None):
+        module: Optional[str] = None) -> Optional[Union[str, int, float, list, map, dict]]:
     return get_config(config, module).get(name, default_value)
 
 
