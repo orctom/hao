@@ -50,15 +50,15 @@ class DB(metaclass=singleton.Multiton):
         self._session = self._create_session()
 
     def _create_engine(self):
-        params_default = {
+        params = {
             'hide_parameters': True,
             'json_serializer': jsons.dumps,
             'pool_pre_ping': True,
             'pool_size': 5,
             'pool_recycle': 3500 * 6,
         }
-        cfg = {**config.get(f"db.{self.profile}"), **params_default}
-        return engine_from_config(cfg, prefix='')
+        params.update(config.get(f"db.{self.profile}"))
+        return engine_from_config(params, prefix='')
 
     def _create_session(self):
         return sessionmaker(self.engine)
