@@ -11,12 +11,12 @@ LOGGER = logs.get_logger(__name__)
 def json_default(o):
     if isinstance(o, (datetime.date, datetime.datetime)):
         return o.isoformat()
-    if hasattr(o, '__str__'):
-        return str(o)
     if isinstance(o, Enum):
         return o.value
     if hasattr(o, '__dict__'):
         return getattr(o, '__dict__')
+    if hasattr(o, '__str__'):
+        return str(o)
 
     try:
         from bson import ObjectId
