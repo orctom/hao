@@ -2,30 +2,32 @@ import importlib
 import pkgutil
 
 from . import (
-    logs,
+    asyncs,
     charsets,
     config,
     currencies,
-    envs,
-    jsons,
-    lists,
-    dicts,
-    nations,
-    paths,
-    regexes,
     decorators,
-    singleton,
-    stopwatch,
-    strings,
-    versions,
+    dicts,
+    english,
+    envs,
     exceptions,
     files,
     invoker,
-    slacks,
+    jsons,
+    lists,
+    logs,
     namespaces,
-    asyncs,
-    english,
+    nations,
+    paths,
+    regexes,
+    singleton,
+    slacks,
+    stopwatch,
+    strings,
+    versions,
 )
+
+__version__ = '3.7.9'
 
 
 def import_submodules(package, recursive=False):

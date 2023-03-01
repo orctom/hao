@@ -1,22 +1,36 @@
-deps:
-	poetry install --no-root -vvv
 
+help:
+	@grep -B1 -E "^[a-zA-Z0-9_-]+\:([^\=]|$$)" Makefile \
+	 | grep -v -- -- \
+	 | sed 'N;s/\n/###/' \
+	 | sed -n 's/^#: \(.*\)###\(.*\):.*/\2###\1/p' \
+	 | column -t  -s '###'
+
+#: install python dependencies
+deps:
+	pi install
+
+#: remove build dists
 clean:
 	rm -rf build dist *.egg-info
 
+#: create git tag with the version number in poetry
+release:
+	git tag `pi version -s`
+	git push origin `pi version -s`
+
+#: re-create git tag with the version number in poetry
+release-again:
+	git tag -d `pi version -s`
+	git push -d origin `pi version -s`
+	git tag `pi version -s`
+	git push origin `pi version -s`
+
+#: build dists
 build:
 	make clean
-	poetry build
+	pi build
 
+#: publish to pypi
 publish:
-	poetry publish
-
-release:
-	git tag `poetry version -s`
-	git push origin `poetry version -s`
-
-release-again:
-	git tag -d `poetry version -s`
-	git push -d origin `poetry version -s`
-	git tag `poetry version -s`
-	git push origin `poetry version -s`
+	pi publish

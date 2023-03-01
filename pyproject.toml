@@ -1,66 +1,61 @@
-[tool.poetry]
+[project]
 name = "hao"
-version = "3.7.8"
 description = "conf, logs, namespace, etc"
-authors = ["orctom <orctom@gmail.com>"]
-
-license = "Apache-2.0"
-
+authors = [{name = "orctom", email = "orctom@gmail.com"}]
 readme = "README.md"
+license = {file = "LICENSE"}
+license-expression = "Apache-2.0"
+dynamic = ["version"]
+classifiers = [
+    'Intended Audience :: Developers',
+]
+requires-python = ">=3.8"
+dependencies = [
+  "PyYAML",
+  "requests",
+  "charset-normalizer",
+  "regex",
+  "tqdm",
+  "decorator",
+  "urllib3>=1.26.5",
+]
 
+[project.urls]
 homepage = "https://github.com/orctom/hao"
 repository = "https://github.com/orctom/hao"
 
-keywords = ["config", "log", "namespace"]
-
-classifiers = [
-    'Intended Audience :: Developers',
-    'License :: OSI Approved :: Apache Software License',
-    'Programming Language :: Python :: 3.7',
-    'Programming Language :: Python :: 3.8',
-    'Programming Language :: Python :: 3.9',
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.2.0",
+  "elasticsearch<8",
+  "pymongo",
+  "kafka-python",
+  "pymysql",
+  "dbutils",
+  "mysql-client",
+  "psycopg2-binary",
+  "kombu",
+  "redis",
+  "oss2",
+  "sqlalchemy",
 ]
 
-[tool.poetry.dependencies]
-python = ">=3.7,<4"
-PyYAML = "*"
-requests = "*"
-charset-normalizer = "*"
-regex = "*"
-tqdm = "*"
-decorator = "*"
-
-# CVE-2020-26116, CVE-2021-33503
-urllib3 = ">=1.26.5"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^7.2.0"
-elasticsearch = ">=7.0.0, <8"
-pymongo = "*"
-kafka-python = "*"
-pymysql = "*"
-DBUtils = "*"
-mysql-client = "*"
-psycopg2-binary = "*"
-kombu = ">=4.6.0"
-redis = "*"
-oss2 = "*"
-sqlalchemy = "*"
-
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["flit_core>=3.8.0,<4"]
+build-backend = "flit_core.buildapi"
 
-[tool.poetry.scripts]
-h-oss-init = "hao.oss:init"
-h-oss-download = "hao.oss:download"
-h-oss-upload = "hao.oss:upload"
-h-run = "hao.cli:run"
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q -s"
+testpaths = [
+    "tests",
+]
 
-[[tool.poetry.source]]
-name = "aliyun"
-url = "http://mirrors.aliyun.com/pypi/simple/"
-default = true
+[tool.autopep8]
+max_line_length = 135
+in-place = true
+recursive = true
+aggressive = 3
 
 [tool.black]
 line-length = 135

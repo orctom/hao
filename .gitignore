@@ -26,4 +26,4 @@ notebook/
 lightning_logs/
 dist/
 conf/
-
+.venv/
