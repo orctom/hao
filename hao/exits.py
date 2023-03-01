@@ -12,6 +12,7 @@ def _on_exit(*a, **kw):
 
 
 signal.signal(signal.SIGTERM, _on_exit)
+signal.signal(signal.SIGINT, _on_exit)
 
 
 def on_exit(func, *a, **kw):
