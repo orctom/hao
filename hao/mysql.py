@@ -35,6 +35,8 @@ with MySQL('some-other', cursor_class='dict') as db:
     ...
 """
 
+from typing import Optional, Union
+
 from . import config, logs
 
 try:
@@ -55,7 +57,7 @@ except ImportError:
 LOGGER = logs.get_logger(__name__)
 
 
-class MySQL(object):
+class MySQL:
     _POOLS = {}
     _CURSOR_CLASSES = {
         'default': Cursor,
@@ -115,6 +117,30 @@ class MySQL(object):
 
     def connect(self) -> Connection:
         return self._POOLS.get(self.profile).connection()
+
+    def execute(self, sql: str, params: Optional[Union[list, tuple]] = None):
+        self.cursor.execute(sql, params)
+        return self.cursor
+
+    def fetchone(self, sql: str, params: Optional[Union[list, tuple]] = None):
+        self.cursor.execute(sql, params)
+        return self.cursor.fetchone()
+
+    def fetchall(self, sql: str, params: Optional[Union[list, tuple]] = None):
+        self.cursor.execute(sql, params)
+        return self.cursor.fetchall()
+
+    def fetchmany(self, sql: str, params: Optional[Union[list, tuple]] = None):
+        self.cursor.execute(sql, params)
+        return self.cursor.fetchmany()
+
+    def commit(self, sql: str, params: Optional[Union[list, tuple]] = None):
+        n_rows = self.cursor.execute(sql, params)
+        self.conn.commit()
+        return n_rows
+
+    def rollback(self):
+        self.conn.rollback()
 
     def __exit__(self, _type, _value, _trace):
         self.cursor.close()

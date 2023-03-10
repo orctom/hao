@@ -22,4 +22,4 @@ class OptionsMixin:
 
     @classmethod
     def options(cls):
-        return [(e.label, e.value) for _, e in enumerate(cls)]
+        return [{'label': e.label, 'value': e.value} for _, e in enumerate(cls)]
