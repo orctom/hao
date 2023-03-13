@@ -19,10 +19,10 @@ def uniquify(sequence, min_size=0):
 def _strip_list_item(item):
     if item is None:
         return None
-    if callable(getattr(item, 'strip', None)):
+    if isinstance(item, str):
         item = item.strip()
-    if len(item) == 0:
-        return None
+        if len(item) == 0:
+            return None
     return item
 
 
