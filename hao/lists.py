@@ -1,29 +1,33 @@
 # -*- coding: utf-8 -*-
 import itertools
-from typing import Union
 
 from . import dicts
 
 
-def uniquify(sequence, min_size=0):
-    if sequence is None:
+def uniquify(items: list, min_size=0):
+    def strip_item(item):
+        if item is None:
+            return None
+        if isinstance(item, str):
+            item = item.strip()
+            if len(item) == 0:
+                return None
+        return item
+
+    def is_qualified(item):
+        if item is None:
+            return False
+        if isinstance(item, str) and len(item) < min_size:
+            return False
+        if item in seen:
+            return False
+        seen.add(item)
+        return True
+
+    if items is None:
         return None
     seen = set()
-    return list(filter(
-        None,
-        [_strip_list_item(x) for x in sequence
-         if x is not None and len(x) >= min_size and not (x in seen or seen.add(x))]
-    ))
-
-
-def _strip_list_item(item):
-    if item is None:
-        return None
-    if isinstance(item, str):
-        item = item.strip()
-        if len(item) == 0:
-            return None
-    return item
+    return list(filter(None, [strip_item(x) for x in items if is_qualified(x)]))
 
 
 def is_empty(items):
