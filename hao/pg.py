@@ -8,10 +8,10 @@ pip install DBUtils
 # option 1: with postgres installed
 # - mac: brew install postgresql
 # - ubuntu: sudo apt install libpq-dev
-pip install psycopg2
+pip install psycopg
 
 # option 2: with packaged binary
-pip install psycopg2-binary
+pip install "psycopg[binary]"
 
 ####################################################
 ###########         config.yml          ############
@@ -51,7 +51,7 @@ try:
 except ImportError:
     from DBUtils.PooledDB import PooledDB
 
-import psycopg2 as client
+import psycopg as client
 
 LOGGER = logs.get_logger(__name__)
 
