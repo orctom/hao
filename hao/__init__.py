@@ -27,7 +27,7 @@ from . import (
     versions,
 )
 
-__version__ = '3.7.10'
+__version__ = '3.7.11'
 
 
 def import_submodules(package, recursive=False):

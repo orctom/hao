@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "dummy",
+            "type": "python",
+            "request": "launch",
+            "program": "-m",
+            "env": {},
+            "console": "integratedTerminal",
+            "args": [
+                "dummy"
+            ],
+            "justMyCode": false
+        }
+    ]
+}

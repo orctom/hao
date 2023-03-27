@@ -3,6 +3,10 @@
 ####################################################
 ###########         dependency          ############
 ####################################################
+# Option 1: requires mysql client installed
+pip install mysqlclient DBUtils
+
+# Option 2: green pure python client, slower than `mysqlclient`
 pip install pymysql DBUtils
 
 ####################################################

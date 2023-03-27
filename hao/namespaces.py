@@ -12,13 +12,14 @@ _CACHE = {}
 
 
 class Attr(object):
-    def __init__(self, type=None, default=None, required=False, key=None, help=None, **kwargs):
+    def __init__(self, type=None, default=None, required=False, key=None, help=None, secret=False, **kwargs):
         super().__init__()
         self.type = type or str
         self.default = default
         self.required = required
         self.key = key
         self.help = help
+        self.secret = secret
         self.kwargs = kwargs
 
     def __call__(self, *args, **kwargs):
@@ -63,7 +64,7 @@ def from_args(_cls=None,
 
         cfg = get_config(config, module)
         if cfg and key:
-            cfg = cfg.get(key)
+            cfg = cfg.get(key, {})
         parser = args.add_argument_group(self.__class__.__name__)
 
         # add any action/parser defaults that aren't present
@@ -200,21 +201,32 @@ def from_args(_cls=None,
     def _get_arg_name(self, _name):
         return f'{prefix}_{_name}' if prefix else _name
 
+    def _secret_fields(self):
+        fields = set()
+        for cls in reversed(self.__class__.__mro__):
+            fields.update([
+                k for k, v in cls.__dict__.items()
+                if isinstance(v, Attr) and v.secret == True
+            ])
+        return fields
+
     def prettify(self, align='<', fill=' ', width=125):
-        def fmt_k(_k):
-            return f"{_k:{fill}{align}{indent}}"
-        def fmt_v(_v):
+        def fmt_kv(_k, _v):
+            key = f"{_k:{fill}{align}{indent}}"
+            if _k in secret_fields:
+                return f"{key}: ********"
             if isinstance(_v, dict):
                 formatted = pformat(_v, compact=True, width=width, sort_dicts=False)
-                return f"\n\t{' ' * (indent + 2)}".join([l for l in formatted.splitlines()])
-            else:
-                return _v
+                val = f"\n\t{' ' * (indent + 2)}".join([l for l in formatted.splitlines()])
+                return f"{key}: {val}"
+            return f"{key}: {_v}"
 
         attributes = self.to_dict()
+        secret_fields = self._secret_fields()
         if len(attributes) == 0:
             return f"[{self.__class__.__name__}]\t[-]"
         indent = max([len(k) for k, _ in attributes.items()]) + 1
-        values = '\n\t'.join([f"{fmt_k(k)}: {fmt_v(v)}" for k, v in attributes.items()])
+        values = '\n\t'.join([fmt_kv(k, v) for k, v in attributes.items()])
         if len(attributes) <= 1:
             return f"[{self.__class__.__name__}]\t{values}"
         else:
@@ -268,7 +280,7 @@ def from_args(_cls=None,
     def wrapper(cls):
         if getattr(cls, "__class__", None) is None:
             raise TypeError("Only works with new-style classes.")
-        for method in [_get_arg_name, __init__, to_dict, __repr__, __str__, prettify]:
+        for method in [_get_arg_name, _secret_fields, __init__, to_dict, __repr__, __str__, prettify]:
             setattr(cls, method.__name__, _method(cls, method))
         for method in [from_dict]:
             setattr(cls, method.__name__, classmethod(method))
