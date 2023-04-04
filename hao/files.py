@@ -6,7 +6,7 @@ import math
 import mmap
 import os
 import sys
-from typing import Optional, Pattern
+from typing import Pattern
 
 import regex
 
@@ -82,10 +82,10 @@ def split(filename, n_split: int, split_prefix: str = '-split-'):
     assert os.path.exists(filename), f"File not exist: {filename}"
     assert n_split > 1, 'n_split should be larger than 1'
 
-    n_lines = count_lines(filename)
-    lines_per_split = math.ceil(n_lines / n_split)
+    lines_per_split = math.ceil(count_lines(filename) / n_split)
     prefix, suffix = os.path.splitext(filename)
     i = 0
+    LOGGER.info(f"Spliting {filename} into {n_split}, {lines_per_split} lines each")
     with open(filename) as f_in:
         f_out = open(f"{prefix}{split_prefix}{i}{suffix}", 'w')
         n_lines = 0
@@ -96,6 +96,7 @@ def split(filename, n_split: int, split_prefix: str = '-split-'):
                 f_out.close()
                 i += 1
                 f_out = open(f"{prefix}{split_prefix}{i}{suffix}", 'w')
+                n_lines = 0
         f_out.close()
 
 
