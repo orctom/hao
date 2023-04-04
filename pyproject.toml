@@ -44,6 +44,13 @@ dev = [
 requires = ["flit_core>=3.8.0,<4"]
 build-backend = "flit_core.buildapi"
 
+[project.scripts]
+h-oss-init = "hao.oss:init"
+h-oss-download = "hao.oss:download_cli"
+h-oss-upload = "hao.oss:upload_cli"
+h-run = "hao.cli:run"
+h-split = "hao.files:split_cli"
+
 [tool.pytest.ini_options]
 minversion = "7.0"
 addopts = "-ra -q -s"

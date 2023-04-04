@@ -277,7 +277,7 @@ def file_crc64(file_name, block_size=64 * 1024, init_crc=0):
     return str(crc64.crc)
 
 
-def download():
+def download_cli():
     args = sys.argv
     if len(args) != 3:
         LOGGER.warn(f'Usage: h-oss-download oss://bucket/your/path local/path')
@@ -287,7 +287,7 @@ def download():
     OSS.from_ossutilconfig().download(path_oss, path_local)
 
 
-def upload():
+def upload_cli():
     args = sys.argv
     if len(args) != 3:
         LOGGER.warn(f'Usage: h-oss-upload local/path oss://bucket/your/path')
