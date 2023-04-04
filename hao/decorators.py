@@ -16,7 +16,7 @@ LOGGER = logs.get_logger(__name__)
 
 
 @decorator
-def retry(func, exceptions=Exception, tries=2, delay=2, backoff=2, logger=LOGGER, *a, **kw):
+def retry(func, exceptions=Exception, tries=2, delay=0.5, backoff=1.2, logger=LOGGER, *a, **kw):
     """
     Retry calling the decorated function using an exponential backoff.
 
@@ -31,26 +31,30 @@ def retry(func, exceptions=Exception, tries=2, delay=2, backoff=2, logger=LOGGER
 
     if asyncio.iscoroutinefunction(func):
         async def wrapper(*args, **kwargs):
-            m_tries, m_delay = tries, delay
-            while m_tries > 1:
+            n_tried, delays = 0, delay
+            while True:
                 try:
                     return await func(*args, **kwargs)
                 except exceptions as e:
-                    logger.warning(f"{e}, Retrying in {m_delay} seconds...")
-                    time.sleep(m_delay)
-                    m_tries -= 1
-                    m_delay *= backoff
+                    n_tried += 1
+                    if n_tried > tries:
+                        raise e
+                    logger.warning(f"{e}, Retrying {n_tried} of {tries} in {delays} seconds...")
+                    asyncio.sleep(delays)
+                    delays *= backoff
     else:
         def wrapper(*args, **kwargs):
-            m_tries, m_delay = tries, delay
-            while m_tries > 1:
+            n_tried, delays = 0, delay
+            while True:
                 try:
                     return func(*args, **kwargs)
                 except exceptions as e:
-                    logger.warning(f"{e}, Retrying in {m_delay} seconds...")
-                    time.sleep(m_delay)
-                    m_tries -= 1
-                    m_delay *= backoff
+                    n_tried += 1
+                    if n_tried > tries:
+                        raise e
+                    logger.warning(f"{e}, Retrying {n_tried} of {tries} in {delays} seconds...")
+                    time.sleep(delays)
+                    delays *= backoff
     return wrapper(*a, **kw)
 
 
