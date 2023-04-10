@@ -112,10 +112,10 @@ def from_args(_cls=None,
                 f"(default: {_attr.default})" if _attr.default else None
             ]))
             if 'action' in _attr.kwargs:
-                parser.add_argument(arg_name, help=desc, default=_attr.default, **_attr.kwargs)
+                parser.add_argument(arg_name, help=desc, **_attr.kwargs)
             else:
                 attr_type = _attr.type if _attr.type != bool else lambda x: strings.boolean(x)
-                parser.add_argument(arg_name, type=attr_type, help=desc, default=_attr.default, **_attr.kwargs)
+                parser.add_argument(arg_name, type=attr_type, help=desc, **_attr.kwargs)
 
         ns, _ = args.parse_known_args()
         loaded_values = from_loader()
