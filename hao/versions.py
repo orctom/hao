@@ -10,11 +10,11 @@ _VERSION = None
 def get_version():
     global _VERSION
     if _VERSION is None:
-        _VERSION = _get_from_version_file() or _get_from_poetry() or _get_git_version() or ''
+        _VERSION = _from_version_file() or _from_poetry() or _from_pi() or _from_git() or ''
     return _VERSION
 
 
-def _get_from_version_file():
+def _from_version_file():
     project_root = paths.root_path()
     if project_root is None:
         return None
@@ -24,7 +24,7 @@ def _get_from_version_file():
     return None
 
 
-def _get_from_poetry():
+def _from_poetry():
     try:
         version = subprocess.check_output(['poetry', 'version', '--short'], stderr=subprocess.DEVNULL)
         return version.decode().strip()
@@ -32,7 +32,15 @@ def _get_from_poetry():
         return None
 
 
-def _get_git_version():
+def _from_pi():
+    try:
+        version = subprocess.check_output(['pi', 'version', '-s'], stderr=subprocess.DEVNULL)
+        return version.decode().strip()
+    except:
+        return None
+
+
+def _from_git():
     try:
         u = subprocess.check_output(['git', 'describe', '--always'], stderr=subprocess.DEVNULL)
         d = subprocess.check_output(['git', 'rev-list', '--count', 'HEAD'], stderr=subprocess.DEVNULL)
