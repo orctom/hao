@@ -5,13 +5,7 @@
 ####################################################
 pip install DBUtils
 
-# option 1: with postgres installed
-# - mac: brew install postgresql
-# - ubuntu: sudo apt install libpq-dev
-pip install psycopg
-
-# option 2: with packaged binary
-pip install "psycopg[binary]"
+pip install psycopg psycopg-binary
 
 ####################################################
 ###########         config.yml          ############
@@ -51,7 +45,10 @@ try:
 except ImportError:
     from DBUtils.PooledDB import PooledDB
 
-import psycopg as client
+try:
+    import psycopg as client
+except ImportError:
+    import psycopg2 as client
 
 LOGGER = logs.get_logger(__name__)
 
@@ -105,6 +102,10 @@ class PG:
 
     def execute(self, sql: str, params: Optional[Union[list, tuple]] = None):
         self.cursor.execute(sql, params)
+        return self.cursor
+
+    def executemany(self, sql: str, params: Optional[Union[list, tuple]] = None):
+        self.cursor.executemany(sql, params)
         return self.cursor
 
     def fetchone(self, sql: str, params: Optional[Union[list, tuple]] = None):
