@@ -1,10 +1,11 @@
-__version__ = '3.7.12'
+__version__ = '3.7.13'
 
 from . import (
     asyncs,
     charsets,
     config,
     currencies,
+    dates,
     decorators,
     dicts,
     english,

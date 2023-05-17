@@ -1,27 +1,7 @@
 # -*- coding: utf-8 -*-
 import time
 
-
-def pretty_time_delta(seconds):
-    if seconds is None:
-        return '-'
-    days, seconds = divmod(seconds, 86400)
-    hours, seconds = divmod(seconds, 3600)
-    minutes, seconds = divmod(seconds, 60)
-    seconds, milliseconds = divmod(seconds, 1)
-    if days > 0:
-        return f'{int(days)}d, {int(hours)}h, {int(minutes)}m, {int(seconds)}s'
-    elif hours > 0:
-        return f'{int(hours)}h, {int(minutes)}m, {int(seconds)}s'
-    elif minutes > 0:
-        return f'{int(minutes)}m, {int(seconds)}s'
-    elif seconds > 0:
-        if seconds >= 10:
-            return f'{int(seconds)}s'
-        else:
-            return f'{int(seconds)}s, {int(milliseconds * 1000)}ms'
-    else:
-        return f'{int(milliseconds * 1000)}ms'
+from .dates import pretty_time_delta
 
 
 class Stopwatch(object):
