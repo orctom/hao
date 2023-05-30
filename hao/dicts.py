@@ -6,7 +6,7 @@ def get(data: dict, attribute, *fallback_attributes, default_value=None):
     if data is None:
         return default_value
     try:
-        value = functools.reduce(getattr, attribute.split('.'), data)
+        value = functools.reduce(lambda d, a: d.get(a), attribute.split('.'), data)
         if value is not None:
             return value
     except AttributeError:
