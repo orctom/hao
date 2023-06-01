@@ -41,7 +41,7 @@ def notify(message: str, channel='default'):
         url = f'https://hooks.slack.com/services/{token}'
         headers = {'content-type': 'application/json'}
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        payload = {'text': f"{identifier()} {timestamp}\tversion: {versions.get_version()}\n```{message}```"}
+        payload = {'text': f"{identifier()} {timestamp}\tversion: {versions.get_version() or 'dev'}\n```{message}```"}
         response = requests.post(url, data=json.dumps(payload), headers=headers)
         LOGGER.info(response.text)
     except Exception as e:
