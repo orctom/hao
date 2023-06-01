@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 import datetime
 import json
+import logging
 from enum import Enum
 
-from . import logs
-
-LOGGER = logs.get_logger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 def json_default(o):

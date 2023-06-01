@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 import json
+import logging
 import traceback
 import typing
 from datetime import datetime
 
 import requests
 
-from . import logs, versions, config, paths, decorators, jsons
+from . import config, decorators, jsons, paths, versions
 
-LOGGER = logs.get_logger(__name__)
+LOGGER = logging.getLogger(__name__)
 
-version = versions.get_version()
 
 _SLACK_TOKENS = config.get('slack')
 _IDENTIFIER = None
@@ -41,7 +41,7 @@ def notify(message: str, channel='default'):
         url = f'https://hooks.slack.com/services/{token}'
         headers = {'content-type': 'application/json'}
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        payload = {'text': f"{identifier()} {timestamp}\tversion: {version}\n```{message}```"}
+        payload = {'text': f"{identifier()} {timestamp}\tversion: {versions.get_version()}\n```{message}```"}
         response = requests.post(url, data=json.dumps(payload), headers=headers)
         LOGGER.info(response.text)
     except Exception as e:

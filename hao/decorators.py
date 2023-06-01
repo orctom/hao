@@ -2,6 +2,7 @@
 
 import asyncio
 import functools
+import logging
 import signal
 import threading
 import time
@@ -9,10 +10,10 @@ import typing
 
 from decorator import decorator
 
-from . import asyncs, exceptions, logs
+from . import asyncs, exceptions
 from .stopwatch import Stopwatch
 
-LOGGER = logs.get_logger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 @decorator
