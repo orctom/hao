@@ -1,4 +1,4 @@
-__version__ = '3.7.15'
+__version__ = '3.7.16'
 
 from . import (
     asyncs,
@@ -20,6 +20,7 @@ from . import (
     nations,
     paths,
     regexes,
+    s3,
     singleton,
     slacks,
     stopwatch,

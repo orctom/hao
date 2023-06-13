@@ -11,14 +11,15 @@ classifiers = [
 ]
 requires-python = ">=3.8"
 dependencies = [
-  "PyYAML",
-  "requests",
-  "charset-normalizer",
-  "dateparser",
-  "regex",
-  "tqdm",
-  "decorator",
-  "urllib3>=1.26.5",
+    "PyYAML",
+    "requests",
+    "charset-normalizer",
+    "dateparser",
+    "regex",
+    "tqdm",
+    "decorator",
+    "urllib3>=1.26.5",
+    "minio",
 ]
 
 [project.urls]
@@ -27,18 +28,17 @@ repository = "https://github.com/orctom/hao"
 
 [project.optional-dependencies]
 dev = [
-  "pytest>=7.2.0",
-  "elasticsearch<8",
-  "pymongo",
-  "kafka-python",
-  "pymysql",
-  "dbutils",
-  "mysqlclient",
-  "psycopg[binary]",
-  "kombu",
-  "redis",
-  "oss2",
-  "sqlalchemy",
+    "pytest>=7.2.0",
+    "elasticsearch<8",
+    "pymongo",
+    "kafka-python",
+    "pymysql",
+    "dbutils",
+    "mysqlclient",
+    "psycopg[binary]",
+    "kombu",
+    "redis",
+    "sqlalchemy",
 ]
 
 [build-system]
@@ -46,9 +46,7 @@ requires = ["flit_core>=3.8.0,<4"]
 build-backend = "flit_core.buildapi"
 
 [project.scripts]
-h-oss-init = "hao.oss:init"
-h-oss-download = "hao.oss:download_cli"
-h-oss-upload = "hao.oss:upload_cli"
+h-s3-init = "hao.s3:init"
 h-run = "hao.cli:run"
 h-split = "hao.files:split_cli"
 
