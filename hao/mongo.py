@@ -31,7 +31,7 @@ mongo_other = Mongo('some-other')
 item1 = mongo.find_by_id('col_name', _id)
 item2 = mongo.find_one('col_name', {'field': 'val'})
 """
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import bson
 from pymongo import MongoClient, ReturnDocument
@@ -207,3 +207,32 @@ class Mongo(object, metaclass=singleton.Multiton):
         pad_size = max([len(col_name) for col_name in sizes]) + 1
         for col_name, size in sizes.items():
             print(f"{col_name: <{pad_size}}: {size}")
+
+    def create_user(self,
+                    username: str,
+                    password: str,
+                    db: str,
+                    roles: Optional[List[str]] = None):
+        """
+        db.createUser(
+          {
+            user: "{username}",
+            pwd:  "{password}",
+            roles: [
+                { role: "readWrite", db: "{db}" },
+                { role: "dbAdmin", db: "{db}" }
+            ]
+          }
+        )
+        db.getUsers()
+        """
+        if roles is None:
+            roles = ['readWrite', 'dbAdmin']
+        roles = [{'role': r, 'db': db} for r in roles]
+        res = self.get_db(db).command(
+            'createUser',
+            username,
+            pwd=password,
+            roles=roles
+        )
+        return res.get('ok', 0) > 0
