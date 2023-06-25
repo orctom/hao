@@ -24,35 +24,35 @@ es:
 ####################################################
 ###########          usage              ############
 ####################################################
-from hao.es import EsClient
-es_client = EsClient()
-es_client = EsClient('some-other')
+from hao.es import ES
+es = ES()
+es = ES('some-other')
 
-es_client.delete_by_id(_id, index='optional-index')
+es.delete_by_id(_id, index='optional-index')
 
-es_client.save(_id, data, index='optional-index', silent=False)
+es.save(_id, data, index='optional-index', silent=False)
 
-es_client.update(_id, data, index='optional-index', silent=False)
+es.update(_id, data, index='optional-index', silent=False)
 
-es_client.is_exists(_id, index='optional-index')
+es.is_exists(_id, index='optional-index')
 
-es_client.get_by_id(_id, index='optional-index')
+es.get_by_id(_id, index='optional-index')
 
-es_client.get_by_ids(id_list, index='optional-index')
+es.get_by_ids(id_list, index='optional-index')
 
-count = es_client.count(query, index='optional-index')
+count = es.count(query, index='optional-index')
 
 # search once
-items = es_client.search(query, index='optional-index', size=200)
+items = es.search(query, index='optional-index', size=200)
 
 # scrolls
-items_generator = es_client.search(query, index='optional-index', size=200, scroll='10m')
+items_generator = es.search(query, index='optional-index', size=200, scroll='10m')
 
-es_client.delete_by_query(query, index='optional-index', timeout=600)
+es.delete_by_query(query, index='optional-index', timeout=600)
 
-es_client.delete_by_id(id, index='optional-index')
+es.delete_by_id(id, index='optional-index')
 
-es_client.bulk(actions)
+es.bulk(actions)
 """
 
 from elasticsearch import Elasticsearch, NotFoundError, helpers
@@ -62,22 +62,22 @@ from . import config, invoker, jsons, logs, slacks
 LOGGER = logs.get_logger(__name__)
 
 
-def connect(host, port, user=None, password=None, timeout=60) -> Elasticsearch:
-    LOGGER.info(f"connecting to {host}:{port}")
+def connect(host, port, user=None, password=None, timeout=60, use_ssl=False, **kwargs) -> Elasticsearch:
+    LOGGER.info(f"[es] connecting to {host}:{port}, use ssl: {use_ssl}")
     if user and password:
-        return Elasticsearch(host, port=port, http_auth=(user, password), timeout=timeout)
-    return Elasticsearch(host, port=port, timeout=timeout)
+        return Elasticsearch(host, port=port, http_auth=(user, password), timeout=timeout, use_ssl=use_ssl, **kwargs)
+    return Elasticsearch(host, port=port, timeout=timeout, use_ssl=use_ssl, **kwargs)
 
 
-class EsClient(object):
+class ES:
 
     def __init__(self, profile='default'):
         self.profile = profile
         self.conf = config.get(f'es.{self.profile}')
         if self.conf is None:
             raise ValueError(f'profile not configured: {self.profile}')
-        self.index = self.conf.get('index') or '_all'
-        self.doc_type = self.conf.get('type') or '_doc'
+        self.index = self.conf.pop('index', '_all')
+        self.doc_type = self.conf.pop('type', '_doc')
         self.client: Elasticsearch = invoker.invoke(connect, **self.conf)
 
     def get_by_id(self, _id, index=None, **kwargs):
@@ -225,3 +225,6 @@ class EsClient(object):
 
     def bulk(self, actions, stats_only=False, *args, **kwargs):
         helpers.bulk(self.client, actions, stats_only=stats_only, *args, **kwargs)
+
+
+EsClient = ES
