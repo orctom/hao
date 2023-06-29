@@ -3,7 +3,9 @@ import typing
 
 import regex
 
-RE_CHINESE = regex.compile(u'[\u4e00-\u9fa5]+')
+P_CHINESE = regex.compile(u'[\u4e00-\u9fa5]+')
+P_HTML_TAGS = regex.compile('<[^>]*>')
+P_NON_CHAR = regex.compile('[^a-zA-Z0-9]')
 
 
 def re_compile(items, prefix='', suffix='', flags=regex.I):
@@ -40,3 +42,11 @@ def split_with_sep(text: str, p: typing.Pattern, sep_as_ending: bool = True) -> 
         item = (cache + text[i:]).strip()
     if len(item) > 0:
         yield item
+
+
+def remove_html_tags(text: str):
+    return P_HTML_TAGS.sub('', text) if text else None
+
+
+def remove_non_char(text: str):
+    return P_NON_CHAR.sub('', text) if text else None
