@@ -139,9 +139,9 @@ class MySQL:
         return self.cursor.fetchmany()
 
     def commit(self, sql: str, params: Optional[Union[list, tuple]] = None):
-        cur = self.cursor.execute(sql, params)
+        rowcount = self.cursor.execute(sql, params)
         self.conn.commit()
-        return cur.rowcount
+        return rowcount
 
     def rollback(self):
         self.conn.rollback()
