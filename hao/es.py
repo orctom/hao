@@ -76,31 +76,37 @@ class ES:
         self.conf = config.get(f'es.{self.profile}')
         if self.conf is None:
             raise ValueError(f'profile not configured: {self.profile}')
-        self.index = self.conf.pop('index', '_all')
-        self.doc_type = self.conf.pop('type', '_doc')
         self.client: Elasticsearch = invoker.invoke(connect, **self.conf)
 
-    def get_by_id(self, _id, index=None, **kwargs):
+    def get_by_id(self, _id, index: str, **kwargs):
+        assert _id is not None, '_id required'
+        assert index is not None, 'index required'
+
         try:
-            index = index or self.index
-            return self.client.get(index=index, doc_type='_all', id=_id, **kwargs)
+            return self.client.get(index=index, id=_id, **kwargs)
         except NotFoundError:
             return None
 
-    def get_by_ids(self, _ids, index=None, **kwargs):
+    def find_by_id(self, _id, index: str, **kwargs):
+        return self.get_by_id(_id, index, **kwargs)
+
+    def get_by_ids(self, _ids, index: str, **kwargs):
+        assert _ids is not None and len(_ids) > 0, '_ids required and should not be empty'
+        assert index is not None, 'index reequired'
+
         try:
-            index = index or self.index
-            result = self.client.mget(index=index, doc_type='_all', body={'ids': _ids}, **kwargs)
+            result = self.client.mget(index=index, body={'ids': _ids}, **kwargs)
             return result.get('docs') if result else None
         except NotFoundError:
             return None
 
-    def count(self, query: dict, index=None, **params):
-        if query is None or len(query) == 0:
-            LOGGER.warning('empty query')
-            return 0
+    def find_by_ids(self, _ids, index: str, **kwargs):
+        return self.get_by_ids(_ids, index, **kwargs)
 
-        index = index or self.index
+    def count(self, query: dict, index: str, **params):
+        assert query is not None and len(query) > 0, 'query required, and should not be empty'
+        assert index is not None, 'index required'
+
         body = query.copy()
         for field in ['track_total_hits', 'from', 'size', '_source', 'sort', 'highlight']:
             body.pop(field, None)
@@ -112,12 +118,10 @@ class ES:
         )
         return data['count']
 
-    def search(self, query: dict, index=None, size=500, scroll=None, timeout=60):
-        if query is None or len(query) == 0:
-            LOGGER.warning('empty query')
-            return None
+    def search(self, query: dict, index: str, size=500, scroll=None, timeout=60):
+        assert query is not None and len(query) > 0, 'query required, and should not be empty'
+        assert index is not None, 'index required'
 
-        index = index or self.index
         if scroll is None or len(scroll) == 0:
             data = self.client.search(
                 index=index,
@@ -153,12 +157,10 @@ class ES:
                 except Exception as ignored:
                     pass
 
-    def aggs(self, query: dict, index=None, timeout=15):
-        if query is None or len(query) == 0:
-            LOGGER.warning('empty query')
-            return None
+    def aggs(self, query: dict, index: str, timeout=15):
+        assert query is not None and len(query) > 0, 'query required, and should not be empty'
+        assert index is not None, 'index required'
 
-        index = index or self.index
         data = self.client.search(
             index=index,
             size=0,
@@ -170,11 +172,12 @@ class ES:
         total = data['hits']['total']
         return buckets, total
 
-    def delete_by_id(self, _id, index=None, doc_type=None, silent=True, timeout=30) -> bool:
+    def delete_by_id(self, _id, index: str, silent=True, timeout=30) -> bool:
+        assert _id is not None, '_id required'
+        assert index is not None, 'index required'
+
         try:
-            index = index or self.index
-            doc_type = doc_type or self.doc_type
-            self.client.delete(index=index, doc_type=doc_type, id=_id, request_timeout=timeout)
+            self.client.delete(index=index, id=_id, request_timeout=timeout)
             return True
         except NotFoundError as e:
             if silent:
@@ -182,11 +185,12 @@ class ES:
             else:
                 raise e
 
-    def delete_by_query(self, query, index=None, doc_type=None, silent=True, timeout=30):
+    def delete_by_query(self, query, index: str, silent=True, timeout=30):
+        assert query is not None and len(query) > 0, 'query required, and should not be empty'
+        assert index is not None, 'index required'
+
         try:
-            index = index or self.index
-            doc_type = doc_type or self.doc_type
-            return self.client.delete_by_query(index=index, body=query, doc_type=doc_type, request_timeout=timeout)
+            return self.client.delete_by_query(index=index, body=query, request_timeout=timeout)
         except NotFoundError as e:
             if silent:
                 LOGGER.error(f"Failed to delete_by_query: {query}, index: {index}")
@@ -195,7 +199,10 @@ class ES:
             else:
                 raise e
 
-    def save(self, _id, doc, index=None, doc_type=None, overwrite=True, silent: bool = True):
+    def save(self, _id, doc, index: str, overwrite=True, silent: bool = True):
+        assert _id is not None, '_id required'
+        assert index is not None, 'index required'
+
         if doc is None:
             return
         try:
@@ -213,15 +220,19 @@ class ES:
             else:
                 raise e
 
-    def update(self, _id, doc, index=None, doc_type=None):
-        index = index or self.index
-        doc_type = doc_type or self.doc_type
-        self.client.update(index, doc_type=doc_type, id=_id, body={'doc': doc})
+    def update(self, _id, doc, index: str):
+        assert _id is not None, '_id required'
+        assert index is not None, 'index required'
 
-    def is_exists(self, _id, index=None, doc_type=None, source=False):
-        index = index or self.index
-        doc_type = doc_type or self.doc_type
-        return self.client.exists(index=index, doc_type=doc_type, id=_id, _source=source)
+        if doc is None:
+            return
+        self.client.update(index, id=_id, body={'doc': doc})
+
+    def is_exists(self, _id, index: str, source=False):
+        assert _id is not None, '_id required'
+        assert index is not None, 'index required'
+
+        return self.client.exists(index=index, id=_id, _source=source)
 
     def bulk(self, actions, stats_only=False, *args, **kwargs):
         helpers.bulk(self.client, actions, stats_only=stats_only, *args, **kwargs)
