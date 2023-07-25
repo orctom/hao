@@ -274,10 +274,9 @@ class ES:
             return
         try:
             index = index or self.index
-            doc_type = doc_type or self.doc_type
-            if not overwrite and self.is_exists(_id, index=index, doc_type=doc_type):
+            if not overwrite and self.is_exists(_id, index=index):
                 return
-            self.client.index(index, doc, doc_type=doc_type, id=_id)
+            self.client.index(index, doc, id=_id)
             return _id
         except Exception as e:
             if silent:

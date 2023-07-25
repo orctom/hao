@@ -2,7 +2,7 @@
 import os
 import time
 
-from . import config
+from . import config, envs
 from .decorators import synchronized
 from .logs import get_logger
 from .singleton import Singleton
@@ -20,7 +20,7 @@ class UUID(object, metaclass=Singleton):
     """
 
     def __init__(self) -> None:
-        host_id = config.get('uuid.host_id', 0)
+        host_id = envs.get_int('HOST_ID', config.get('uuid.host_id', 0))
         assert 0 <= host_id <= 15, 'host_id must be in range of 0 - 15'
         LOGGER.info(f"[uuid] host id: {host_id}")
         pid = os.getpid()
