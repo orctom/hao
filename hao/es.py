@@ -142,7 +142,7 @@ class ES:
                timeout=60):
         assert query is not None and len(query) > 0, 'query required, and should not be empty'
         assert index is not None, 'index required'
-        assert (highlight is not None or highlight_fields is not None) or (scroll is not None), 'highlight not supported with scroll'
+        assert (highlight is None and highlight_fields is None) or (scroll is None), 'highlight not supported with scroll'
         if scroll is None or len(scroll) == 0:
             yield from self._search(query, index, size, highlight, highlight_fields, timeout)
         else:
