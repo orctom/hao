@@ -33,7 +33,7 @@ item2 = mongo.find_one('col_name', {'field': 'val'})
 """
 from typing import List, Optional, Union
 
-import bson
+from bson import ObjectId
 from pymongo import MongoClient, ReturnDocument
 from pymongo.collection import Collection
 from pymongo.common import (
@@ -70,13 +70,19 @@ def connect(host=None,
     return MongoClient(host, port, document_class, tz_aware, connect_now, type_registry, **params)
 
 
-def ensure_id_type(_id):
-    if _id is None:
+def ensure_id_type(query: Union[str, ObjectId, dict]):
+    if query is None:
         return None
-    assert isinstance(_id, (str, bson.ObjectId))
-    if isinstance(_id, str):
-        _id = bson.ObjectId(_id)
-    return _id
+    if isinstance(query, ObjectId):
+        return query
+    if isinstance(query, str):
+        return ObjectId(query)
+    if isinstance(query, dict):
+        _id = query.get('_id')
+        if _id:
+            query['_id'] = ObjectId(_id)
+        return query
+    return query
 
 
 class Mongo(object, metaclass=singleton.Multiton):
@@ -112,16 +118,19 @@ class Mongo(object, metaclass=singleton.Multiton):
         return len(self.db.list_collection_names(filter={"name": collection_name})) > 0
 
     def count(self, col_name: str, query: Optional[dict] = None):
+        query = ensure_id_type(query)
         return self.col(col_name).count_documents(query or {})
 
-    def find_by_id(self, col_name: str, _id: Union[str, bson.ObjectId]):
+    def find_by_id(self, col_name: str, _id: Union[str, ObjectId]):
         _id = ensure_id_type(_id)
         return self.col(col_name).find_one({'_id': _id})
 
     def find_one(self, col_name: str, query: Optional[dict] = None, projection: Optional[dict] = None, **kwargs):
+        query = ensure_id_type(query)
         return self.col(col_name).find_one(query or {}, projection, **kwargs)
 
     def find(self, col_name: str, query: Optional[dict] = None, projection: Optional[dict] = None, **kwargs):
+        query = ensure_id_type(query)
         return self.col(col_name).find(query or {}, projection, **kwargs)
 
     def save(self, col_name: str, data: dict):
@@ -137,23 +146,27 @@ class Mongo(object, metaclass=singleton.Multiton):
                 return rt
 
     def update_one(self, col_name: str, query: dict, data: dict):
+        query = ensure_id_type(query)
         if not any(op in data for op in UPDATE_OPS):
             data = {'$set': data}
         return self.col(col_name).update_one(query, data)
 
     def update(self, col_name: str, query: dict, data: dict):
+        query = ensure_id_type(query)
         if not any(op in data for op in UPDATE_OPS):
             data = {'$set': data}
         return self.col(col_name).update_many(query, data)
 
-    def delete_by_id(self, col_name: str, _id: Union[str, bson.ObjectId]):
+    def delete_by_id(self, col_name: str, _id: Union[str, ObjectId]):
         _id = ensure_id_type(_id)
         return self.col(col_name).delete_one({'_id': _id})
 
     def delete_one(self, col_name: str, query: dict):
+        query = ensure_id_type(query)
         return self.col(col_name).delete_one(query)
 
     def delete(self, col_name: str, query: dict):
+        query = ensure_id_type(query)
         return self.col(col_name).delete_many(query)
 
     def bulk(self, col_name: str, batch: list, ordered=True, bypass_document_validation=False):
