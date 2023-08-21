@@ -134,9 +134,14 @@ class MySQL:
         self.cursor.execute(sql, params)
         return self.cursor.fetchall()
 
-    def fetchmany(self, sql: str, params: Optional[Union[list, tuple]] = None):
+    def fetch(self, sql: str, params: Optional[Union[list, tuple]] = None, batch=2000):
         self.cursor.execute(sql, params)
-        return self.cursor.fetchmany()
+        while True:
+            records = self.cursor.fetchmany(size=batch)
+            if not records:
+                break
+            for record in records:
+                yield record
 
     def commit(self, sql: str, params: Optional[Union[list, tuple]] = None):
         rowcount = self.cursor.execute(sql, params)
