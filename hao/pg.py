@@ -36,9 +36,10 @@ with PG() as db:
 with PG('some-other', cursor_class='dict') as db:
     ...
 """
+import secrets
 from typing import Optional, Union
 
-from . import config, logs
+from . import config, logs, strings
 
 try:
     from dbutils.pooled_db import PooledDB
@@ -116,9 +117,19 @@ class PG:
         self.cursor.execute(sql, params)
         return self.cursor.fetchall()
 
-    def fetchmany(self, sql: str, params: Optional[Union[list, tuple]] = None):
-        self.cursor.execute(sql, params)
-        return self.cursor.fetchmany()
+    def fetch(self, sql: str, params: Optional[Union[list, tuple]] = None, batch=2000):
+        name = f"{strings.sha256(sql)}-{hash(','.join(params)) if params else 0}-{secrets.token_hex()}"
+        cursor = self.conn.cursor(name=name)
+        try:
+            cursor.execute(sql, params)
+            while True:
+                records = cursor.fetchmany(size=batch)
+                if not records:
+                    break
+                for record in records:
+                    yield record
+        finally:
+            cursor.close()
 
     def commit(self, sql: str, params: Optional[Union[list, tuple]] = None):
         cur = self.cursor.execute(sql, params)
