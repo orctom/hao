@@ -140,6 +140,17 @@ def boolean(value, default=False):
     return value in ['true', 'True', '1', 't', 'T', 'y', 'Y', 'yes', 'YES', 'Yes']
 
 
+def md5(text: str, hexical: bool = True):
+    text = strip_to_none(text)
+    if text is None:
+        return None
+    unique_key = text.encode('utf-8')
+    if hexical:
+        return hashlib.md5(unique_key).hexdigest()
+    else:
+        return base64.b64encode(hashlib.md5(unique_key).digest()).decode()
+
+
 def sha1(text: str, hexical: bool = True):
     text = strip_to_none(text)
     if text is None:
@@ -151,15 +162,15 @@ def sha1(text: str, hexical: bool = True):
         return base64.b64encode(hashlib.sha1(unique_key).digest()).decode()
 
 
-def md5(text: str, hexical: bool = True):
+def sha256(text: str, hexical: bool = True):
     text = strip_to_none(text)
     if text is None:
         return None
     unique_key = text.encode('utf-8')
     if hexical:
-        return hashlib.md5(unique_key).hexdigest()
+        return hashlib.sha256(unique_key).hexdigest()
     else:
-        return base64.b64encode(hashlib.md5(unique_key).digest()).decode()
+        return base64.b64encode(hashlib.sha256(unique_key).digest()).decode()
 
 
 def sim(a, b):
