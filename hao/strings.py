@@ -11,7 +11,7 @@ from typing import List, Optional, Pattern
 
 import regex
 
-from . import lists
+from . import jsons, lists
 
 RE_BACKSPACES = regex.compile("\b+")
 PUNCTUATION_ZH = '＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､\u3000、〃〈〉《》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏﹑﹔·！？｡。'
@@ -58,14 +58,25 @@ def normalize(text: str,
               encoding: str = None):
     if text is None:
         return None
+
+    if '{' in text and '}' in text:
+        try:
+            obj = json.loads(text)
+            obj_normalized = normalize_obj(obj)
+            return jsons.dumps(obj_normalized)
+        except json.JSONDecodeError:
+            pass
+
     text = text.strip()
     text = normalize_chars(text)
+
     try:
         val = json.loads(f'"{text}"')
         if isinstance(val, str):
             text = val
     except json.JSONDecodeError:
         pass
+
     if controls:
         text = remove_controls(text)
     if specials:
@@ -83,6 +94,23 @@ def trim(text: str):
     if text is None:
         return None
     return text.strip()
+
+
+def normalize_obj(obj,
+                  controls: bool = True,
+                  specials: bool = True,
+                  emojis: bool = True,
+                  unicodes: bool = False,
+                  encoding: str = None):
+    if obj is None:
+        return None
+    if isinstance(obj, str):
+        return normalize(obj, controls, specials, emojis, unicodes, encoding)
+    elif isinstance(obj, list):
+        return [normalize_obj(e) for e in obj]
+    elif not isinstance(obj, dict):
+        return obj
+    return {k: normalize_obj(v) for k, v in obj.items()}
 
 
 def normalize_chars(text) -> Optional[str]:
