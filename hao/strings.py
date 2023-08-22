@@ -5,9 +5,9 @@ import hashlib
 import json
 import random as rand
 import string
-import typing
 import unicodedata
 from difflib import SequenceMatcher
+from typing import List, Optional, Pattern
 
 import regex
 
@@ -16,11 +16,15 @@ from . import lists
 RE_BACKSPACES = regex.compile("\b+")
 PUNCTUATION_ZH = '＂＃＄％＆＇（）＊＋，－／：；＜＝＞＠［＼］＾＿｀｛｜｝～｟｠｢｣､\u3000、〃〈〉《》「」『』【】〔〕〖〗〘〙〚〛〜〝〞〟〰〾〿–—‘’‛“”„‟…‧﹏﹑﹔·！？｡。'
 
-SUB_NORMALIZE = [
+RE_NORMALIZE = [
     (regex.compile(r'<200d>'), ''),
     (regex.compile(r'\u200d'), ''),
     (regex.compile(r'\ufeff'), ''),
     (regex.compile(r'&?nbsp;?'), ''),
+    (regex.compile(r'\\t'), '  '),
+    (regex.compile(r'\t'), '  '),
+    (regex.compile(r'\\r'), '\n'),
+    (regex.compile(r'\r'), '\n'),
 ]
 
 P_EMOJI = regex.compile(
@@ -46,19 +50,16 @@ P_EMOJI = regex.compile(
 )
 
 
-def normalize(
-        text: str,
-        controls: bool = True,
-        specials: bool = True,
-        emoji: bool = True,
-        unicode: bool = False,
-        encoding: str = None
-):
+def normalize(text: str,
+              controls: bool = True,
+              specials: bool = True,
+              emojis: bool = True,
+              unicodes: bool = False,
+              encoding: str = None):
     if text is None:
         return None
     text = text.strip()
-    for p, sub in SUB_NORMALIZE:
-        text = p.sub(sub, text)
+    text = normalize_chars(text)
     try:
         val = json.loads(f'"{text}"')
         if isinstance(val, str):
@@ -66,22 +67,15 @@ def normalize(
     except json.JSONDecodeError:
         pass
     if controls:
-        text = remove_control_chars(text)
+        text = remove_controls(text)
     if specials:
-        text = unicodedata.normalize('NFD', text)
-    if emoji:
-        text = remove_emoji(text)
-    if unicode:
-        try:
-            text = codecs.decode(codecs.encode(text, 'latin-1', 'backslashreplace'), 'unicode-escape')
-            text = remove_control_chars(text)
-        except UnicodeDecodeError:
-            pass
+        text = remove_specials(text)
+    if emojis:
+        text = remove_emojis(text)
+    if unicodes:
+        text = remove_unicodes(text)
     if encoding:
-        try:
-            text = text.encode(encoding, 'ignore').decode(encoding, 'ignore')
-        except LookupError:
-            pass
+        text = fix_encoding(text, encoding)
     return text
 
 
@@ -91,16 +85,51 @@ def trim(text: str):
     return text.strip()
 
 
-def remove_control_chars(text: str) -> typing.Optional[str]:
+def normalize_chars(text) -> Optional[str]:
     if text is None:
         return None
-    return ''.join([ch for ch in text if not is_char_control(ch)])
+    for p, sub in RE_NORMALIZE:
+        text = p.sub(sub, text)
+    return text
 
 
-def remove_emoji(text: str) -> typing.Optional[str]:
+def remove_controls(text: str, trn: bool = False) -> Optional[str]:
+    if text is None:
+        return None
+    return ''.join([ch for ch in text if not is_char_control(ch, trn=trn)])
+
+
+def remove_specials(text: str) -> Optional[str]:
+    if text is None:
+        return None
+    return unicodedata.normalize('NFD', text)
+
+
+def remove_emojis(text: str) -> Optional[str]:
     if text is None:
         return None
     return P_EMOJI.sub('', text)
+
+
+def remove_unicodes(text: str) -> Optional[str]:
+    if text is None:
+        return None
+    try:
+        text = codecs.decode(codecs.encode(text, 'latin-1', 'backslashreplace'), 'unicode-escape')
+        text = remove_controls(text)
+    except UnicodeDecodeError:
+        pass
+    return text
+
+
+def fix_encoding(text: str, encoding: str) -> Optional[str]:
+    if text is None:
+        return None
+    try:
+        text = text.encode(encoding, 'ignore').decode(encoding, 'ignore')
+    except LookupError:
+        pass
+    return text
 
 
 def strip_to_empty(text: str):
@@ -178,7 +207,7 @@ def sim(a, b):
     return SequenceMatcher(None, a, b).ratio()
 
 
-def any_sim(items: typing.List[str], item: str, threshold=0.75):
+def any_sim(items: List[str], item: str, threshold=0.75):
     if items is None or len(items) == 0 or item is None:
         return False
     for _item in items:
@@ -203,7 +232,7 @@ def split_to_n(text, n, sep=None, default_value=None):
     if sep is None:
         items = text.split()
     else:
-        if isinstance(sep, typing.Pattern):
+        if isinstance(sep, Pattern):
             items = sep.split(text)
         else:
             items = regex.split(sep, text)
@@ -297,9 +326,9 @@ def is_char_valid(char):
     )
 
 
-def is_char_control(char):
-    if char == "\t" or char == "\n" or char == "\r":
-        return False
+def is_char_control(char, trn: bool = False):
+    if char in ('\t', '\r', '\n'):
+        return trn
     cat = unicodedata.category(char)
     return cat in ("Cc", "Cf")
 
