@@ -74,6 +74,7 @@ def normalize(
     if unicode:
         try:
             text = codecs.decode(codecs.encode(text, 'latin-1', 'backslashreplace'), 'unicode-escape')
+            text = remove_control_chars(text)
         except UnicodeDecodeError:
             pass
     if encoding:
