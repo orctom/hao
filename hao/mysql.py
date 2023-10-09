@@ -4,10 +4,10 @@
 ###########         dependency          ############
 ####################################################
 # Option 1: requires mysql client installed
-pip install mysqlclient DBUtils
+pip install mysqlclient dbutils>=3.0.0
 
 # Option 2: green pure python client, slower than `mysqlclient`
-pip install pymysql DBUtils
+pip install pymysql dbutils>=3.0.0
 
 ####################################################
 ###########         config.yml          ############
@@ -32,21 +32,17 @@ mysql:
 ####################################################
 from hao.mysql import MySQL
 with MySQL() as db:
-    db.cursor.execute('select * from t_dummy_table')
-    records = db.cursor.fetchall()
+    records = db.fetchall('select * from t_dummy_table')
 
-with MySQL('some-other', cursor_class='dict') as db:
+with MySQL('profile-name', cursor='dict') as db:
     ...
 """
 
-from typing import Optional, Union
+from typing import Literal, Optional, Union
+
+from dbutils.pooled_db import PooledDB
 
 from . import config, logs
-
-try:
-    from dbutils.pooled_db import PooledDB
-except ImportError:
-    from DBUtils.PooledDB import PooledDB
 
 try:
     import pymysql as mysqlclient
@@ -63,21 +59,18 @@ LOGGER = logs.get_logger(__name__)
 
 class MySQL:
     _POOLS = {}
-    _CURSOR_CLASSES = {
+    _CURSORS = {
         'default': Cursor,
         'ss': SSCursor,
         'dict': DictCursor,
         'ss-dict': SSDictCursor,
     }
 
-    def __init__(self, profile='default', cursor_class='default') -> None:
+    def __init__(self, profile='default', cursor: Literal['default', 'ss', 'dict', 'ss-dict'] = 'default') -> None:
         super().__init__()
         self.profile = profile
-        self.cursor_class = cursor_class or 'default'
+        self._cursor_class = self._CURSORS.get(cursor, Cursor)
         self._ensure_pool()
-
-    def _get_cursor_class(self):
-        return self._CURSOR_CLASSES.get(self.cursor_class, Cursor)
 
     def _ensure_pool(self):
         if self.profile in MySQL._POOLS:
@@ -92,8 +85,6 @@ class MySQL:
             'maxconnections': 20,
             'use_unicode': True,
             'charset': "utf8",
-            'cursorclass': self._get_cursor_class(),
-            'autocommit': True,
         }
         conf.update(conf_profile)
         LOGGER.debug(f"connecting [{self.profile}], host: {conf.get('host')}, db: {conf.get('db')}")
@@ -110,47 +101,63 @@ class MySQL:
             reset=conf.pop('reset', True),
             failures=conf.pop('failures', None),
             ping=conf.pop('ping', 1),
+            autocommit=conf.pop('autocommit', False)
             **conf
         )
         MySQL._POOLS[self.profile] = pool
 
     def __enter__(self):
-        self.conn = self.connect()
-        self.cursor = self.conn.cursor()
+        self._conn = self.connect()
+        self._cursor = self._conn.cursor(self._cursor_class)
         return self
 
     def connect(self) -> Connection:
         return self._POOLS.get(self.profile).connection()
 
-    def execute(self, sql: str, params: Optional[Union[list, tuple]] = None):
-        self.cursor.execute(sql, params)
-        return self.cursor
+    def cursor(self, cursor: Literal['default', 'ss', 'dict', 'ss-dict'] = 'default') -> Cursor:
+        return self._conn.cursor(self._CURSORS.get(cursor))
 
-    def fetchone(self, sql: str, params: Optional[Union[list, tuple]] = None):
-        self.cursor.execute(sql, params)
-        return self.cursor.fetchone()
+    def execute(self, sql: str, params: Optional[Union[list, tuple]] = None, *, commit: bool = False) -> Cursor:
+        self._cursor.execute(sql, params)
+        if commit:
+            self.commit()
+        return self._cursor
 
-    def fetchall(self, sql: str, params: Optional[Union[list, tuple]] = None):
-        self.cursor.execute(sql, params)
-        return self.cursor.fetchall()
+    def executemany(self, sql: str, params: Optional[Union[list, tuple]] = None, *, commit: bool = False) -> Cursor:
+        self._cursor.executemany(sql, params)
+        if commit:
+            self.commit()
+        return self._cursor
 
-    def fetch(self, sql: str, params: Optional[Union[list, tuple]] = None, batch=2000):
-        self.cursor.execute(sql, params)
+    def fetchone(self, sql: str, params: Optional[Union[list, tuple]] = None, *, commit: bool = False):
+        self._cursor.execute(sql, params)
+        if commit:
+            self.commit()
+        return self._cursor.fetchone()
+
+    def fetchall(self, sql: str, params: Optional[Union[list, tuple]] = None, *, commit: bool = False):
+        self._cursor.execute(sql, params)
+        if commit:
+            self.commit()
+        return self._cursor.fetchall()
+
+    def fetch(self, sql: str, params: Optional[Union[list, tuple]] = None, batch=2000, *, commit: bool = False):
+        self._cursor.execute(sql, params)
+        if commit:
+            self.commit()
         while True:
-            records = self.cursor.fetchmany(size=batch)
+            records = self._cursor.fetchmany(size=batch)
             if not records:
                 break
             for record in records:
                 yield record
 
-    def commit(self, sql: str, params: Optional[Union[list, tuple]] = None):
-        rowcount = self.cursor.execute(sql, params)
-        self.conn.commit()
-        return rowcount
+    def commit(self):
+        self._conn.commit()
 
     def rollback(self):
-        self.conn.rollback()
+        self._conn.rollback()
 
     def __exit__(self, _type, _value, _trace):
-        self.cursor.close()
-        self.conn.close()
+        self._cursor.close()
+        self._conn.close()

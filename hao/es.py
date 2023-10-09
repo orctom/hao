@@ -3,7 +3,7 @@
 ####################################################
 ###########         dependency          ############
 ####################################################
-pip install elasticsearch
+pip install elasticsearch<8
 
 ####################################################
 ###########         config.yml          ############
@@ -26,7 +26,7 @@ es:
 ####################################################
 from hao.es import ES
 es = ES()
-es = ES('some-other')
+es = ES('profile-name')
 
 es.delete_by_id(_id, index='optional-index')
 
@@ -287,6 +287,3 @@ class ES:
 
     def bulk(self, actions, stats_only=False, *args, **kwargs):
         helpers.bulk(self.client, actions, stats_only=stats_only, *args, **kwargs)
-
-
-EsClient = ES
