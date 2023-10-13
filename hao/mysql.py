@@ -101,7 +101,7 @@ class MySQL:
             reset=conf.pop('reset', True),
             failures=conf.pop('failures', None),
             ping=conf.pop('ping', 1),
-            autocommit=conf.pop('autocommit', False)
+            autocommit=conf.pop('autocommit', False),
             **conf
         )
         MySQL._POOLS[self.profile] = pool
