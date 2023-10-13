@@ -115,33 +115,39 @@ class MySQL:
         return self._POOLS.get(self.profile).connection()
 
     def cursor(self, cursor: Literal['default', 'ss', 'dict', 'ss-dict'] = 'default') -> Cursor:
+        self._conn.ping()
         return self._conn.cursor(self._CURSORS.get(cursor))
 
     def execute(self, sql: str, params: Optional[Union[list, tuple]] = None, *, commit: bool = False) -> Cursor:
+        self._conn.ping()
         self._cursor.execute(sql, params)
         if commit:
             self.commit()
         return self._cursor
 
     def executemany(self, sql: str, params: Optional[Union[list, tuple]] = None, *, commit: bool = False) -> Cursor:
+        self._conn.ping()
         self._cursor.executemany(sql, params)
         if commit:
             self.commit()
         return self._cursor
 
     def fetchone(self, sql: str, params: Optional[Union[list, tuple]] = None, *, commit: bool = False):
+        self._conn.ping()
         self._cursor.execute(sql, params)
         if commit:
             self.commit()
         return self._cursor.fetchone()
 
     def fetchall(self, sql: str, params: Optional[Union[list, tuple]] = None, *, commit: bool = False):
+        self._conn.ping()
         self._cursor.execute(sql, params)
         if commit:
             self.commit()
         return self._cursor.fetchall()
 
     def fetch(self, sql: str, params: Optional[Union[list, tuple]] = None, batch=2000, *, commit: bool = False):
+        self._conn.ping()
         self._cursor.execute(sql, params)
         if commit:
             self.commit()
