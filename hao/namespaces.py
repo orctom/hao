@@ -5,7 +5,7 @@ import sys
 from pprint import pformat
 from typing import Callable, Optional, Union
 
-from . import args, envs, strings
+from . import args, envs
 from .config import Config, get_config
 
 _CACHE = {}
@@ -109,12 +109,12 @@ def from_args(_cls=None,
             desc = ' '.join(filter(None, [
                 '[required]' if _attr.required else '[optional]',
                 _attr.help,
-                f"(default: {_attr.default})" if _attr.default else None
+                f"(default: {_attr.default})" if _attr.default is not None else None
             ]))
             if 'action' in _attr.kwargs:
                 parser.add_argument(arg_name, help=desc, **_attr.kwargs)
             else:
-                attr_type = _attr.type if _attr.type != bool else lambda x: strings.boolean(x)
+                attr_type = _attr.type
                 parser.add_argument(arg_name, type=attr_type, help=desc, **_attr.kwargs)
 
         ns, _ = args.parse_known_args()
