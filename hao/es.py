@@ -66,7 +66,7 @@ LOGGER = logs.get_logger(__name__)
 
 
 def connect(host, port, user=None, password=None, timeout=60, use_ssl=False, **kwargs) -> Elasticsearch:
-    LOGGER.info(f"[es] connecting to {host}:{port}, use ssl: {use_ssl}")
+    LOGGER.debug(f"[es] connecting to {host}:{port}, use ssl: {use_ssl}")
     if user and password:
         return Elasticsearch(host, port=port, http_auth=(user, password), timeout=timeout, use_ssl=use_ssl, **kwargs)
     return Elasticsearch(host, port=port, timeout=timeout, use_ssl=use_ssl, **kwargs)
