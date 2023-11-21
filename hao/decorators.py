@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import asyncio
 import functools
 import logging
@@ -17,18 +16,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 @decorator
-def retry(func, exceptions=Exception, tries=2, delay=0.5, backoff=1.2, logger=LOGGER, *a, **kw):
-    """
-    Retry calling the decorated function using an exponential backoff.
-
-    Args:
-        func: wrapper function
-        exceptions: The exception to check. may be a tuple of exceptions to check.
-        tries: Number of times to try (not retry) before giving up.
-        delay: Initial delay between retries in seconds.
-        backoff: Backoff multiplier (e.g. value of 2 will double the delay each retry).
-        logger: Logger to use. If None, print.
-    """
+def retry(func, exceptions=Exception, tries=2, delay=0.5, backoff=1.2, max_delay=60, logger=LOGGER, *a, **kw):
 
     if asyncio.iscoroutinefunction(func):
         async def wrapper(*args, **kwargs):
@@ -42,7 +30,7 @@ def retry(func, exceptions=Exception, tries=2, delay=0.5, backoff=1.2, logger=LO
                         raise e
                     logger.warning(f"{e}, Retrying {n_tried} of {tries} in {delays} seconds...")
                     asyncio.sleep(delays)
-                    delays *= backoff
+                    delays = min(max_delay, delay + backoff)
     else:
         def wrapper(*args, **kwargs):
             n_tried, delays = 0, delay
@@ -55,7 +43,7 @@ def retry(func, exceptions=Exception, tries=2, delay=0.5, backoff=1.2, logger=LO
                         raise e
                     logger.warning(f"{e}, Retrying {n_tried} of {tries} in {delays} seconds...")
                     time.sleep(delays)
-                    delays *= backoff
+                    delays = min(max_delay, delay + backoff)
     return wrapper(*a, **kw)
 
 
