@@ -157,26 +157,25 @@ def formatted(date: Union[str, int, datetime.date, datetime.datetime], fmt=FORMA
     return date.strftime(fmt)
 
 
-def pretty_time_delta(seconds):
+def pretty_time_delta(seconds, *, show_millis: bool = True):
     if seconds is None:
         return '-'
     days, seconds = divmod(seconds, 86400)
     hours, seconds = divmod(seconds, 3600)
     minutes, seconds = divmod(seconds, 60)
     seconds, milliseconds = divmod(seconds, 1)
+    chunks = []
     if days > 0:
-        return f'{int(days)}d, {int(hours)}h, {int(minutes)}m, {int(seconds)}s'
+        chunks.append(f"{int(days)}d")
     elif hours > 0:
-        return f'{int(hours)}h, {int(minutes)}m, {int(seconds)}s'
+        chunks.append(f"{int(hours)}h")
     elif minutes > 0:
-        return f'{int(minutes)}m, {int(seconds)}s'
+        chunks.append(f"{int(minutes)}m")
     elif seconds > 0:
-        if seconds >= 10:
-            return f'{int(seconds)}s'
-        else:
-            return f'{int(seconds)}s, {int(milliseconds * 1000)}ms'
-    else:
-        return f'{int(milliseconds * 1000)}ms'
+        chunks.append(f"{int(seconds)}s")
+    elif milliseconds and show_millis:
+        chunks.append(f"{int(milliseconds * 1000)}ms")
+    return ', '.join(chunks)
 
 
 def current_milliseconds():

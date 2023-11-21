@@ -1,16 +1,44 @@
 import threading
 import time
+from typing import List, Optional
+
+from .dates import pretty_time_delta
 
 
 class Spinner(threading.Thread):
 
-    def __init__(self, msg: str, interval=0.25, cursor1='▁▂▃▄▅▆▇█', cursor2='⣾⣷⣯⣟⡿⢿⣻⣽'):
+    LINE_CLEAR = '\x1b[2K'
+    FRAMES = [
+        '|\\_________',
+        '_|\\________',
+        '__|\\_______',
+        '___|\\______',
+        '____|\\_____',
+        '_____|\\____',
+        '______|\\___',
+        '_______|\\__',
+        '________|\\_',
+        '_________|\\',
+        '_________/|',
+        '________/|_',
+        '_______/|__',
+        '______/|___',
+        '_____/|____',
+        '____/|_____',
+        '___/|______',
+        '__/|_______',
+        '_/|________',
+        '/|_________',
+    ]
+
+    def __init__(self, msg: str, *, ps='>', done: str = '✔️', interval=0.1, frames: Optional[List[str]] = None):
         super().__init__()
-        print(f"{msg}   ", end='')
-        self.status = threading.Event()
+        self.msg = msg
+        self.ps = ps
+        self.done = done
         self.interval = interval
-        self.cursor1 = cursor1
-        self.cursor2 = cursor2
+        self.frames = frames or self.FRAMES
+        self.status = threading.Event()
         self.daemon = True
 
     def stop(self):
@@ -19,23 +47,23 @@ class Spinner(threading.Thread):
     def is_stopped(self):
         return self.status.is_set()
 
-    def cursors(self, chars):
+    def cursors(self):
         while True:
-            for cursor in chars:
+            for cursor in self.frames:
                 yield cursor
 
+    def write(self, text):
+        print(f"{self.LINE_CLEAR}\r{self.ps} {text}", flush=True)
+
     def run(self):
-        i = 0
-        c1, c2 = self.cursors(self.cursor1), self.cursors(self.cursor2)
-        p = ' '
+        start = int(time.time())
+        cursors = self.cursors()
         while not self.is_stopped():
             self.status.wait(self.interval)
-            i += 1
-            if i % 8 == 0:
-                p = f"{p}{next(c1)}" if p == self.CURSORS_0[-1] else f"{next(c1)}"
-                print(f"\b\b{p} ", end='')
-            print(f"\b{next(c2)}", end='')
-        print(' ')
+            took = pretty_time_delta(int(time.time()) - start, show_millis=False)
+            p = f"{self.LINE_CLEAR}\r{self.ps} {self.msg} [{took}] {next(cursors)}"
+            print(p, end='', flush=True)
+        print(f"{self.done} ", end='\n', flush=True)
 
     def __enter__(self):
         self.start()

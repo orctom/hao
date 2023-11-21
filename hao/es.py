@@ -122,8 +122,8 @@ class ES:
         assert index is not None, 'index required'
 
         body = query.copy()
-        for field in ['track_total_hits', 'from', 'size', '_source', 'sort', 'highlight']:
-            body.pop(field, None)
+        for name in ['track_total_hits', 'from', 'size', '_source', 'sort', 'highlight']:
+            body.pop(name, None)
 
         data = self.client.count(
             index=index,
@@ -189,7 +189,7 @@ class ES:
         finally:
             try:
                 self.client.clear_scroll(scroll_id=sid, ignore=(404,))
-            except Exception as ignored:
+            except Exception:
                 pass
 
     @staticmethod

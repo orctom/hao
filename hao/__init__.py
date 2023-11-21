@@ -23,6 +23,7 @@ from . import (
     s3,
     singleton,
     slacks,
+    spinner,
     stopwatch,
     strings,
     versions,
