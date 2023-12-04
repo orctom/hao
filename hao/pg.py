@@ -57,22 +57,23 @@ class PG:
     def __init__(self, profile='default', cursor: Literal['tuple', 'dict', 'namedtuple'] = 'tuple') -> None:
         super().__init__()
         self.profile = profile
+        conf_profile = config.get(f"pg.{self.profile}", {})
+        assert len(conf_profile) > 0, f'pg profile not configured: pg.{self.profile}'
+        self.__conf = {
+            'mincached': 1,
+            'maxcached': 2,
+            'maxshared': 2,
+            'maxconnections': 20,
+            **conf_profile
+        }
         self._row_factory = self._CURSORS.get(cursor)
         self._ensure_pool()
 
     def _ensure_pool(self):
         if self.profile in PG._POOLS:
             return
-        conf_profile = config.get(f"pg.{self.profile}", {})
-        if len(conf_profile) == 0:
-            raise ValueError(f'pg profile not configured: {self.profile}')
-        conf = {
-            'mincached': 1,
-            'maxcached': 2,
-            'maxshared': 2,
-            'maxconnections': 20,
-        }
-        conf.update(conf_profile)
+
+        conf = {**self.__conf}
         LOGGER.debug(f"connecting [{self.profile}], host: {conf.get('host')}, db: {conf.get('db')}")
 
         pool = PooledDB(
@@ -91,6 +92,12 @@ class PG:
             **conf
         )
         PG._POOLS[self.profile] = pool
+
+    def __str__(self) -> str:
+        return f"profile: [{self.profile}], host: {self.__conf.get('host')}, db: {self.__conf.get('db')}"
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
     def __enter__(self):
         self._conn = self.connect()

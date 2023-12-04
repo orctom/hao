@@ -29,35 +29,39 @@ from multiprocessing import Lock
 
 from arango import ArangoClient
 
-from . import logs, config
+from . import config, logs
 
 LOGGER = logs.get_logger(__name__)
 
 
 class Arango(object):
-    __slots__ = ['profile', '_conf', '_lock', '_lock_graph', '_client', '_db', '_graph']
+    __slots__ = ['profile', '__conf', '_lock', '_lock_graph', '_client', '_db', '_graph']
 
     def __init__(self, profile='default') -> None:
         super().__init__()
         self.profile = profile
-        self._conf = config.get(f"arango.{profile}")
-        if self._conf is None:
-            raise ValueError(f'no config found for arangodb, expecting: `arango.{profile}')
+        self.__conf = config.get(f"arango.{profile}", {})
+        assert len(self.__conf) > 0, f'arango profile not configured: arango.{self.profile}'
         LOGGER.debug(f"connecting to profile: {profile}")
-        hosts = self._conf.get('hosts')
         self._lock: Lock = Lock()
         self._lock_graph: Lock = Lock()
-        self._client = ArangoClient(hosts=hosts)
+        self._client = ArangoClient(hosts=self.__conf.get('hosts'))
         self._db = None
         self._graph = None
+
+    def __str__(self) -> str:
+        return f"hosts: {self.__conf.get('hosts')}"
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
     def db(self):
         if self._db is None:
             with self._lock:
                 if self._db is None:
-                    db = self._conf.get('db')
-                    username = self._conf.get('username')
-                    password = self._conf.get('password')
+                    db = self.__conf.get('db')
+                    username = self.__conf.get('username')
+                    password = self.__conf.get('password')
                     if db is None or username is None or password is None:
                         raise ValueError(f'missing config for '
                                          f'`arango.{self.profile}.db` or '
@@ -70,7 +74,7 @@ class Arango(object):
         if self._graph is None:
             with self._lock_graph:
                 if self._graph is None:
-                    graph = self._conf.get('graph')
+                    graph = self.__conf.get('graph')
                     if graph is None:
                         raise ValueError(f'missing config for `arango.{self.profile}.graph`')
                     self._graph = self.db().graph(graph)

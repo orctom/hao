@@ -87,10 +87,15 @@ class ES:
 
     def __init__(self, profile='default'):
         self.profile = profile
-        self.conf = config.get(f'es.{self.profile}')
-        if self.conf is None:
-            raise ValueError(f'profile not configured: {self.profile}')
-        self.client: Elasticsearch = invoker.invoke(connect, **self.conf)
+        self.__conf = config.get(f'es.{self.profile}')
+        assert len(self.__conf) > 0, f'es profile not configured: es.{self.profile}'
+        self.client: Elasticsearch = invoker.invoke(connect, **self.__conf)
+
+    def __str__(self) -> str:
+        return f"profile: [{self.profile}], host: {self.__conf.get('host')}, port: {self.__conf.get('port')}"
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
     def get_by_id(self, _id, index: str, **params):
         assert _id is not None, '_id required'
@@ -101,8 +106,9 @@ class ES:
         except NotFoundError:
             return None
 
-    def find_by_id(self, _id, index: str, **params):
-        return self.get_by_id(_id, index, **params)
+    def find_by_id(self, _id, index: str, **params) -> list:
+        query = {"query": {"term": {"_id": _id}}}
+        return list(self.search(query, index, **params))
 
     def get_by_ids(self, _ids, index: str, **params):
         assert _ids is not None and len(_ids) > 0, '_ids required and should not be empty'
@@ -114,8 +120,9 @@ class ES:
         except NotFoundError:
             return None
 
-    def find_by_ids(self, _ids, index: str, **params):
-        return self.get_by_ids(_ids, index, **params)
+    def find_by_ids(self, ids: List[str], index: str, **params) -> list:
+        query = {"query": {"ids" : {"values": ids}}}
+        return list(self.search(query, index, **params))
 
     def count(self, query: dict, index: str, **params):
         assert query is not None and len(query) > 0, 'query required, and should not be empty'

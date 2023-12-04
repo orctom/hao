@@ -61,14 +61,14 @@ for msg in rabbit.consume(queue_name, timeout=1):
 """
 import atexit
 import threading
-import typing
+from typing import Generator, Optional, Tuple, Union
 
 from amqp import UnexpectedFrame
 from kombu import Connection
 from kombu.simple import SimpleQueue
 from kombu.transport.pyamqp import Message
 
-from . import logs, config, jsons
+from . import config, jsons, logs
 
 LOGGER = logs.get_logger(__name__)
 
@@ -80,12 +80,20 @@ class Rabbit(object):
     def __init__(self, profile='default', prefetch=1) -> None:
         super().__init__()
         self.profile = profile
+        self.__conf = config.get(f"rabbit.{self.profile}", {})
+        assert len(self.__conf) > 0, f'rabbit profile not configured `rabbit.{self.profile}`'
         self.prefetch = prefetch
-        self._conn: typing.Optional[Connection] = None
+        self._conn: Optional[Connection] = None
         self._queues = {}
         self._queue_options = {}
         self.__lock__ = threading.Lock()
         atexit.register(self.close)
+
+    def __str__(self) -> str:
+        return f"{self.__conf.get('user')}:***@{self.__conf.get('host')}:{self.__conf.get('port', 5672)}/{self.__conf.get('vhost', '')}"
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
     def __enter__(self):
         self.ensure_connection()
@@ -114,24 +122,20 @@ class Rabbit(object):
                 self._queues.clear()
 
     def _connect(self):
-        conf = config.get(f"rabbit.{self.profile}")
-        if conf is None:
-            raise ValueError(f'no config found for mongodb, expecting: `rabbit.{self.profile}`')
-
-        self._queue_options = conf.get('queues')
+        self._queue_options = self.__conf.get('queues')
         n_queue_options = len(self._queue_options)
         if n_queue_options == 0:
             raise ValueError(f'no queues configured, expecting: `rabbit.{self.profile}.queues`')
 
         return Connection(
-            conf.get('host', 'localhost'),
-            conf.get('user', 'rabbit'),
-            conf.get('password', 'rabbit'),
-            conf.get('vhost', '/'),
-            conf.get('port', 5672),
-            connect_timeout=conf.get('timeout', 10),
-            heartbeat=conf.get('heartbeat', 0),
-            login_method=conf.get('login_method', 'PLAIN')
+            self.__conf.get('host', 'localhost'),
+            self.__conf.get('user', 'rabbit'),
+            self.__conf.get('password', 'rabbit'),
+            self.__conf.get('vhost', '/'),
+            self.__conf.get('port', 5672),
+            connect_timeout=self.__conf.get('timeout', 10),
+            heartbeat=self.__conf.get('heartbeat', 0),
+            login_method=self.__conf.get('login_method', 'PLAIN')
         )
 
     def reconnect(self):
@@ -139,7 +143,7 @@ class Rabbit(object):
         self.close()
         self.ensure_connection()
 
-    def get_queue(self, queue_id: str = None) -> typing.Tuple[typing.Optional[SimpleQueue], str]:
+    def get_queue(self, queue_id: str = None) -> Tuple[Optional[SimpleQueue], str]:
         self.ensure_connection()
         if queue_id is None:
             queue_id = list(self._queue_options)[0]
@@ -182,7 +186,7 @@ class Rabbit(object):
         return True
 
     def publish(self,
-                message: typing.Union[str, dict, list],
+                message: Union[str, dict, list],
                 queue_id: str = None,
                 prior: bool = False,
                 retry: bool = True,
@@ -219,7 +223,7 @@ class Rabbit(object):
         except (BrokenPipeError, ConnectionResetError, OSError):
             self.reconnect()
 
-    def pull(self, queue_id: str = None, timeout=5, block=True) -> typing.Optional[Message]:
+    def pull(self, queue_id: str = None, timeout=5, block=True) -> Optional[Message]:
         queue, queue_id = self.get_queue(queue_id)
         if queue is None:
             return None
@@ -230,7 +234,7 @@ class Rabbit(object):
         except (BrokenPipeError, ConnectionResetError, OSError):
             self.reconnect()
 
-    def consume(self, queue_id: str = None, timeout=1, block=True) -> typing.Generator[Message, None, None]:
+    def consume(self, queue_id: str = None, timeout=1, block=True) -> Generator[Message, None, None]:
         queue, queue_id = self.get_queue(queue_id)
         if queue is None:
             return None
@@ -250,10 +254,3 @@ class Rabbit(object):
             queue, queue_id = rabbit.get_queue(queue_id)
             queue_size = queue.qsize() if queue else -1
         return str(queue_size)
-
-    def __str__(self) -> str:
-        conf = config.get(f"rabbit.{self.profile}")
-        return f"{conf.get('user')}:***@{conf.get('host')}:{conf.get('port', 5672)}/{conf.get('vhost', '')}"
-
-    def __repr__(self) -> str:
-        return self.__str__()

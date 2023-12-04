@@ -69,24 +69,24 @@ class MySQL:
     def __init__(self, profile='default', cursor: Literal['default', 'ss', 'dict', 'ss-dict'] = 'default') -> None:
         super().__init__()
         self.profile = profile
-        self._cursor_class = self._CURSORS.get(cursor, Cursor)
-        self._ensure_pool()
-
-    def _ensure_pool(self):
-        if self.profile in MySQL._POOLS:
-            return
         conf_profile = config.get(f"mysql.{self.profile}", {})
-        if len(conf_profile) == 0:
-            raise ValueError(f'mysql profile not configured: {self.profile}')
-        conf = {
+        assert len(conf_profile) > 0, f'mysql profile not configured: mysql.{self.profile}'
+        self.__conf = {
             'mincached': 1,
             'maxcached': 2,
             'maxshared': 2,
             'maxconnections': 20,
             'use_unicode': True,
             'charset': "utf8",
+            **conf_profile
         }
-        conf.update(conf_profile)
+        self._cursor_class = self._CURSORS.get(cursor, Cursor)
+        self._ensure_pool()
+
+    def _ensure_pool(self):
+        if self.profile in MySQL._POOLS:
+            return
+        conf = {**self.__conf}
         LOGGER.debug(f"connecting [{self.profile}], host: {conf.get('host')}, db: {conf.get('db')}")
 
         pool = PooledDB(
@@ -105,6 +105,12 @@ class MySQL:
             **conf
         )
         MySQL._POOLS[self.profile] = pool
+
+    def __str__(self) -> str:
+        return f"profile: [{self.profile}], host: {self.__conf.get('host')}, db: {self.__conf.get('db')}"
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
     def __enter__(self):
         self._conn = self.connect()

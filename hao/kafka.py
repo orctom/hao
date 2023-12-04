@@ -71,13 +71,13 @@ class Kafka(object):
     def __init__(self, profile='default') -> None:
         super().__init__()
         self.profile = profile
-        self._conf = config.get(f"kafka.{self.profile}")
-        if self._conf is None:
+        self.__conf = config.get(f"kafka.{self.profile}")
+        if self.__conf is None:
             raise ValueError(f'no config found for kafka, expecting: `kafka.{self.profile}`')
         self._producer = None
 
     def __str__(self) -> str:
-        return f"hosts: {self._conf.get('hosts')}, group_id: {self._conf.get('group_id')}"
+        return f"hosts: {self.__conf.get('hosts')}, group_id: {self.__conf.get('group_id')}"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -90,18 +90,18 @@ class Kafka(object):
                      group_id=None,
                      client_id=None):
         topics = [topic] if isinstance(topic, str) else topic
-        group_id = group_id or self._conf.get('group_id')
-        client_id = client_id or self._conf.get('client_id', self._conf.get('group_id'))
+        group_id = group_id or self.__conf.get('group_id')
+        client_id = client_id or self.__conf.get('client_id', self.__conf.get('group_id'))
         LOGGER.info(f"[kafka] consumer to topics: {topics}, group_id: {group_id}, client_id: {client_id}")
         return KafkaConsumer(
             *topics,
-            bootstrap_servers=self._conf.get('hosts'),
+            bootstrap_servers=self.__conf.get('hosts'),
             group_id=group_id,
             client_id=client_id,
-            auto_offset_reset=self._conf.get('auto_offset_reset', 'earliest'),
+            auto_offset_reset=self.__conf.get('auto_offset_reset', 'earliest'),
             enable_auto_commit=enable_auto_commit,
             auto_commit_interval_ms=auto_commit_interval_ms,
-            session_timeout_ms=self._conf.get('session_timeout_ms', 10_000),
+            session_timeout_ms=self.__conf.get('session_timeout_ms', 10_000),
             max_poll_records=max_poll_records,
             api_version=(1, 1, 0)
         )
@@ -109,7 +109,7 @@ class Kafka(object):
     def get_producer(self):
         if self._producer is None:
             self._producer = KafkaProducer(
-                bootstrap_servers=self._conf.get('hosts'),
+                bootstrap_servers=self.__conf.get('hosts'),
                 api_version=(1, 1, 0)
             )
         return self._producer

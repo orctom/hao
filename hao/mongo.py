@@ -90,14 +90,13 @@ class Mongo(object, metaclass=singleton.Multiton):
     def __init__(self, profile='default', db_name=None) -> None:
         super().__init__()
         self.profile = profile
-        self._conf = config.get(f"mongo.{profile}")
-        if self._conf is None:
-            raise ValueError(f'no config found for mongodb, expecting: `mongo.{profile}')
-        self.client = connect(**self._conf)
+        self.__conf = config.get(f"mongo.{profile}", {})
+        assert len(self.__conf) > 0, f'mongo profile not configured: mongo.{self.profile}'
+        self.client = connect(**self.__conf)
         self.db = self.get_db(db_name)
 
     def __str__(self) -> str:
-        return f"{self.client.address} [{self.db.name}]"
+        return f"host: {self.client.address}, db: {self.db.name}"
 
     def __repr__(self):
         return self.__str__()
@@ -108,7 +107,7 @@ class Mongo(object, metaclass=singleton.Multiton):
 
     def get_db(self, name=None) -> Database:
         if name is None:
-            name = self._conf.get('db')
+            name = self.__conf.get('db')
         return self.client[name]
 
     def col(self, name: str) -> Collection:

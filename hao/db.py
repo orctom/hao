@@ -46,19 +46,27 @@ from . import config, jsons, singleton
 class DB(metaclass=singleton.Multiton):
     def __init__(self, profile='default') -> None:
         self.profile = profile
-        self.engine = self._create_engine()
-        self._session = self._create_session()
-
-    def _create_engine(self):
-        params = {
+        conf_profile = config.get(f"db.{self.profile}", {})
+        assert len(conf_profile) > 0, f'db profile not configured: db.{self.profile}'
+        self.__conf = {
             'hide_parameters': True,
             'json_serializer': jsons.dumps,
             'pool_pre_ping': True,
             'pool_size': 5,
             'pool_recycle': 3500 * 6,
+            **conf_profile
         }
-        params.update(config.get(f"db.{self.profile}"))
-        return engine_from_config(params, prefix='')
+        self.engine = self._create_engine()
+        self._session = self._create_session()
+
+    def __str__(self) -> str:
+        return f"url: {self.engine.url}"
+
+    def __repr__(self) -> str:
+        return self.__str__()
+
+    def _create_engine(self):
+        return engine_from_config(self.__conf, prefix='')
 
     def _create_session(self):
         return sessionmaker(self.engine)
