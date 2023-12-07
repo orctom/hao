@@ -164,18 +164,21 @@ def pretty_time_delta(seconds, *, show_millis: bool = True):
     hours, seconds = divmod(seconds, 3600)
     minutes, seconds = divmod(seconds, 60)
     seconds, milliseconds = divmod(seconds, 1)
-    chunks = []
     if days > 0:
-        chunks.append(f"{int(days)}d")
+        return f"{int(days)}d, {int(hours)}h, {int(minutes)}m, {int(seconds)}s"
     elif hours > 0:
-        chunks.append(f"{int(hours)}h")
+        return f"{int(hours)}h, {int(minutes)}m, {int(seconds)}s"
     elif minutes > 0:
-        chunks.append(f"{int(minutes)}m")
+        if show_millis:
+            return f"{int(minutes)}m, {int(seconds)}s, {int(milliseconds * 1000)}ms"
+        else:
+            return f"{int(minutes)}m, {int(seconds)}s"
     elif seconds > 0:
-        chunks.append(f"{int(seconds)}s")
-    elif milliseconds and show_millis:
-        chunks.append(f"{int(milliseconds * 1000)}ms")
-    return ', '.join(chunks)
+        if show_millis:
+            return f"{int(seconds)}s, {int(milliseconds * 1000)}ms"
+        else:
+            return f'{int(seconds)}s'
+    return f"{int(milliseconds * 1000)}ms"
 
 
 def current_milliseconds():
