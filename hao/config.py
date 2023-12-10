@@ -44,7 +44,7 @@ class Config(object, metaclass=singleton.Multiton):
 
             return None
         except ModuleNotFoundError:
-            print(f"[config] expecting a 'conf' module in current directory")
+            print("[config] expecting a 'conf' module in current directory")
         except Exception as e:
             print(f"[config] {e}")
             traceback.print_exc()
