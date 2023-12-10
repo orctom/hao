@@ -72,10 +72,6 @@ class MySQL:
         conf_profile = config.get(f"mysql.{self.profile}", {})
         assert len(conf_profile) > 0, f'mysql profile not configured: mysql.{self.profile}'
         self.__conf = {
-            'mincached': 1,
-            'maxcached': 2,
-            'maxshared': 2,
-            'maxconnections': 20,
             'use_unicode': True,
             'charset': "utf8",
             **conf_profile
@@ -92,8 +88,8 @@ class MySQL:
         pool = PooledDB(
             mysqlclient,
             mincached=conf.pop('mincached', 1),
-            maxcached=conf.pop('maxcached', 2),
-            maxshared=conf.pop('maxshared', 2),
+            maxcached=conf.pop('maxcached', 20),
+            maxshared=conf.pop('maxshared', 0),
             maxconnections=conf.pop('maxconnections', 20),
             blocking=conf.pop('blocking', False),
             maxusage=conf.pop('maxusage', None),
