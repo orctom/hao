@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import collections
 import threading
-import typing
+from typing import Callable, DefaultDict
 
 import requests
 
@@ -47,7 +47,7 @@ class SimpleMetrics(object):
         super().__init__()
         self._logger = logger or LOGGER
         self._interval = interval
-        self._meters: typing.DefaultDict[str, SimpleCounter] = collections.defaultdict(SimpleCounter)
+        self._meters: DefaultDict[str, SimpleCounter] = collections.defaultdict(SimpleCounter)
         self._gauges = {}
         self._reporter = threads.PeriodicalTask(interval, self._report)
         self._n_cycle = 0
@@ -66,13 +66,13 @@ class SimpleMetrics(object):
             self._reporter.stop()
 
     def reset(self):
-        self._meters: typing.DefaultDict[str, SimpleCounter] = collections.defaultdict(SimpleCounter)
+        self._meters: DefaultDict[str, SimpleCounter] = collections.defaultdict(SimpleCounter)
         self._n_cycle = 0
 
     def mark(self, key):
         self._meters[key].increment()
 
-    def register_gauge(self, key, gauge: typing.Callable, overwrite=True):
+    def register_gauge(self, key, gauge: Callable, overwrite=True):
         if not overwrite and key in self._gauges:
             return
         self._gauges[key] = gauge
@@ -109,4 +109,5 @@ class SimpleMetrics(object):
             try:
                 requests.put(url, data=data, timeout=5)
             except Exception as e:
+                LOGGER.info(e)
                 LOGGER.info(e)
