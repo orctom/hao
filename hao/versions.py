@@ -28,7 +28,7 @@ def _from_poetry():
     try:
         version = subprocess.check_output(['poetry', 'version', '--short'], stderr=subprocess.DEVNULL)
         return version.decode().strip()
-    except:
+    except Exception:
         return None
 
 
@@ -36,7 +36,7 @@ def _from_pi():
     try:
         version = subprocess.check_output(['pi', 'version', '-s'], stderr=subprocess.DEVNULL)
         return version.decode().strip()
-    except:
+    except Exception:
         return None
 
 
@@ -46,5 +46,5 @@ def _from_git():
         d = subprocess.check_output(['git', 'rev-list', '--count', 'HEAD'], stderr=subprocess.DEVNULL)
         b = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD'], stderr=subprocess.DEVNULL)
         return f'{u.decode().strip()}-r{d.decode().strip()}-{b.decode().strip()}'
-    except:
+    except Exception:
         return None

@@ -5,7 +5,7 @@ import typing
 
 import requests
 
-from . import config, logs
+from . import config, logs, threads
 
 LOGGER = logs.get_logger(__name__)
 
@@ -49,7 +49,7 @@ class SimpleMetrics(object):
         self._interval = interval
         self._meters: typing.DefaultDict[str, SimpleCounter] = collections.defaultdict(SimpleCounter)
         self._gauges = {}
-        self._reporter = PeriodicalTask(interval, self._report)
+        self._reporter = threads.PeriodicalTask(interval, self._report)
         self._n_cycle = 0
         self.prometheus_gateway = config.get('prometheus.gateway')
         self.prometheus_key = config.get('prometheus.key')
@@ -110,25 +110,3 @@ class SimpleMetrics(object):
                 requests.put(url, data=data, timeout=5)
             except Exception as e:
                 LOGGER.info(e)
-
-
-class PeriodicalTask(threading.Thread):
-
-    def __init__(self, interval, target):
-        super().__init__()
-        self.status = threading.Event()
-        self.interval = interval
-        self.target = target
-        self.daemon = True
-
-    def stop(self):
-        self.status.set()
-
-    def is_stopped(self):
-        return self.status.isSet()
-
-    def run(self):
-        while not self.is_stopped():
-            LOGGER.debug('event')
-            self.status.wait(self.interval)
-            self.target()
