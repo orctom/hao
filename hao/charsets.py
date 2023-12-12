@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from typing import Optional
+
 import regex
 from charset_normalizer import from_bytes
 
@@ -163,6 +165,11 @@ CHARSETS = {
     'windows-1251': 'cp1251',
 }
 
+FIXING_ENCODINGS = (
+    'iso-8859-1',
+    'cp1025',
+    'GB18030',
+)
 
 def fix_encoding_name(encoding):
     encoding = encoding.lower()
@@ -188,4 +195,14 @@ def get_declared_encodings(html_text, uniquify=False):
 def guess_encoding(html_text):
     text = regex.sub("<.*?>", " ", html_text)
     encodding = from_bytes(text.encode()).best()
-    return fix_encoding_name(encodding)
+    return fix_encoding_name(encodding.encoding)
+
+
+def fix_encoding(text: str, encoding: Optional[str] = None):
+    encodings = lists.uniquify([encoding] + FIXING_ENCODINGS)
+    for encoding in encodings:
+        try:
+            return text.encode(encoding).decode()
+        except UnicodeDecodeError:
+            pass
+    return text
