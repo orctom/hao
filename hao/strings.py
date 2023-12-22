@@ -3,7 +3,7 @@ import base64
 import codecs
 import hashlib
 import json
-import random as rand
+import os
 import string
 import unicodedata
 from difflib import SequenceMatcher
@@ -446,4 +446,5 @@ def pad(text: str, width: int, align: str = '<', fill: str = ' '):
 
 
 def random(n: int) -> str:
-    return ''.join(rand.choices(string.ascii_letters + string.digits, k=n))
+    assert n % 2 == 0, 'n must be an even'
+    return os.urandom(n//2).hex()
