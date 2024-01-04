@@ -15,7 +15,7 @@ def run():
     argv = sys.argv
     n_args = len(argv)
     if n_args == 1:
-        LOGGER.warn(f'Usage: h-run module.func [params]')
+        LOGGER.warn('Usage: h-run module.func [params]')
         return
 
     try:

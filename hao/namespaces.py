@@ -12,11 +12,12 @@ _CACHE = {}
 
 
 class Attr(object):
-    def __init__(self, type=None, default=None, required=False, key=None, help=None, secret=False, **kwargs):
+    def __init__(self, type=None, default=None, required=False, env=None, key=None, help=None, secret=False, **kwargs):
         super().__init__()
         self.type = type or str
         self.default = default
         self.required = required
+        self.env = env
         self.key = key
         self.help = help
         self.secret = secret
@@ -32,7 +33,6 @@ attr = Attr
 def from_args(_cls=None,
               prefix=None,
               adds=None,
-              env: bool = True,
               config: Optional[Union[str, Config]] = None,
               module: Optional[str] = None,
               key: Optional[str] = None,
@@ -45,7 +45,6 @@ def from_args(_cls=None,
     :param prefix: optional prefix for command line: {prefix}_attribute
     :param adds: optional one or more function to add more args to ArgumentParser()<br/>
         e.g. <pre> @from_args(adds=pytorch_lightning.Trainer.add_argparse_args) </pre>
-    :param env: will try to resolve args from environment properties if True
     :param config: optional yaml config filename (path not included)
     :param module: optional module name, will try to load from conf/{{module}}/config.yml or site-packages/{{module}}/config.yml
     :param key: optional key name in config file, if config is specified
@@ -139,8 +138,8 @@ def from_args(_cls=None,
             _value = getattr(ns, arg_name, None)  # namespace
             if _value is None and _name in kw:
                 _value = kw.get(_name)
-            if _value is None and env:
-                _value = envs.get_of_type(arg_name, _attr.type)
+            if _value is None and _attr.env:
+                _value = envs.get_of_type(_attr.evn, _attr.type)
             if _value is None:  # 0 or 2 -> 2
                 if _attr.key:
                     _value = cfg.get(_attr.key.format(**values), _attr.default)
@@ -174,8 +173,8 @@ def from_args(_cls=None,
             _value = getattr(ns, arg_name, None)  # namespace
             if _value is None:  # constructor
                 _value = kw.get(_name)
-            if _value is None:  # env / default
-                _value = envs.get_of_type(arg_name, _attr.type) if env else _default
+            if _value is None and _attr.env:  # env / default
+                _value = envs.get_of_type(_attr.env, _attr.type) or _default
             setattr(self, _name, _value)
             values[_name] = _value
 
@@ -206,7 +205,7 @@ def from_args(_cls=None,
         for cls in reversed(self.__class__.__mro__):
             fields.update([
                 k for k, v in cls.__dict__.items()
-                if isinstance(v, Attr) and v.secret == True
+                if isinstance(v, Attr) and v.secret is True
             ])
         return fields
 
@@ -217,7 +216,7 @@ def from_args(_cls=None,
                 return f"{key}: ********"
             if isinstance(_v, dict):
                 formatted = pformat(_v, compact=True, width=width, sort_dicts=False)
-                val = f"\n\t{' ' * (indent + 2)}".join([l for l in formatted.splitlines()])
+                val = f"\n\t{' ' * (indent + 2)}".join([line for line in formatted.splitlines()])
                 return f"{key}: {val}"
             return f"{key}: {_v}"
 
@@ -247,14 +246,14 @@ def from_args(_cls=None,
     def from_dict(cls, data: dict):
         def populate(_o, _d):
             for k, v in _d.items():
-                if type(v) == dict:
+                if isinstance(v, dict):
                     setattr(_o, k, populate(type(k, (), {})(), v))
                 else:
                     setattr(_o, k, v)
             return _o
 
         def convert(_d):
-            if type(_d) == dict:
+            if isinstance(_d, dict):
                 _o = type('', (), {})()
                 for k, v in _d.items():
                     setattr(_o, k, convert(v))
