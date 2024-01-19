@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import ctypes
 import logging
 import os
 from typing import Optional
@@ -26,6 +27,35 @@ def is_in_docker():
 
 def is_in_aliyun():
     return os.path.exists('/usr/sbin/aliyun-service')
+
+
+def is_in_qcloud():
+    return os.path.exists('/usr/local/qcloud')
+
+
+def is_gpu_available():
+    try:
+        ctypes.CDLL('libcuda.so')
+        return True
+    except OSError:
+        return False
+
+
+def cuda_version():
+    try:
+        cuda = ctypes.CDLL('libcuda.so')
+        ver = ctypes.c_int()
+        if cuda.cuDriverGetVersion(ctypes.byref(ver)) == 0:
+            version = ver.value
+            major = version // 1000
+            minor = version % 1000 // 10
+            return f"{major}.{minor}"
+        return None
+    except OSError:
+        return None
+    except Exception as e:
+        LOGGER.exception(e)
+        return None
 
 
 def get_str(key: str, default: str = None) -> Optional[str]:
