@@ -26,6 +26,32 @@ homepage = "https://github.com/orctom/hao"
 repository = "https://github.com/orctom/hao"
 
 [project.optional-dependencies]
+es = [
+    "elasticsearch<8",
+]
+mongo = [
+    "pymongo",
+]
+kafka = [
+    "kafka-python",
+]
+mysql = [
+    "pymysql",
+    "dbutils>=3.0.0",
+]
+pg = [
+    "psycopg[binary]",
+    "dbutils>=3.0.0",
+]
+rabbit = [
+    "kombu",
+]
+redis = [
+    "redis",
+]
+sql = [
+    "sqlalchemy",
+]
 dev = [
     "ruff",
     "pytest>=7.2.0",

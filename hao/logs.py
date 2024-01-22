@@ -2,175 +2,238 @@
 import logging
 import os
 import sys
-import typing
+from datetime import datetime
 from logging import handlers as logging_handlers
+from typing import Dict, List, Optional
 
 from . import args, config, invoker, paths
 
-LOGGER_FORMAT = config.get('logger.format', "%(asctime)s %(levelname)-7s %(name)s:%(lineno)-4d - %(message)s")
+LOGGER_FORMAT = config.get('logger.format', '%(asctime)s %(levelname)-7s %(name)s:%(lineno)-4d - %(message)s')
 LOGGER_FORMATTER = logging.Formatter(LOGGER_FORMAT)
-
-_LOGGING_LEVELS = config.get('logging', {})
-_LOGGING_LEVEL_ROOT = _LOGGING_LEVELS.get('root', 'INFO')
-
-_HANDLERS: typing.List[logging.Handler] = []
-
-_LOGGERS = {}
-_LOGGER_DIR = config.get_path('logger.dir', 'data/logs')
+LOGGER_DIR = config.get_path('logger.dir', 'data/logs')
 
 
-def _get_handlers():
-    global _HANDLERS
-    if len(_HANDLERS) > 0:
-        return _HANDLERS
+class Handlers:
 
-    stream_handler = logging.StreamHandler(sys.stdout)
-    stream_handler.setFormatter(LOGGER_FORMATTER)
-    _HANDLERS.append(stream_handler)
+    def __init__(self) -> None:
+        self._app_name = paths.program_name()
+        self._logger_filename_arg = args.get_arg('log-to', help='abstract path or relative path to `{project-root}/data/logs`')
+        self._handlers: Dict[str, logging.Handler] = self._load()
+        self._default_handlers = self.get_handlers(['stdout', 'log-to'])
 
-    log_filename_arg = _get_logger_filename_arg()
-    log_filename_fallback = _get_logger_filename_fallback()
+    def add_handler(self, name: str, handler: logging.Handler):
+        self._handlers[name] = handler
 
-    logger_handlers = config.get('logger.handlers')
-    if logger_handlers:
-        for handler_name, handler_args in logger_handlers.items():
-            handler_cls = _get_handler_cls(handler_name)
-            if handler_cls is None:
-                print('[logger] skip invalid logger handler: ', handler_name)
-                continue
-            handler_args = _updated_handler_args(handler_args, log_filename_arg, log_filename_fallback)
-            handler = invoker.invoke(handler_cls, **handler_args)
+    def get_handler(self, name: str):
+        handler = self._handlers.get(name)
+        if handler is None and name not in ('stdout', 'log-to'):
+            print(f"[logger] handler not found in configure: {name}")
+        return handler
+
+    def get_handlers(self, names: Optional[List[str]] = None):
+        if not names:
+            return self._default_handlers
+        return list(filter(None, [self.get_handler(name) for name in set(names) if name]))
+
+    @staticmethod
+    def get_formatter(fmt: Optional[str] = None):
+        return logging.Formatter(fmt) if fmt else LOGGER_FORMATTER
+
+    @staticmethod
+    def _get_handler_cls(handler_name):
+        if not handler_name:
+            return None
+        if hasattr(logging, handler_name):
+            return getattr(logging, handler_name)
+        if hasattr(logging_handlers, handler_name):
+            return getattr(logging_handlers, handler_name)
+        return None
+
+    def _updated_handler_args(self, handler_args: dict):
+        if handler_args is None:
+            handler_args = {}
+        handler_args['filename'] = filename = self._get_log_path(handler_args.get('filename'))
+        if filename:
+            paths.make_parent_dirs(filename)
+        return handler_args
+
+    def _get_log_path(self, filename: str):
+        filename = filename or f"{self._app_name}.log"
+        if filename[0] in ('/', '~', '$'):
+            return paths.get(filename)
+        else:
+            return paths.get(LOGGER_DIR, filename)
+
+    def _load(self) -> Dict[str, logging.Handler]:
+        def load_default():
+            if 'stdout' in handlers:
+                return
+            handler = logging.StreamHandler(sys.stdout)
             handler.setFormatter(LOGGER_FORMATTER)
-            _HANDLERS.append(handler)
-            log_path = handler_args.get('filename')
-            if log_path:
-                print(f'logging to: {log_path} [{handler_name}]')
-    else:
-        if log_filename_arg:
-            from datetime import datetime
+            handlers['stdout'] = handler
+
+        def load_from_arg():
+            if not self._logger_filename_arg or 'log-to' in handlers:
+                return
+            now = datetime.now()
             params = {
-                'date': datetime.now().strftime('%y%m%d'),
-                'datehour': datetime.now().strftime('%y%m%d-%H'),
-                'datetime': datetime.now().strftime('%y%m%d-%H%M%S')
+                'app': self._app_name,
+                'date': now.strftime('%y%m%d'),
+                'datehour': now.strftime('%y%m%d-%H'),
+                'datetime': now.strftime('%y%m%d-%H%M%S'),
             }
-            log_filename = log_filename_arg.format(**params)
-            log_path = paths.get(_LOGGER_DIR, log_filename)
+            log_filename = self._logger_filename_arg.format(**params)
+            log_path = self._get_log_path(log_filename)
             paths.make_parent_dirs(log_path)
             handler = logging.FileHandler(log_path)
             handler.setFormatter(LOGGER_FORMATTER)
-            _HANDLERS.append(handler)
-            print(f'logging to: {log_path} [FileHandler]')
+            handlers['log-to'] = handler
+            print(f'[logger] [log-to] -> {log_path}')
 
-    return _HANDLERS
+        def load_from_config():
+            for handler_name, handler_config in config.get('logger.handlers').items():
+                try:
+                    if not handler_config:
+                        print(f"[logger] empty handler config: {handler_name}")
+                        continue
+                    if not isinstance(handler_config, dict):
+                        print(f"[logger] dict config expected for handler: {handler_name}, found: {type(handler_config)}")
+                        continue
+                    if handler_name in ('stdout', 'log-to'):
+                        if (fmt := handler_config.get('format')) is not None:
+                            handlers['stdout'].setFormatter(self.get_formatter(fmt))
+                        continue
+
+                    handler_cls = self._get_handler_cls(handler_config.get('handler'))
+                    if handler_cls is None:
+                        print(f"[logger] class not found for handler: {handler_name}, {handler_config.get('handler')}")
+                        continue
+                    handler_cls_args = self._updated_handler_args(handler_config.get('args'))
+                    handler = invoker.invoke(handler_cls, **handler_cls_args)
+                    handler.setFormatter(self.get_formatter(handler_config.get('format')))
+                    handlers[handler_name] = handler
+                    log_path = handler_cls_args.get('filename')
+                    if log_path:
+                        print(f'[logger] [{handler_name}] -> {log_path}')
+                except Exception as e:
+                    print(f"[logger] Failed to create handler: {handler_name}, {e}")
+                    break
+
+        handlers: Dict[str, logging.Handler] = {}
+        load_default()
+        load_from_arg()
+        load_from_config()
+        return handlers
 
 
-def _get_handler_cls(handler_name):
-    if hasattr(logging, handler_name):
-        return getattr(logging, handler_name)
-    if hasattr(logging_handlers, handler_name):
-        return getattr(logging_handlers, handler_name)
-    return None
+class Loggers:
+    def __init__(self) -> None:
+        self._loggers_config = {
+            'root': {'level': 'INFO'},
+            **{
+                logger_name: {'level': logger_config} if isinstance(logger_config, str) else logger_config
+                for logger_name, logger_config in config.get('logging', {}).items()
+            }
+        }
+        self._default_level = self._loggers_config.get('root', {}).get('level', 'INFO')
+        self._default_logger_config = {
+            'level': self._default_level,
+            'handlers': self._loggers_config.get('root', {}).get('handlers', ['stdout', 'log-to']),
+        }
+        self._loggers: Dict[str, logging.Logger] = self._load()
+        self.update_imported_modules()
 
+    def _get_logger_config(self, name):
+        while True:
+            logger_config = self._loggers_config.get(name)
+            if logger_config:
+                return {**self._loggers_config, **logger_config}
+            end = name.rfind('.')
+            if end <= 0:
+                return self._default_logger_config
+            name = name[:end]
 
-def _updated_handler_args(handler_args: dict, log_filename_arg: str, log_filename_fallback: str):
-    if handler_args is None:
-        handler_args = {}
-    filename = handler_args.get('filename')
-    if filename:
-        if filename[0] in ('/', '~', '$'):
-            filename = paths.get(filename)
+    def _get_handlers(self, name):
+        self._loggers_config.get(name)
+
+    def _get_logger(self, name, level=None):
+        _logger_config = self._get_logger_config(name)
+        _logger = logging.getLogger(name)
+        _logger.setLevel(level or _logger_config.get('level'))
+        _logger.handlers.clear()
+        _logger.propagate = False
+
+        handlers = _HANDLERS.get_handlers(_logger_config.get('handlers'))
+        if os.environ.get('SCRAPY_PROJECT') is not None:
+            if len(handlers) > 0:
+                _logger.addHandler(handlers[0])
         else:
-            filename = paths.get(_LOGGER_DIR, filename)
-    else:
-        filename = paths.get(_LOGGER_DIR, log_filename_arg or log_filename_fallback)
+            for handler in handlers:
+                _logger.addHandler(handler)
 
-    handler_args['filename'] = filename
-    paths.make_parent_dirs(filename)
+        if level:
+            self._loggers_config[name]['level'] = level
 
-    return handler_args
+        return _logger
+
+    def _load(self) -> Dict[str, logging.Logger]:
+        loggers: Dict[str, logging.Logger] = {}
+        for name in self._loggers_config:
+            loggers[name] = self._get_logger(name)
+        return loggers
+
+    def get_logger(self, name: str, level: Optional[str] = None):
+        logger = self._loggers.get(name)
+        if logger and level:
+            logger.setLevel(level)
+            return logger
+
+        logger = self._get_logger(name, level)
+        self.update_imported_modules()
+        return logger
+
+    def update_imported_modules(self):
+        """update other modules that newly imported"""
+        for _name in list(logging.root.manager.loggerDict):
+            if _name not in self._loggers:
+                self._loggers[_name] = self._get_logger(_name)
+
+    def update_levels(self, levels: dict):
+        if levels is None or len(levels) == 0:
+            return
+        for name, level in sorted(levels.items()):
+            self.update_level(name, level)
+
+    def update_level(self, name: str, level):
+        for _name, _logger in self._loggers.items():
+            if _name == name or _name.startswith(name):
+                _logger.setLevel(level)
 
 
-def _get_logger_filename_arg():
-    return args.get_arg('log-to', help='abstract path or relative path to `{project-root}/data/logs`')
-
-
-def _get_logger_filename_fallback():
-    return f"{paths.program_name()}.log"
+_HANDLERS = Handlers()
+_LOGGERS = Loggers()
 
 
 def get_logger(name=None, level=None):
-    global _LOGGERS
     if name is None:
         name = paths.who_called_me()
 
-    logger = _LOGGERS.get(name)
-    if logger is None:
-        logger = _get_logger(name, level)
-        _LOGGERS[name] = logger
-    elif level is not None:
-        logger.setLevel(level)
-
-    # update other modules that newly imported
-    for _name in list(logging.root.manager.loggerDict):
-        if _name not in _LOGGERS:
-            _LOGGERS[_name] = _get_logger(_name)
-
-    return logger
-
-
-def _get_logger(name, level=None):
-    _logger = logging.getLogger(name)
-    _logger.setLevel(level or _get_logging_level(name))
-    _logger.handlers.clear()
-
-    handlers = _get_handlers()
-    _logger.propagate = False
-    if os.environ.get('SCRAPY_PROJECT') is not None:
-        if len(handlers) > 0:
-            _logger.addHandler(handlers[0])
-    else:
-        for handler in handlers:
-            _logger.addHandler(handler)
-
-    if level:
-        _LOGGING_LEVELS[name] = level
-
-    return _logger
-
-
-def _get_logging_level(name):
-    while True:
-        level = _LOGGING_LEVELS.get(name)
-        if level is not None:
-            return level
-        end = name.rfind('.')
-        if end <= 0:
-            return _LOGGING_LEVEL_ROOT
-        name = name[:end]
+    return _LOGGERS.get_logger(name, level)
 
 
 def update_logger_levels(logging_levels: dict):
-    if logging_levels is None or len(logging_levels) == 0:
-        return
-    for module, level in sorted(logging_levels.items()):
-        update_logger_level(module, level)
+    _LOGGERS.update_levels(logging_levels)
 
 
-def update_logger_level(module: str, level):
-    _logger = _LOGGERS.get(module)
-    if _logger:
-        _logger.setLevel(level)
-
-    for _module, _logger in _LOGGERS.items():
-        if _module.startswith(module):
-            _logger.setLevel(level)
+def update_level(module: str, level):
+    _LOGGERS.update_level(module, level)
 
 
 def _config_base_logger():
     logging.basicConfig(**{
-        'handlers': _get_handlers(),
+        'handlers': _HANDLERS._default_handlers,
         'format': LOGGER_FORMAT,
-        'level': _LOGGING_LEVEL_ROOT
+        'level': _LOGGERS._default_level,
     })
 
 

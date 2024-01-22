@@ -131,7 +131,7 @@ def get_config_dir():
     if root_path is None:
         root_path = os.getcwd()
     program_path = os.environ.get('_')
-    if program_path:
+    if program_path and '/usr/bin/env' != program_path:
         os.environ['program_name'] = os.path.basename(program_path)
     return os.path.join(root_path, 'conf')
 
