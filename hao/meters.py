@@ -5,12 +5,12 @@ from typing import Callable, DefaultDict
 
 import requests
 
-from . import config, logs, threads
+from . import config, exits, logs, threads
 
 LOGGER = logs.get_logger(__name__)
 
 
-class SimpleCounter(object):
+class SimpleCounter:
 
     def __init__(self):
         super().__init__()
@@ -41,7 +41,7 @@ class SimpleCounter(object):
         return self.get()
 
 
-class SimpleMetrics(object):
+class SimpleMetrics(exits.OnExit):
 
     def __init__(self, logger=None, interval=15):
         super().__init__()
@@ -58,7 +58,7 @@ class SimpleMetrics(object):
         if self._reporter.is_alive():
             return self
         self.reset()
-        self._reporter.start()
+        # self._reporter.start()
         return self
 
     def stop(self):
@@ -68,6 +68,11 @@ class SimpleMetrics(object):
     def reset(self):
         self._meters: DefaultDict[str, SimpleCounter] = collections.defaultdict(SimpleCounter)
         self._n_cycle = 0
+
+    def on_exit(self):
+        for key in self._meters:
+            self._logger.info(f"[meter-{key}] removing from prometheus")
+            self._remove_from_prometheus(key)
 
     def mark(self, key):
         self._meters[key].increment()
@@ -110,4 +115,11 @@ class SimpleMetrics(object):
                 requests.put(url, data=data, timeout=5)
             except Exception as e:
                 LOGGER.info(e)
+
+    def _remove_from_prometheus(self, job_name):
+        if self.prometheus_gateway and self.prometheus_key:
+            url = f"{self.prometheus_gateway}/metrics/job/{job_name}/instance/{config.HOSTNAME}"
+            try:
+                requests.delete(url, timeout=5)
+            except Exception as e:
                 LOGGER.info(e)

@@ -95,6 +95,42 @@ logger:
       backupCount: 3
 ```
 
+Example
+```yaml
+logger:
+  format: "%(asctime)s %(levelname)-7s %(name)s:%(lineno)-4d - %(message)s"   # overwrite to change to other format
+  handlers:
+    stdout:
+      format: "%(asctime)s %(levelname)-7s %(name)s:%(lineno)-4d - %(message)s"   # overwrite to change to other format
+    file:
+      format: "%(message)s"   # overwrite to change to other format
+      handler: TimedRotatingFileHandler
+      args:
+        when: d
+        backupCount: 3
+        filename: test.log
+    rolling-file:
+      handler: TimedRotatingFileHandler
+      args:
+        when: d
+        backupCount: 3
+        filename: hello.log
+
+logging:
+  root: INFO
+  torch.models: INFO
+  __main__: DEBUG
+  access:
+    level: INFO
+    handlers:
+      - stdout
+      - rolling-file
+  test:
+    level: INFO
+    handlers:
+      - file
+```
+
 Declare and user the logger
 
 ```python

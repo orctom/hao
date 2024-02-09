@@ -34,7 +34,7 @@ from . import config, logs
 LOGGER = logs.get_logger(__name__)
 
 
-class Arango(object):
+class Arango:
     __slots__ = ['profile', '__conf', '_lock', '_lock_graph', '_client', '_db', '_graph']
 
     def __init__(self, profile='default') -> None:
@@ -43,8 +43,8 @@ class Arango(object):
         self.__conf = config.get(f"arango.{profile}", {})
         assert len(self.__conf) > 0, f'arango profile not configured: arango.{self.profile}'
         LOGGER.debug(f"connecting to profile: {profile}")
-        self._lock: Lock = Lock()
-        self._lock_graph: Lock = Lock()
+        self._lock = Lock()
+        self._lock_graph = Lock()
         self._client = ArangoClient(hosts=self.__conf.get('hosts'))
         self._db = None
         self._graph = None

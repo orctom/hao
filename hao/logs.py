@@ -14,7 +14,6 @@ LOGGER_DIR = config.get_path('logger.dir', 'data/logs')
 
 
 class Handlers:
-
     def __init__(self) -> None:
         self._app_name = paths.program_name()
         self._logger_filename_arg = args.get_arg('log-to', help='abstract path or relative path to `{project-root}/data/logs`')
