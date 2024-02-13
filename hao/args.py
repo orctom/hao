@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 import argparse
+import sys
 from typing import Callable, List, Optional, Union
+
+import regex
 
 _PARSER = argparse.ArgumentParser(formatter_class=argparse.MetavarTypeHelpFormatter, add_help=False, conflict_handler='resolve')
 
@@ -35,6 +38,12 @@ def add_by_function(addon_fn: Optional[Union[List[Callable], Callable]]):
     elif callable(addon_fn):
         addon_fn(_PARSER)
     return {action.dest: action for action in getattr(_PARSER, '_actions') if action.dest not in _names_before}
+
+
+def args_as_dict() -> dict:
+    args_str = ' '.join(sys.argv[1:])
+    args = [regex.compile(r'(?:\s*=\s*|\s+)').split(item) for item in regex.compile(r'\s*\-{2}').split(args_str) if item]
+    return {a[0]: a[1] if len(a) == 2 else None for a in args}
 
 
 def print_help():
