@@ -90,35 +90,33 @@ class Handlers:
             print(f'[logger] [log-to] -> {log_path}')
 
         def load_from_config():
-            logger_handlers = config.get('logger.handlers')
-            if logger_handlers:
-                for handler_name, handler_config in logger_handlers.items():
-                    try:
-                        if not handler_config:
-                            print(f"[logger] empty handler config: {handler_name}")
-                            continue
-                        if not isinstance(handler_config, dict):
-                            print(f"[logger] dict config expected for handler: {handler_name}, found: {type(handler_config)}")
-                            continue
-                        if handler_name in ('stdout', 'log-to'):
-                            if (fmt := handler_config.get('format')) is not None:
-                                handlers['stdout'].setFormatter(self.get_formatter(fmt))
-                            continue
+            for handler_name, handler_config in config.get('logger.handlers', {}).items():
+                try:
+                    if not handler_config:
+                        print(f"[logger] empty handler config: {handler_name}")
+                        continue
+                    if not isinstance(handler_config, dict):
+                        print(f"[logger] dict config expected for handler: {handler_name}, found: {type(handler_config)}")
+                        continue
+                    if handler_name in ('stdout', 'log-to'):
+                        if (fmt := handler_config.get('format')) is not None:
+                            handlers['stdout'].setFormatter(self.get_formatter(fmt))
+                        continue
 
-                        handler_cls = self._get_handler_cls(handler_config.get('handler'))
-                        if handler_cls is None:
-                            print(f"[logger] class not found for handler: {handler_name}, {handler_config.get('handler')}")
-                            continue
-                        handler_cls_args = self._updated_handler_args(handler_config.get('args'))
-                        handler = invoker.invoke(handler_cls, **handler_cls_args)
-                        handler.setFormatter(self.get_formatter(handler_config.get('format')))
-                        handlers[handler_name] = handler
-                        log_path = handler_cls_args.get('filename')
-                        if log_path:
-                            print(f'[logger] [{handler_name}] -> {log_path}')
-                    except Exception as e:
-                        print(f"[logger] Failed to create handler: {handler_name}, {e}")
-                        break
+                    handler_cls = self._get_handler_cls(handler_config.get('handler'))
+                    if handler_cls is None:
+                        print(f"[logger] class not found for handler: {handler_name}, {handler_config.get('handler')}")
+                        continue
+                    handler_cls_args = self._updated_handler_args(handler_config.get('args'))
+                    handler = invoker.invoke(handler_cls, **handler_cls_args)
+                    handler.setFormatter(self.get_formatter(handler_config.get('format')))
+                    handlers[handler_name] = handler
+                    log_path = handler_cls_args.get('filename')
+                    if log_path:
+                        print(f'[logger] [{handler_name}] -> {log_path}')
+                except Exception as e:
+                    print(f"[logger] Failed to create handler: {handler_name}, {e}")
+                    break
 
         handlers: Dict[str, logging.Handler] = {}
         load_default()
