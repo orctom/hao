@@ -2,15 +2,15 @@
 import contextlib
 import inspect
 import os
-import pathlib
 import sys
 import types
 import typing
 from glob import glob
+from pathlib import Path
 
 import regex
 
-FILES_IN_ROOT = ('pyproject.toml', 'requirements.txt', 'setup.py', 'LICENSE', '.git', '.idea', '.vscode')
+FILES_IN_ROOT = ('pyproject.toml', 'requirements.txt', 'setup.py', 'LICENSE', '.git', '.idea', '.vscode', '.venv', 'venv')
 _ROOT_PATH = None
 
 
@@ -29,7 +29,8 @@ def project_root_path():
     global _ROOT_PATH
     if _ROOT_PATH is not None:
         return _ROOT_PATH
-    path = pathlib.Path(os.getcwd())
+    path = Path(os.getcwd())
+    stops = ('/', home_path())
     while True:
         if str(path) == str(path.parent).replace('-', '_'):
             _ROOT_PATH = str(path.parent)
@@ -41,7 +42,7 @@ def project_root_path():
 
         path = path.parent
 
-        if str(path) == '/':
+        if str(path) in stops:
             _ROOT_PATH = os.getcwd()
             break
     return _ROOT_PATH
@@ -52,7 +53,7 @@ def root_path():
 
 
 def home_path():
-    return str(pathlib.Path.home())
+    return str(Path.home())
 
 
 def whoami():
@@ -83,16 +84,16 @@ def program_name():
         return name
     main_module = sys.modules['__main__']
     if hasattr(main_module, '__file__'):
-        return pathlib.Path(main_module.__file__).stem
+        return Path(main_module.__file__).stem
     return project_name()
 
 
 def project_name():
-    return pathlib.Path(project_root_path() or os.getcwd()).stem
+    return Path(project_root_path() or os.getcwd()).stem
 
 
 def make_parent_dirs(file_path, exist_ok=True):
-    parent = pathlib.Path(file_path).parent
+    parent = Path(file_path).parent
     if parent.exists():
         return
     os.makedirs(parent, exist_ok=exist_ok)
