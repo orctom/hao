@@ -2,6 +2,7 @@
 import argparse
 import copy
 import sys
+from distutils.util import strtobool
 from pprint import pformat
 from typing import Callable, Optional, Union
 
@@ -112,6 +113,8 @@ def from_args(_cls=None,
             ]))
             if 'action' in _attr.kwargs:
                 parser.add_argument(arg_name, help=desc, **_attr.kwargs)
+            elif _attr.type == bool:
+                parser.add_argument(arg_name, type=lambda x: bool(strtobool(x)), help=desc, **_attr.kwargs)
             else:
                 attr_type = _attr.type
                 parser.add_argument(arg_name, type=attr_type, help=desc, **_attr.kwargs)
@@ -212,7 +215,7 @@ def from_args(_cls=None,
     def prettify(self, align='<', fill=' ', width=125):
         def fmt_kv(_k, _v):
             key = f"{_k:{fill}{align}{indent}}"
-            if _k in secret_fields:
+            if _k in secret_fields and _v:
                 return f"{key}: ********"
             if isinstance(_v, dict):
                 formatted = pformat(_v, compact=True, width=width, sort_dicts=False)
