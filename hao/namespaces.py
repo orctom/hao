@@ -142,7 +142,7 @@ def from_args(_cls=None,
             if _value is None and _name in kw:
                 _value = kw.get(_name)
             if _value is None and _attr.env:
-                _value = envs.get_of_type(_attr.evn, _attr.type)
+                _value = envs.get_of_type(_attr.env, _attr.type)
             if _value is None:  # 0 or 2 -> 2
                 if _attr.key:
                     _value = cfg.get(_attr.key.format(**values), _attr.default)
