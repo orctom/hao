@@ -8,11 +8,10 @@ _handlers = []
 def _on_exit(*a, **kw):
     while _handlers:
         handler, args, kwargs = _handlers.pop()
-        handler(*args, **kwargs)
-
-
-signal.signal(signal.SIGTERM, _on_exit)
-signal.signal(signal.SIGINT, _on_exit)
+        try:
+            handler(*args, **kwargs)
+        except Exception:
+            pass
 
 
 def on_exit(func, *a, **kw):
@@ -29,3 +28,14 @@ class OnExit(abc.ABC):
     @abc.abstractmethod
     def on_exit(self):
         raise NotImplementedError()
+
+
+def register_handler():
+    for sig in (signal.SIGINT, signal.SIGTERM):
+        if callable((_handler := signal.getsignal(sig))):
+            _handlers.append((_handler, [], {}))
+
+        signal.signal(sig, _on_exit)
+
+
+register_handler()
