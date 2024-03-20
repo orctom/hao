@@ -16,8 +16,8 @@ LOGGER_DIR = config.get_path('logger.dir', 'data/logs')
 class Handlers:
     def __init__(self) -> None:
         self._app_name = paths.program_name()
-        self._logger_filename_arg = args.get_arg('log-to', help='abstract path or relative path to `{project-root}/data/logs`')
-        self._handlers: Dict[str, logging.Handler] = self._load()
+        self._handlers: Dict[str, logging.Handler] = {}
+        self._load()
         self._default_handlers = self.get_handlers(['stdout', 'log-to'])
 
     def add_handler(self, name: str, handler: logging.Handler):
@@ -63,66 +63,65 @@ class Handlers:
         else:
             return paths.get(LOGGER_DIR, filename)
 
-    def _load(self) -> Dict[str, logging.Handler]:
-        def load_default():
-            if 'stdout' in handlers:
-                return
-            handler = logging.StreamHandler(sys.stdout)
-            handler.setFormatter(LOGGER_FORMATTER)
-            handlers['stdout'] = handler
+    def _load_default(self):
+        if 'stdout' in self._handlers:
+            return
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(LOGGER_FORMATTER)
+        self._handlers['stdout'] = handler
 
-        def load_from_arg():
-            if not self._logger_filename_arg or 'log-to' in handlers:
-                return
-            now = datetime.now()
-            params = {
-                'app': self._app_name,
-                'date': now.strftime('%y%m%d'),
-                'datehour': now.strftime('%y%m%d-%H'),
-                'datetime': now.strftime('%y%m%d-%H%M%S'),
-            }
-            log_filename = self._logger_filename_arg.format(**params)
-            log_path = self._get_log_path(log_filename)
-            paths.make_parent_dirs(log_path)
-            handler = logging.FileHandler(log_path)
-            handler.setFormatter(LOGGER_FORMATTER)
-            handlers['log-to'] = handler
-            print(f'[logger] [log-to] -> {log_path}')
+    def _load_from_arg(self):
+        log_to_arg = args.get_arg('log-to', help='abstract path or relative path to `{project-root}/data/logs`')
+        if not log_to_arg or 'log-to' in self._handlers:
+            return
+        now = datetime.now()
+        params = {
+            'app': self._app_name,
+            'date': now.strftime('%y%m%d'),
+            'datehour': now.strftime('%y%m%d-%H'),
+            'datetime': now.strftime('%y%m%d-%H%M%S'),
+        }
+        log_filename = log_to_arg.format(**params)
+        log_path = self._get_log_path(log_filename)
+        paths.make_parent_dirs(log_path)
+        handler = logging.FileHandler(log_path)
+        handler.setFormatter(LOGGER_FORMATTER)
+        self._handlers['log-to'] = handler
+        print(f'[logger] [log-to] -> {log_path}')
 
-        def load_from_config():
-            for handler_name, handler_config in config.get('logger.handlers', {}).items():
-                try:
-                    if not handler_config:
-                        print(f"[logger] empty handler config: {handler_name}")
-                        continue
-                    if not isinstance(handler_config, dict):
-                        print(f"[logger] dict config expected for handler: {handler_name}, found: {type(handler_config)}")
-                        continue
-                    if handler_name in ('stdout', 'log-to'):
-                        if (fmt := handler_config.get('format')) is not None:
-                            handlers['stdout'].setFormatter(self.get_formatter(fmt))
-                        continue
+    def _load_from_config(self):
+        for handler_name, handler_config in config.get('logger.handlers', {}).items():
+            try:
+                if not handler_config:
+                    print(f"[logger] empty handler config: {handler_name}")
+                    continue
+                if not isinstance(handler_config, dict):
+                    print(f"[logger] dict config expected for handler: {handler_name}, found: {type(handler_config)}")
+                    continue
+                if handler_name in ('stdout', 'log-to'):
+                    if (fmt := handler_config.get('format')) is not None:
+                        self._handlers['stdout'].setFormatter(self.get_formatter(fmt))
+                    continue
 
-                    handler_cls = self._get_handler_cls(handler_config.get('handler'))
-                    if handler_cls is None:
-                        print(f"[logger] class not found for handler: {handler_name}, {handler_config.get('handler')}")
-                        continue
-                    handler_cls_args = self._updated_handler_args(handler_config.get('args'))
-                    handler = invoker.invoke(handler_cls, **handler_cls_args)
-                    handler.setFormatter(self.get_formatter(handler_config.get('format')))
-                    handlers[handler_name] = handler
-                    log_path = handler_cls_args.get('filename')
-                    if log_path:
-                        print(f'[logger] [{handler_name}] -> {log_path}')
-                except Exception as e:
-                    print(f"[logger] Failed to create handler: {handler_name}, {e}")
-                    break
+                handler_cls = self._get_handler_cls(handler_config.get('handler'))
+                if handler_cls is None:
+                    print(f"[logger] class not found for handler: {handler_name}, {handler_config.get('handler')}")
+                    continue
+                handler_cls_args = self._updated_handler_args(handler_config.get('args'))
+                handler = invoker.invoke(handler_cls, **handler_cls_args)
+                handler.setFormatter(self.get_formatter(handler_config.get('format')))
+                self._handlers[handler_name] = handler
+                log_path = handler_cls_args.get('filename')
+                if log_path:
+                    print(f'[logger] [{handler_name}] -> {log_path}')
+            except Exception as e:
+                print(f"[logger] Failed to create handler: {handler_name}, {e}")
+                break
 
-        handlers: Dict[str, logging.Handler] = {}
-        load_default()
-        load_from_arg()
-        load_from_config()
-        return handlers
+    def _load(self) -> None:
+        self._load_default()
+        self._load_from_arg()
+        self._load_from_config()
 
 
 class Loggers:
@@ -208,6 +207,15 @@ class Loggers:
             if _name == name or _name.startswith(name):
                 _logger.setLevel(level)
 
+    def add_log_to_file(self, path: str):
+        log_path = paths.get(path)
+        paths.make_parent_dirs(log_path)
+        handler = logging.FileHandler(log_path)
+        handler.setFormatter(LOGGER_FORMATTER)
+        for _logger in self._loggers.values():
+            _logger.addHandler(handler)
+        print(f'[logger] [log-to-file] -> {log_path}')
+
 
 _HANDLERS = Handlers()
 _LOGGERS = Loggers()
@@ -234,6 +242,9 @@ def _config_base_logger():
         'format': LOGGER_FORMAT,
         'level': _LOGGERS._default_level,
     })
+
+
+add_log_to_file = _LOGGERS.add_log_to_file
 
 
 _config_base_logger()

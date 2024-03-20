@@ -75,6 +75,7 @@ h-s3-init = "hao.s3:init"
 h-run = "hao.cli:run"
 h-split = "hao.files:split_cli"
 hf-download = "hao.hf:download"
+h-vs = 'hao.vs:run'
 
 [tool.pi]
 license-expression = "Apache-2.0"
