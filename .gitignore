@@ -1,6 +1,6 @@
 *.pyc
 .idea/
-.vscode/settings.json
+.vscode/
 
 *.log
 eggs
