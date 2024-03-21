@@ -43,7 +43,7 @@ def add_by_function(addon_fn: Optional[Union[List[Callable], Callable]]):
 def args_as_dict() -> dict:
     args_str = ' '.join(sys.argv[1:])
     args = [regex.compile(r'(?:\s*=\s*|\s+)').split(item) for item in regex.compile(r'\s*\-{2}').split(args_str) if item]
-    return {a[0]: a[1] if len(a) == 2 else None for a in args}
+    return {a[0]: '='.join(a[1:]) if len(a) >= 2 else None for a in args}
 
 
 def print_help():
