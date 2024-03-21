@@ -157,7 +157,7 @@ def formatted(date: Union[str, int, datetime.date, datetime.datetime], fmt=FORMA
     return date.strftime(fmt)
 
 
-def pretty_time_delta(seconds, *, show_millis: bool = True):
+def pretty_time_delta(seconds, *, millis: bool = True):
     if seconds is None:
         return '-'
     days, seconds = divmod(seconds, 86400)
@@ -169,12 +169,12 @@ def pretty_time_delta(seconds, *, show_millis: bool = True):
     elif hours > 0:
         return f"{int(hours)}h, {int(minutes)}m, {int(seconds)}s"
     elif minutes > 0:
-        if show_millis:
+        if millis:
             return f"{int(minutes)}m, {int(seconds)}s, {int(milliseconds * 1000)}ms"
         else:
             return f"{int(minutes)}m, {int(seconds)}s"
     elif seconds > 0:
-        if show_millis:
+        if millis:
             return f"{int(seconds)}s, {int(milliseconds * 1000)}ms"
         else:
             return f'{int(seconds)}s'

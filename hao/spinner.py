@@ -60,7 +60,7 @@ class Spinner(threading.Thread):
         cursors = self.cursors()
         while not self.is_stopped():
             self.status.wait(self.interval)
-            took = pretty_time_delta(int(time.time()) - start, show_millis=False)
+            took = pretty_time_delta(int(time.time()) - start, millis=False)
             p = f"{self.LINE_CLEAR}\r{self.ps} {self.msg} [{took}] {next(cursors)}"
             print(p, end='', flush=True)
         print(f"{self.done} ", end='\n', flush=True)

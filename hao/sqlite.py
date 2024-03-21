@@ -86,6 +86,29 @@ class SQLite:
             self.commit()
         return cursor
 
+    def fetchone(self, sql: str, params: Optional[Union[list, tuple]] = None, *, commit: bool = False):
+        cursor = self.conn.execute(sql, params or ())
+        if commit:
+            self.commit()
+        return cursor.fetchone()
+
+    def fetchall(self, sql: str, params: Optional[Union[list, tuple]] = None, *, commit: bool = False):
+        cursor = self.conn.execute(sql, params or ())
+        if commit:
+            self.commit()
+        return cursor.fetchall()
+
+    def fetch(self, sql: str, params: Optional[Union[list, tuple]] = None, batch=2000, *, commit: bool = False):
+        cursor = self.conn.execute(sql, params or ())
+        if commit:
+            self.commit()
+        while True:
+            records = cursor.fetchmany(size=batch)
+            if not records:
+                break
+            for record in records:
+                yield record
+
     def commit(self):
         return self.conn.commit()
 

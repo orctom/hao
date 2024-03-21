@@ -88,11 +88,11 @@ class Stopwatch(object):
             return 0
         return int(_lap * 1000)
 
-    def elapsed(self):
+    def elapsed(self, millis: bool = True):
         _elapsed = self._elapsed()
         if _elapsed is None:
             return '0s'
-        return pretty_time_delta(_elapsed)
+        return pretty_time_delta(_elapsed, millis=millis)
 
     def elapsed_milliseconds(self):
         _elapsed = self._elapsed()
@@ -100,5 +100,5 @@ class Stopwatch(object):
             return 0
         return int(_elapsed * 1000)
 
-    def took(self):
-        return self.elapsed()
+    def took(self, millis: bool = True):
+        return self.elapsed(millis)
