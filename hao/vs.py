@@ -17,10 +17,11 @@ def run():
         return
 
     try:
-        module_name = argv[1]
+        module_name = argv[-1]
         path_launch_json = paths.get('.vscode/launch.json')
         if not os.path.exists(path_launch_json):
             data = {'version': '0.2.0', 'configurations': []}
+            paths.make_parent_dirs(path_launch_json)
         else:
             with open(path_launch_json) as f:
                 data = json.load(f)
