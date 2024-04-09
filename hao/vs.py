@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 import json
+import logging
 import os
 import sys
 
 from . import jsons, paths
+
+LOGGER = logging.getLogger(__name__)
+
 
 def run():
     argv = sys.argv
