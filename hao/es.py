@@ -97,12 +97,12 @@ class ES:
     def __repr__(self) -> str:
         return self.__str__()
 
-    def get_by_id(self, _id, index: str, **params):
+    def get_by_id(self, _id, index: str, params: Optional[dict] = None, **kwargs):
         assert _id is not None, '_id required'
         assert index is not None, 'index required'
 
         try:
-            return self.client.get(index=index, id=_id, params=params)
+            return self.client.get(index=index, id=_id, params=params, **kwargs)
         except NotFoundError:
             return None
 
