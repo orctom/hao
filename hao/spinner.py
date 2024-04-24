@@ -9,26 +9,46 @@ class Spinner(threading.Thread):
 
     LINE_CLEAR = '\x1b[2K'
     FRAMES = [
-        '|\\_________',
-        '_|\\________',
-        '__|\\_______',
-        '___|\\______',
-        '____|\\_____',
-        '_____|\\____',
-        '______|\\___',
-        '_______|\\__',
-        '________|\\_',
-        '_________|\\',
-        '_________/|',
-        '________/|_',
-        '_______/|__',
-        '______/|___',
-        '_____/|____',
-        '____/|_____',
-        '___/|______',
-        '__/|_______',
-        '_/|________',
-        '/|_________',
+        '_________________',
+        '\\________________',
+        '|\\_______________',
+        '_|\\______________',
+        '__|\\_____________',
+        '___|\\____________',
+        '____|\\___________',
+        '_____|\\__________',
+        '______|\\_________',
+        '_______|\\________',
+        '________|\\_______',
+        '_________|\\______',
+        '__________|\\_____',
+        '___________|\\____',
+        '____________|\\___',
+        '_____________|\\__',
+        '______________|\\_',
+        '_______________|\\',
+        '________________|',
+        '_________________',
+        '_________________',
+        '________________/',
+        '_______________/|',
+        '______________/|_',
+        '_____________/|__',
+        '____________/|___',
+        '___________/|____',
+        '__________/|_____',
+        '_________/|______',
+        '________/|_______',
+        '_______/|________',
+        '______/|_________',
+        '_____/|__________',
+        '____/|___________',
+        '___/|____________',
+        '__/|_____________',
+        '_/|______________',
+        '/|_______________',
+        '|________________',
+        '_________________',
     ]
 
     def __init__(self, msg: str, *, ps='>', done: str = '✔️', interval=0.1, frames: Optional[List[str]] = None):
@@ -40,6 +60,10 @@ class Spinner(threading.Thread):
         self.frames = frames or self.FRAMES
         self.status = threading.Event()
         self.daemon = True
+        self._start = None
+
+    def elapes(self):
+        return pretty_time_delta(int(time.time()) - self._start, millis=False) if self._start else '-'
 
     def stop(self):
         self.status.set()
@@ -56,11 +80,11 @@ class Spinner(threading.Thread):
         print(f"{self.LINE_CLEAR}\r{self.ps} {text}", flush=True)
 
     def run(self):
-        start = int(time.time())
+        self._start = int(time.time())
         cursors = self.cursors()
         while not self.is_stopped():
             self.status.wait(self.interval)
-            took = pretty_time_delta(int(time.time()) - start, millis=False)
+            took = self.elapes()
             p = f"{self.LINE_CLEAR}\r{self.ps} {self.msg} [{took}] {next(cursors)}"
             print(p, end='', flush=True)
         print(f"{self.done} ", end='\n', flush=True)
