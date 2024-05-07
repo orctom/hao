@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import json
+import ast
 import logging
 import os
 import sys
@@ -13,7 +13,7 @@ def run():
     argv = sys.argv
     n_args = len(argv)
     if n_args == 1:
-        print('Usage: h-code {module.name}')
+        print('Usage: h-vs {module.name}')
         return
 
     try:
@@ -24,7 +24,9 @@ def run():
             paths.make_parent_dirs(path_launch_json)
         else:
             with open(path_launch_json) as f:
-                data = json.load(f)
+                text = f.read()
+                text = text.replace('null', 'None').replace('true', 'True').replace('false', 'False')
+                data = ast.literal_eval(text)
         data.get('configurations').append({
             "name": module_name,
             "type": "debugpy",
