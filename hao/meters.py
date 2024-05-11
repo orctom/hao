@@ -58,7 +58,7 @@ class SimpleMetrics(exits.OnExit):
         if self._reporter.is_alive():
             return self
         self.reset()
-        # self._reporter.start()
+        self._reporter.start()
         return self
 
     def stop(self):
@@ -71,7 +71,6 @@ class SimpleMetrics(exits.OnExit):
 
     def on_exit(self):
         for key in self._meters:
-            self._logger.info(f"[meter-{key}] removing from prometheus")
             self._remove_from_prometheus(key)
 
     def mark(self, key):
@@ -118,6 +117,7 @@ class SimpleMetrics(exits.OnExit):
 
     def _remove_from_prometheus(self, job_name):
         if self.prometheus_gateway and self.prometheus_key:
+            self._logger.info(f"[meter-{job_name}] removing from prometheus")
             url = f"{self.prometheus_gateway}/metrics/job/{job_name}/instance/{config.HOSTNAME}"
             try:
                 requests.delete(url, timeout=5)
