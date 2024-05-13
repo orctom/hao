@@ -225,14 +225,15 @@ def from_args(_cls=None,
 
         attributes = self.to_dict()
         secret_fields = self._secret_fields()
+        headline = f"[{self.__class__.__name__}] (prefix='{self.__PREFIX__}')" if self.__PREFIX__ else f"[{self.__class__.__name__}]"
         if len(attributes) == 0:
-            return f"[{self.__class__.__name__}]\t[-]"
+            return f"{headline}\t[-]"
         indent = max([len(k) for k, _ in attributes.items()]) + 1
         values = '\n\t'.join([fmt_kv(k, v) for k, v in attributes.items()])
         if len(attributes) <= 1:
-            return f"[{self.__class__.__name__}]\t{values}"
+            return f"{headline}\t{values}"
         else:
-            return f"[{self.__class__.__name__}]\n\t{values}"
+            return f"{headline}\n\t{values}"
 
     def __repr__(self) -> str:
         return self.prettify()
@@ -282,6 +283,7 @@ def from_args(_cls=None,
     def wrapper(cls):
         if getattr(cls, "__class__", None) is None:
             raise TypeError("Only works with new-style classes.")
+        setattr(cls, '__PREFIX__', prefix)
         for method in [_get_arg_name, _secret_fields, __init__, to_dict, __repr__, __str__, prettify]:
             setattr(cls, method.__name__, _method(cls, method))
         for method in [from_dict]:
