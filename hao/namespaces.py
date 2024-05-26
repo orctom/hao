@@ -4,7 +4,7 @@ import copy
 import sys
 from distutils.util import strtobool
 from pprint import pformat
-from typing import Callable, Optional, Union
+from typing import Callable, Dict, Optional, Union
 
 from . import args, envs
 from .config import Config, get_config
@@ -26,6 +26,15 @@ class Attr(object):
 
     def __call__(self, *args, **kwargs):
         pass
+
+    def __repr__(self):
+        return ', '.join(filter(None, [
+            str(self.type),
+            f"default: {self.default}",
+            f"choices: {self.kwargs.get('choices')}" if self.kwargs.get('choices') else '',
+            'required' if self.required else 'optional',
+            f"help: {self.help}" if self.help else '',
+        ]))
 
 
 attr = Attr
@@ -61,6 +70,10 @@ def from_args(_cls=None,
             return loader()
 
         assert len(a) == 0 or _cls is None, '@from_args() not allowed arg: "_cls"'
+
+        if cache and (_cached := _CACHE.get(fqdn(self))) is not None:
+            self = copy.copy(_cached)
+            return
 
         cfg = get_config(config, module)
         if cfg and key:
@@ -197,8 +210,7 @@ def from_args(_cls=None,
         if post_init_fn:
             post_init_fn()
 
-        if cache:
-            _CACHE[fqdn(self)] = self
+        _CACHE[fqdn(self)] = self
 
     def _get_arg_name(self, _name):
         return f'{prefix}_{_name}' if prefix else _name
@@ -296,8 +308,14 @@ def from_args(_cls=None,
         return wrapper(_cls)
 
 
-def get_cached() -> dict:
-    return copy.copy(_CACHE)
+def attrs(clz: type) -> Dict[str, Attr]:
+    items = {}
+    for cls in reversed(clz.__mro__):
+        items.update({
+            k: v for k, v in cls.__dict__.items()
+            if not k.startswith('__') and not k.endswith('__') and isinstance(v, Attr)
+        })
+    return items
 
 
 def fqdn(obj: object) -> str:
