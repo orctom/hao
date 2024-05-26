@@ -49,9 +49,9 @@ class SQLite:
     }
 
     def __init__(self,
-                 profile: str | None = 'default',
+                 profile: Optional[str] = 'default',
                  *,
-                 path: str | None = None,
+                 path: Optional[str] = None,
                  cursor: Literal['tuple', 'dict', 'namedtuple'] = 'tuple') -> None:
         self.profile = profile
         self.path = path
@@ -76,38 +76,53 @@ class SQLite:
 
     def execute(self, sql, params: Optional[Union[list, tuple]] = None, *, commit: bool = False) -> sqlite3.Cursor:
         cursor = self.conn.execute(sql, params or ())
-        if commit:
-            self.commit()
-        return cursor
+        try:
+            if commit:
+                self.commit()
+            return cursor.rowcount
+        finally:
+            cursor.close()
 
     def executemany(self, sql, params: Optional[Union[list, tuple]] = None, *, commit: bool = False) -> sqlite3.Cursor:
         cursor = self.conn.executemany(sql, params or ())
-        if commit:
-            self.commit()
-        return cursor
+        try:
+            if commit:
+                self.commit()
+            return cursor.rowcount
+        finally:
+            cursor.close()
 
     def fetchone(self, sql: str, params: Optional[Union[list, tuple]] = None, *, commit: bool = False):
         cursor = self.conn.execute(sql, params or ())
-        if commit:
-            self.commit()
-        return cursor.fetchone()
+        try:
+            if commit:
+                self.commit()
+            return cursor.fetchone()
+        finally:
+            cursor.close()
 
     def fetchall(self, sql: str, params: Optional[Union[list, tuple]] = None, *, commit: bool = False):
         cursor = self.conn.execute(sql, params or ())
-        if commit:
-            self.commit()
-        return cursor.fetchall()
+        try:
+            if commit:
+                self.commit()
+            return cursor.fetchall()
+        finally:
+            cursor.close()
 
     def fetch(self, sql: str, params: Optional[Union[list, tuple]] = None, batch=2000, *, commit: bool = False):
         cursor = self.conn.execute(sql, params or ())
-        if commit:
-            self.commit()
-        while True:
-            records = cursor.fetchmany(size=batch)
-            if not records:
-                break
-            for record in records:
-                yield record
+        try:
+            if commit:
+                self.commit()
+            while True:
+                records = cursor.fetchmany(size=batch)
+                if not records:
+                    break
+                for record in records:
+                    yield record
+        finally:
+            cursor.close()
 
     def commit(self):
         return self.conn.commit()
@@ -116,7 +131,9 @@ class SQLite:
         return self.conn.rollback()
 
     def list_tables(self):
-        return self.conn.execute("SELECT name, sql FROM sqlite_master WHERE type='table'").fetchall()
+        sql = "SELECT name, sql FROM sqlite_master WHERE type='table'"
+        return self.fetchall(sql)
 
     def show_table(self, table):
-        return self.conn.execute(f"pragma table_info('{table}')").fetchall()
+        sql = f"pragma table_info('{table}')"
+        return self.fetchall(sql)
