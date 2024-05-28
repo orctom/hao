@@ -96,7 +96,7 @@ class Mongo(object, metaclass=singleton.Multiton):
         self.db = self.get_db(db_name)
 
     def __str__(self) -> str:
-        return f"host: {self.client.address}, db: {self.db.name}"
+        return repr(self.client)
 
     def __repr__(self):
         return self.__str__()
