@@ -144,7 +144,7 @@ def get_gpu_info():
                         pid=pid,
                         device_id=_device_id,
                         started=datetime.fromtimestamp(ps.create_time()).strftime('%Y-%m-%d %H:%M:%S'),
-                        username=ps.username,
+                        username=ps.username(),
                         name=ps.name(),
                         command=' '.join(ps.cmdline()),
                         cpu=Percent(ps.cpu_percent()),
