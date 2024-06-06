@@ -21,7 +21,7 @@ class Percent:
 
 
 @dataclass
-class CpuInfo:
+class Cpu:
     count: int
     percent: Percent
 
@@ -48,7 +48,7 @@ class Bits:
 
 
 @dataclass
-class MemInfo:
+class Mem:
     used: Bytes
     free: Bytes
     total: Bytes
@@ -71,21 +71,29 @@ class Process:
 
 
 @dataclass
-class GpuInfo:
+class GpuDevice:
     i: int
+    uuid: str
     name: str
     fan_speed: int
     temperature: int
-    mem: MemInfo
+    mem: Mem
     util: Percent
     processes: List[Process]
 
 
 @dataclass
+class Gpu:
+    driver_version: str
+    cuda_version: str
+    devices: List[GpuDevice]
+
+
+@dataclass
 class Info:
-    cpu: CpuInfo
-    mem: MemInfo
-    gpus: List[GpuInfo]
+    cpu: Cpu
+    mem: Mem
+    gpu: Gpu
 
 
 def bytes2human(n, format="%(value).2f%(symbol)s"):
@@ -105,12 +113,12 @@ def bytes2mega(n):
 
 
 def get_cpu_info():
-    return CpuInfo(count=psutil.cpu_count(), percent=Percent(psutil.cpu_percent()))
+    return Cpu(count=psutil.cpu_count(), percent=Percent(psutil.cpu_percent()))
 
 
 def get_mem_info():
     mem = psutil.virtual_memory()
-    return MemInfo(
+    return Mem(
         used=Bytes(mem.used),
         free=Bytes(mem.available),
         total=Bytes(mem.total),
@@ -127,7 +135,7 @@ def get_gpu_info():
 
     def get_mem_info(_handle):
         _mem = pynvml.nvmlDeviceGetMemoryInfo(_handle)
-        return MemInfo(
+        return Mem(
             used=Bytes(_mem.used),
             free=Bytes(_mem.free),
             total=Bytes(_mem.total),
@@ -156,10 +164,11 @@ def get_gpu_info():
                 pass
         return _processes
 
-    def get_gpu_info(_device_id: int):
+    def get_device_info(_device_id: int):
         handle = pynvml.nvmlDeviceGetHandleByIndex(_device_id)
-        return GpuInfo(
+        return GpuDevice(
             i=_device_id,
+            uuid=pynvml.nvmlDeviceGetUUID(handle),
             name=pynvml.nvmlDeviceGetName(handle),
             fan_speed=pynvml.nvmlDeviceGetFanSpeed(handle),
             temperature=pynvml.nvmlDeviceGetTemperature(handle, 0),
@@ -173,8 +182,14 @@ def get_gpu_info():
     try:
         device_count = pynvml.nvmlDeviceGetCount()
         if device_count == 0:
-            return []
-        return [get_gpu_info(device_id) for device_id in range(device_count)]
+            devices = []
+        else:
+            devices = [get_device_info(device_id) for device_id in range(device_count)]
+        return Gpu(
+            driver_version=get_driver_version(),
+            cuda_version=get_cuda_version(),
+            devices=devices,
+        )
     finally:
         pynvml.nvmlShutdown()
 
@@ -183,5 +198,5 @@ def get_info():
     return Info(
         cpu=get_cpu_info(),
         mem=get_mem_info(),
-        gpus=get_gpu_info(),
+        gpu=get_gpu_info(),
     )
