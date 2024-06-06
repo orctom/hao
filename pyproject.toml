@@ -52,6 +52,10 @@ redis = [
 sql = [
     "sqlalchemy",
 ]
+sys = [
+    "psutil",
+    "nvidia-ml-py",
+]
 dev = [
     "ruff",
     "pytest>=7.2.0",
