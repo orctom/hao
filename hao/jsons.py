@@ -68,3 +68,13 @@ def prettify(data, sort_keys=False, indent=2, separators=(',', ': ')):
 
 def remove_empties(d):
     return {k: v for k, v in d.iteritems() if v is not None and len(v) > 0}
+
+
+def dump(data, path):
+    with open(path, 'w') as f:
+        json.dump(data, f, ensure_ascii=False, default=json_default)
+
+
+def load(path):
+    with open(path) as f:
+        return json.load(f)
