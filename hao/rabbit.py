@@ -250,5 +250,4 @@ class Rabbit(object):
 
     def queue_size(self, queue_id: str = None) -> int:
         queue, queue_id = self.get_queue(queue_id)
-        queue_size = queue.qsize() if queue else -1
-        return queue_size
+        return queue.qsize() if queue else -1
