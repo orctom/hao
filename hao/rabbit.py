@@ -248,9 +248,7 @@ class Rabbit(object):
         except (BrokenPipeError, ConnectionResetError, OSError):
             self.reconnect()
 
-    @staticmethod
-    def queue_size(queue_id: str = None):
-        with Rabbit() as rabbit:
-            queue, queue_id = rabbit.get_queue(queue_id)
-            queue_size = queue.qsize() if queue else -1
-        return str(queue_size)
+    def queue_size(self, queue_id: str = None) -> int:
+        queue, queue_id = self.get_queue(queue_id)
+        queue_size = queue.qsize() if queue else -1
+        return queue_size
