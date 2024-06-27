@@ -133,6 +133,12 @@ def get_gpu_info():
         version = pynvml.nvmlSystemGetCudaDriverVersion()
         return f"{version // 1000}.{version % 1000 // 10}"
 
+    def get_fan_speed(_handle):
+        try:
+            return pynvml.nvmlDeviceGetFanSpeed(_handle)
+        except pynvml.NVMLError:
+            return -1
+
     def get_mem_info(_handle):
         _mem = pynvml.nvmlDeviceGetMemoryInfo(_handle)
         return Mem(
@@ -170,7 +176,7 @@ def get_gpu_info():
             i=_device_id,
             uuid=pynvml.nvmlDeviceGetUUID(handle),
             name=pynvml.nvmlDeviceGetName(handle),
-            fan_speed=pynvml.nvmlDeviceGetFanSpeed(handle),
+            fan_speed=get_fan_speed(handle),
             temperature=pynvml.nvmlDeviceGetTemperature(handle, 0),
             mem=get_mem_info(handle),
             util=Percent(pynvml.nvmlDeviceGetUtilizationRates(handle).gpu / 100),
