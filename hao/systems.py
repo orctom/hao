@@ -113,7 +113,7 @@ def bytes2mega(n):
 
 
 def get_cpu_info():
-    return Cpu(count=psutil.cpu_count(), percent=Percent(psutil.cpu_percent()))
+    return Cpu(count=psutil.cpu_count(), percent=Percent(psutil.cpu_percent()/100))
 
 
 def get_mem_info():
