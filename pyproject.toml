@@ -78,6 +78,7 @@ build-backend = "flit_core.buildapi"
 h-s3-init = "hao.s3:init"
 h-run = "hao.cli:run"
 h-split = "hao.files:split_cli"
+h-gpu = "hao.systems:get_gpu_info"
 hf-download = "hao.hf:download"
 h-vs = 'hao.vs:run'
 
