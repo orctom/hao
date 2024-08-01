@@ -1,4 +1,4 @@
-__version__ = '3.8.11.1'
+__version__ = '3.8.11.2'
 
 from . import (
     asyncs,
