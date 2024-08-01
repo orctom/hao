@@ -19,11 +19,17 @@ class Percent:
             self.value = self.value / 100
         self.formatted = f"{100 * self.value:.1f}%"
 
+    def __str__(self):
+        return self.formatted
+
 
 @dataclass
 class Cpu:
     count: int
     percent: Percent
+
+    def __str__(self):
+        return f"cpu: {self.count} cores, percent: {self.percent}"
 
 
 @dataclass
@@ -34,6 +40,9 @@ class Bytes:
     def __post_init__(self):
         self.mega = bytes2mega(self.value)
         self.human = bytes2human(self.value)
+
+    def __str__(self):
+        return self.human
 
 
 @dataclass
@@ -46,6 +55,9 @@ class Bits:
         self.mega = bytes2mega(_bytes)
         self.human = bytes2human(_bytes)
 
+    def __str__(self):
+        return self.human
+
 
 @dataclass
 class Mem:
@@ -55,6 +67,9 @@ class Mem:
     percent: Percent = field(init=False, default=None)
     def __post_init__(self):
         self.percent = Percent(round(self.used.value / self.total.value, 3))
+
+    def __str__(self):
+        return f"mem: {self.used} / {self.total} ({self.percent})"
 
 
 @dataclass
@@ -69,6 +84,9 @@ class Process:
     mem: Bytes
     gpu: Bytes
 
+    def __str__(self):
+        return f"[{self.pid}] {self.username}, {self.name}, {self.mem}, gpu: {self.gpu}, started: {self.started}"
+
 
 @dataclass
 class GpuDevice:
@@ -81,6 +99,13 @@ class GpuDevice:
     util: Percent
     processes: List[Process]
 
+    def __str__(self):
+        processes = ''.join([f"\n    {process}" for process in self.processes])
+        return (
+            f"[{self.i}] {self.name}, {self.mem}, util: {self.util}, fan: {self.fan_speed}, temp: {self.temperature}℃"
+            f"{processes}"
+        )
+
 
 @dataclass
 class Gpu:
@@ -88,12 +113,19 @@ class Gpu:
     cuda_version: str
     devices: List[GpuDevice]
 
+    def __str__(self):
+        devices = ''.join([f"\n{device}" for device in self.devices])
+        return f"gpu: (driver: {self.driver_version}, cuda: {self.cuda_version}){devices}"
+
 
 @dataclass
 class Info:
     cpu: Cpu
     mem: Mem
     gpu: Gpu
+
+    def __str__(self):
+        return f"{self.cpu}\n{self.mem}\n{self.gpu}"
 
 
 def bytes2human(n, format="%(value).2f%(symbol)s"):
