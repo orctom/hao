@@ -100,7 +100,7 @@ class Process:
     gpu: Bytes
 
     def __str__(self):
-        return f"{self.pid: <8} | {self.username: <15} | {self.name: <15} | mem: {str(self.mem): >7} | gpu: {str(self.gpu): >8} | started: [{self.started}]"
+        return f"{self.pid: <8} | {self.username: <15} | mem: {str(self.mem): >7} | gpu: {str(self.gpu): >8} | started: {self.started} | {self.command}"
 
     def __repr__(self):
         return self.__str__()
