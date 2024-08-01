@@ -22,6 +22,9 @@ class Percent:
     def __str__(self):
         return self.formatted
 
+    def __repr__(self):
+        return self.__str__()
+
 
 @dataclass
 class Cpu:
@@ -29,7 +32,10 @@ class Cpu:
     percent: Percent
 
     def __str__(self):
-        return f"cpu: {self.count} cores, percent: {self.percent}"
+        return f"cpu: {self.count} cores ({self.percent})"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 @dataclass
@@ -43,6 +49,9 @@ class Bytes:
 
     def __str__(self):
         return self.human
+
+    def __repr__(self):
+        return self.__str__()
 
 
 @dataclass
@@ -58,6 +67,9 @@ class Bits:
     def __str__(self):
         return self.human
 
+    def __repr__(self):
+        return self.__str__()
+
 
 @dataclass
 class Mem:
@@ -70,6 +82,9 @@ class Mem:
 
     def __str__(self):
         return f"mem: {self.used} / {self.total} ({self.percent})"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 @dataclass
@@ -85,7 +100,10 @@ class Process:
     gpu: Bytes
 
     def __str__(self):
-        return f"[{self.pid}] {self.username}, {self.name}, {self.mem}, gpu: {self.gpu}, started: {self.started}"
+        return f"{self.pid: <8} | {self.username: <15} | {self.name: <15} | mem: {str(self.mem): >7} | gpu: {str(self.gpu): >8} | started: [{self.started}]"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 @dataclass
@@ -106,6 +124,9 @@ class GpuDevice:
             f"{processes}"
         )
 
+    def __repr__(self):
+        return self.__str__()
+
 
 @dataclass
 class Gpu:
@@ -117,6 +138,9 @@ class Gpu:
         devices = ''.join([f"\n{device}" for device in self.devices])
         return f"gpu: (driver: {self.driver_version}, cuda: {self.cuda_version}){devices}"
 
+    def __repr__(self):
+        return self.__str__()
+
 
 @dataclass
 class Info:
@@ -126,6 +150,9 @@ class Info:
 
     def __str__(self):
         return f"{self.cpu}\n{self.mem}\n{self.gpu}"
+
+    def __repr__(self):
+        return self.__str__()
 
 
 def bytes2human(n, format="%(value).2f%(symbol)s"):
