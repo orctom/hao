@@ -187,10 +187,9 @@ def strip_to_none(text: str):
 def boolean(value, default=False):
     if value is None:
         return default
-    value_type = type(value)
-    if value_type == bool:
+    if isinstance(value, bool):
         return value
-    if value_type == bytes:
+    if isinstance(value, bytes):
         value = value.decode()
     value = strip_to_none(value)
     if value is None:
