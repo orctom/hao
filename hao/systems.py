@@ -100,9 +100,10 @@ class Process:
     gpu: Bytes
 
     def __str__(self):
+        username = f"{self.username: <12}" if len(self.username) <= 12 else f"{self.username[:10]}.."
         return (
             f"{self.pid: <8} "
-            f"| {self.username: <15} "
+            f"| {username} "
             f"| mem: {str(self.mem): >7} "
             f"| gpu: {str(self.gpu): >8} "
             f"| started: {self.started} "
@@ -117,6 +118,7 @@ class Process:
 class GpuDevice:
     i: int
     uuid: str
+    bus_id: str
     name: str
     fan_speed: int
     temperature: int
@@ -127,7 +129,7 @@ class GpuDevice:
     def __str__(self):
         processes = ''.join([f"\n    {process}" for process in self.processes])
         return (
-            f"[{self.i}] {self.name}, {self.mem}, util: {self.util}, fan: {self.fan_speed}, temp: {self.temperature}℃"
+            f"[{self.i}] {self.name} ({self.bus_id}), {self.mem}, util: {self.util}, fan: {self.fan_speed}, temp: {self.temperature}℃"
             f"{processes}"
         )
 
@@ -238,9 +240,11 @@ def get_gpu_info():
 
     def get_device_info(_device_id: int):
         handle = pynvml.nvmlDeviceGetHandleByIndex(_device_id)
+
         return GpuDevice(
             i=_device_id,
             uuid=pynvml.nvmlDeviceGetUUID(handle),
+            bus_id=pynvml.nvmlDeviceGetPciInfo(handle).busId,
             name=pynvml.nvmlDeviceGetName(handle),
             fan_speed=get_fan_speed(handle),
             temperature=pynvml.nvmlDeviceGetTemperature(handle, 0),
