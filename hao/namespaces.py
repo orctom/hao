@@ -2,7 +2,6 @@
 import argparse
 import copy
 import sys
-from distutils.util import strtobool
 from pprint import pformat
 from typing import Callable, Dict, Optional, Union
 
@@ -126,8 +125,9 @@ def from_args(_cls=None,
             ]))
             if 'action' in _attr.kwargs:
                 parser.add_argument(arg_name, help=desc, **_attr.kwargs)
-            elif _attr.type == bool:
-                parser.add_argument(arg_name, type=lambda x: bool(strtobool(x)), help=desc, **_attr.kwargs)
+            elif _attr.type is bool:
+                trues = ('true', '1', 't', 'y', 'yes', 'on')
+                parser.add_argument(arg_name, type=lambda x: x is not None and x.lower() in trues, help=desc, **_attr.kwargs)
             else:
                 attr_type = _attr.type
                 parser.add_argument(arg_name, type=attr_type, help=desc, **_attr.kwargs)

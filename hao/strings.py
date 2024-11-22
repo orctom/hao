@@ -194,7 +194,7 @@ def boolean(value, default=False):
     value = strip_to_none(value)
     if value is None:
         return default
-    return value in ['true', 'True', '1', 't', 'T', 'y', 'Y', 'yes', 'YES', 'Yes']
+    return value.lower() in ('true', '1', 't', 'y', 'yes', 'on')
 
 
 def md5(text: str, hexical: bool = True):
