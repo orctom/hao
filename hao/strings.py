@@ -25,6 +25,7 @@ RE_NORMALIZE = [
     (regex.compile(r'\t'), '  '),
     (regex.compile(r'\\r'), '\n'),
     (regex.compile(r'\r'), '\n'),
+    (regex.compile(r'\xa0'), ' '),
 ]
 
 P_EMOJI = regex.compile(

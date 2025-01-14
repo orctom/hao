@@ -68,6 +68,7 @@ dev = [
     "kombu",
     "redis",
     "sqlalchemy",
+    "jieba",
 ]
 
 [build-system]
