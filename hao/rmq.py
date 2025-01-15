@@ -189,7 +189,8 @@ class RMQ:
 
     def _connect(self) -> socket.socket:
         conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        conn.connect_ex((self.__conf.get('host'), self.__conf.get('port', 7001)))
+        host, port = self.__conf.get('host'), self.__conf.get('port', 7001)
+        conn.connect((host, port))
         return conn
 
     def reconnect(self):
@@ -203,7 +204,7 @@ class RMQ:
         def decode_payload():
             if len(msg.payload) < 13:
                 return None, None, None
-            mid, priority, size_data = struct.unpack(">QcI", msg.payload)
+            mid, priority, size_data = struct.unpack(">QcI", msg.payload[:13])
             data = msg.payload[13:13 + size_data]
             return mid, Priority(priority), data
 
@@ -250,8 +251,6 @@ class RMQ:
 
         try:
             payload = build_payload()
-            LOGGER.info(f"0 payload: {len(payload)}")
-            LOGGER.info(f"1 payload: {payload}")
             request = Msg(event=Event.PUT, payload=payload).encode()
             self._conn.sendall(request)
             response = self._conn.recv(11)
