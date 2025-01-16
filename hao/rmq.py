@@ -53,9 +53,9 @@ def _int_2_bytes(i: int, size: int = 1):
 
 
 class Priority(enum.Enum):
-    NORM = _int_2_bytes(0)
-    HIGH = _int_2_bytes(1)
-    URGENT = _int_2_bytes(2)
+    LOW = _int_2_bytes(0)
+    MEDIUM = _int_2_bytes(1)
+    HIGH = _int_2_bytes(2)
 
     @classmethod
     def has_value(cls, value):
@@ -132,14 +132,14 @@ class Message:
 
 @dataclass(repr=False)
 class Stats:
-    urgent: int
+    low: int
+    medium: int
     high: int
-    norm: int
     ins: float
     outs: float
 
     def __str__(self) -> str:
-        return f"urgent={self.urgent}, high={self.high}, norm={self.norm}, ins={self.ins:.1f}, outs={self.outs:.1f}"
+        return f"low={self.low}, medium={self.medium}, high={self.high}, ins={self.ins:.1f}, outs={self.outs:.1f}"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -248,7 +248,7 @@ class RMQ:
     def publish(self,
                 data: Union[str, dict, bytes],
                 queue: str,
-                priority: Priority = Priority.NORM) -> Optional[str]:
+                priority: Priority = Priority.LOW) -> Optional[str]:
         def build_payload():
             fmt = f">I{len(queue)}scI"
             return struct.pack(fmt, len(queue), queue.encode('utf-8'), priority.value, len(data)) + data
@@ -311,7 +311,7 @@ class RMQ:
             return struct.pack(f">I{len(queue)}s", len(queue), queue.encode('utf-8'))
         def decode_val(data: bytes):
             urgent, high, norm, ins, outs = struct.unpack('>qqqdd', data)
-            return Stats(urgent=urgent, high=high, norm=norm, ins=ins, outs=outs)
+            return Stats(low=urgent, medium=high, high=norm, ins=ins, outs=outs)
         def decode_payload():
             stats = {}
             if len(msg.payload) < 4:
