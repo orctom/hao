@@ -102,7 +102,8 @@ class SimpleMetrics(exits.OnExit):
         for key, gauge in self._gauges.items():
             try:
                 value = gauge()
-                self._logger.info(f"[{key}] gauge: {value}")
+                if value is not None:
+                    self._logger.info(f"[{key}] gauge: {value}")
             except Exception as e:
                 self._logger.warning(e)
 
