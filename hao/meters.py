@@ -74,7 +74,7 @@ class SimpleMetrics(exits.OnExit):
             self._remove_from_prometheus(key)
 
     def mark(self, key):
-        self._meters[key].increment()
+        self._meters[str(key)].increment()
 
     def register_gauge(self, key, gauge: Callable, overwrite=True):
         if not overwrite and key in self._gauges:
@@ -90,12 +90,15 @@ class SimpleMetrics(exits.OnExit):
 
     def _report_meters(self):
         self._n_cycle += 1
+        if len(self._meters) == 0:
+            return
+        pad_size = max([len(key) for key in self._meters]) + 8
         for key, counter in self._meters.items():
             delta = counter.delta()
             rate = delta / self._interval
             total = counter.get()
             rate_total = total / (self._interval * self._n_cycle)
-            self._logger.info(f"[meter-{key}] count: {delta}, rate: {rate:.2f} it/s; total: {total}, avg: {rate_total:.2f} it/s")
+            self._logger.info(f"{f'[meter-{key}]': <{pad_size}} count: {delta: >5}, rate: {f'{rate:.1f}': >6} it/s; total: {total: >8}, avg: {f'{rate_total:.1f}': >6} it/s")
             self._report_to_prometheus(key, rate)
 
     def _report_gauges(self):
