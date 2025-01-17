@@ -339,8 +339,8 @@ class RMQ:
         def build_payload():
             return struct.pack(f">I{len(queue)}s", len(queue), queue.encode('utf-8'))
         def decode_val(data: bytes):
-            urgent, high, norm, ins, outs = struct.unpack('>qqqdd', data)
-            return Stats(low=urgent, medium=high, high=norm, ins=ins, outs=outs)
+            low, medium, high, ins, outs = struct.unpack('>qqqdd', data)
+            return Stats(low=low, medium=medium, high=high, ins=ins, outs=outs)
         def decode_payload():
             if len(msg.payload) < 4:
                 return stats
