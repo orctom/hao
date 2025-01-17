@@ -252,11 +252,15 @@ class RMQ:
             if msg.event != Event.GET:
                 LOGGER.error(f"[get] got invalid response {msg}")
                 return None
-            mid, priority, data = decode_payload()
-            return None if mid is None else Message(mid=mid, priority=priority, data=data)
+            try:
+                mid, priority, data = decode_payload()
+                return None if mid is None else Message(mid=mid, priority=priority, data=data)
+            except Exception as e:
+                LOGGER.exception(e)
+                return None
         except (socket.timeout, BlockingIOError):
             return None
-        except OSError as e:
+        except (RMQError, OSError) as e:
             LOGGER.error(e)
             self.reconnect()
 
@@ -268,7 +272,10 @@ class RMQ:
             fmt = f">I{len(queue)}scI"
             return struct.pack(fmt, len(queue), queue.encode('utf-8'), priority.value, len(data)) + data
         def decode_payload():
-            return msg.payload.decode('utf-8') if msg.payload else None
+            try:
+                return msg.payload.decode('utf-8') if msg.payload else None
+            except UnicodeDecodeError as e:
+                return str(e)
 
         if data is None:
             return
@@ -296,7 +303,7 @@ class RMQ:
                 raise RMQDataError(err)
         except (socket.timeout, BlockingIOError) as e:
             return RMQDataError(e)
-        except OSError as e:
+        except (RMQError, OSError) as e:
             LOGGER.error(e)
             self.reconnect()
 
@@ -304,7 +311,10 @@ class RMQ:
         def build_payload():
             return struct.pack(f">I{len(queue)}scQ", len(queue), queue.encode('utf-8'), priority.value, id)
         def decode_payload():
-            return msg.payload.decode('utf-8') if msg.payload else None
+            try:
+                return msg.payload.decode('utf-8') if msg.payload else None
+            except UnicodeDecodeError as e:
+                return str(e)
 
         try:
             payload = build_payload()
@@ -321,7 +331,7 @@ class RMQ:
                 raise RMQDataError(err)
         except (socket.timeout, BlockingIOError) as e:
             return RMQDataError(e)
-        except OSError as e:
+        except (RMQError, OSError) as e:
             LOGGER.error(e)
             self.reconnect()
 
@@ -334,15 +344,19 @@ class RMQ:
         def decode_payload():
             if len(msg.payload) < 4:
                 return stats
-            n, = struct.unpack(">I", msg.payload[:4])
-            p = 4
-            for _ in range(n):
-                key_len, val_len = struct.unpack(">II", msg.payload[p:p + 8])
-                key = msg.payload[p+8:p+8 + key_len].decode('utf-8')
-                val = msg.payload[p+8 + key_len:p+8 + key_len + val_len]
-                stats[key] = decode_val(val)
-                p += 8 + key_len + val_len
-            return stats
+            try:
+                n, = struct.unpack(">I", msg.payload[:4])
+                p = 4
+                for _ in range(n):
+                    key_len, val_len = struct.unpack(">II", msg.payload[p:p + 8])
+                    key = msg.payload[p+8:p+8 + key_len].decode('utf-8')
+                    val = msg.payload[p+8 + key_len:p+8 + key_len + val_len]
+                    stats[key] = decode_val(val)
+                    p += 8 + key_len + val_len
+                return stats
+            except UnicodeDecodeError as e:
+                LOGGER.error(e)
+                return stats
 
         stats = {}
         try:
@@ -359,6 +373,6 @@ class RMQ:
             return decode_payload()
         except (socket.timeout, BlockingIOError):
             return stats
-        except OSError as e:
+        except (RMQError, OSError) as e:
             LOGGER.error(e)
             self.reconnect()
