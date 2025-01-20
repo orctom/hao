@@ -253,12 +253,15 @@ class RMQ:
     def _receive_loop(self):
         while True:
             try:
+                if self._conn is None:
+                    time.sleep(1)
+                    continue
                 response = self._conn.recv(47)
                 if not response:
                     continue
                 msg = Msg.from_bytes(response)
                 try:
-                    if msg.payload_size > 0:
+                    if msg.payload_size > 0 and self._conn is not None:
                         msg.payload = self._conn.recv(msg.payload_size)
                 except (socket.timeout, TimeoutError, BlockingIOError):
                     pass
