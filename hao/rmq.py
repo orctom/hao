@@ -33,11 +33,11 @@ for msg in rabbit.consume(queue_name, timeout=1):
 """
 import atexit
 import enum
-import select
 import socket
 import struct
 import threading
 import time
+import uuid
 from dataclasses import dataclass
 from typing import Dict, Optional, Union
 
@@ -87,9 +87,10 @@ class OK(enum.Enum):
 
 
 class Msg:
-    def __init__(self, event: Event, *, payload_size: int = 0, payload: bytes = None, ok: OK = OK.TRUE):
+    def __init__(self, event: Event, *, uid: str = None, payload_size: int = 0, payload: bytes = None, ok: OK = OK.TRUE):
         self.event = event
         self.ok = ok
+        self.uid = uid or str(uuid.uuid4())
         self.payload_size = payload_size if payload is None else len(payload)
         self.payload = payload
 
@@ -102,10 +103,11 @@ class Msg:
     def encode(self) -> bytes:
         assert self.payload is not None
         return struct.pack(
-            '>5sccI',
+            '>5scc36sI',
             _MAGIC,
             self.event.value,
             self.ok.value,
+            self.uid.encode('utf-8'),
             self.payload_size,
         ) + self.payload
 
@@ -113,18 +115,32 @@ class Msg:
     def from_bytes(cls, data: bytes) -> 'Msg':
         if len(data) == 0:
             raise RMQError("Server lost")
-        if len(data) != 11:
+        if len(data) != 47:
             raise RMQDataError(f"Invalid message size: {len(data)}")
-        magic, event, ok, payload_size = struct.unpack('>5sccI', data[:11])
+        magic, event, ok, uid, payload_size = struct.unpack('>5scc36sI', data[:47])
         if magic != _MAGIC:
             raise RMQDataError(f"Invalid magic number {magic}")
         if not Event.has_value(event):
             raise RMQDataError("Invalid event value")
         if not OK.has_value(ok):
             raise RMQDataError("Invalid OK value")
-        msg = cls(Event(event), payload_size=payload_size)
+        msg = cls(Event(event), uid=uid.decode('utf-8'), payload_size=payload_size)
         msg.ok = OK(ok)
         return msg
+
+
+class Request:
+    def __init__(self):
+        self._event = threading.Event()
+        self._data = None
+
+    def set_data(self, data):
+        self._data = data
+        self._event.set()
+
+    def get_data(self, timeout=0.1):
+        self._event.wait(timeout)
+        return self._data
 
 
 @dataclass
@@ -169,7 +185,10 @@ class RMQ:
         assert len(self.__conf) > 0, f'rmq profile not configured `rmq.{self.profile}`'
         self._conn: Optional[socket.socket] = None
         self._timeout = self.__conf.get('timeout', 30)
+        self._requests: Dict[str, Request] = {}
+        self.connected = False
         self.__lock__ = threading.Lock()
+        self._receive_thread = threading.Thread(target=self._receive_loop, daemon=True)
         atexit.register(self.close)
 
     def __str__(self) -> str:
@@ -196,12 +215,17 @@ class RMQ:
             LOGGER.warning(e)
         finally:
             self._conn = None
+            self.connected = False
 
     def ensure_connection(self, force=False):
-        if self._conn is None or force:
+        if self._conn is None or force or not self.connected:
             with self.__lock__:
                 LOGGER.debug('[rmq] connecting')
                 self._conn = self._connect()
+                self.connected = True
+
+        if not self._receive_thread.is_alive():
+            self._receive_thread.start()
 
     def _connect(self) -> socket.socket:
         host, port = self.__conf.get('host'), self.__conf.get('port', 7001)
@@ -215,19 +239,44 @@ class RMQ:
                 self.ensure_connection()
                 return
             except OSError as e:
+                self.connected = False
                 LOGGER.error(e)
                 time.sleep(5)
 
-    def _send(self, data: bytes):
-        self._conn.sendall(data)
+    def request(self, event: Event, payload: bytes, timeout = 1) -> bytes:
+        self.ensure_connection()
+        msg = Msg(event=event, payload=payload)
+        request = self._requests[msg.uid] = Request()
+        self._conn.sendall(msg.encode())
+        return request.get_data(timeout)
 
-    def _recv(self, n_bytes: int, timeout: Optional[int] = None):
-        self._conn.setblocking(0)
-        ready = select.select([self._conn], [], [], timeout or self._timeout)
-        if ready[0]:
-            return self._conn.recv(n_bytes)
+    def _receive_loop(self):
+        while True:
+            try:
+                response = self._conn.recv(47)
+                if not response:
+                    continue
+                msg = Msg.from_bytes(response)
+                try:
+                    if msg.payload_size > 0:
+                        msg.payload = self._conn.recv(msg.payload_size)
+                except (socket.timeout, TimeoutError, BlockingIOError):
+                    pass
+                except Exception as e:
+                    LOGGER.exception(e)
+                finally:
+                    request = self._requests.get(msg.uid)
+                    if request is not None:
+                        request.set_data(msg)
+                        del self._requests[msg.uid]
+            except (socket.timeout, TimeoutError, BlockingIOError):
+                pass
+            except (RMQError, OSError) as e:
+                LOGGER.error(e)
+                self.reconnect()
+            except Exception as e:
+                LOGGER.exception(e)
 
-        raise socket.timeout()
 
     def pull(self, queue: str, ttl: int = 0) -> Optional[Message]:
         def build_payload():
@@ -240,17 +289,10 @@ class RMQ:
             return mid, Priority(priority), data
 
         try:
-            payload = build_payload()
-            request = Msg(event=Event.GET, payload=payload).encode()
-            self._send(request)
-            response = self._recv(11, ttl)
-            msg = Msg.from_bytes(response)
-            if msg.payload_size > 0:
-                msg.payload = self._recv(msg.payload_size)
-            else:
+            msg = self.request(Event.GET, build_payload(), 1 + ttl)
+            if msg is None:
                 return None
-            if msg.event != Event.GET:
-                LOGGER.error(f"[get] got invalid response {msg}")
+            if msg.payload_size == 0:
                 return None
             try:
                 mid, priority, data = decode_payload()
@@ -258,7 +300,7 @@ class RMQ:
             except Exception as e:
                 LOGGER.exception(e)
                 return None
-        except (socket.timeout, BlockingIOError):
+        except (socket.timeout, TimeoutError, BlockingIOError):
             return None
         except (RMQError, OSError) as e:
             LOGGER.error(e)
@@ -289,19 +331,13 @@ class RMQ:
             raise ValueError(f"Unsupported type of message: {type(data)}")
 
         try:
-            payload = build_payload()
-            request = Msg(event=Event.PUT, payload=payload).encode()
-            self._send(request)
-            response = self._recv(11)
-            msg = Msg.from_bytes(response)
-            if msg.payload_size > 0:
-                msg.payload = self._recv(msg.payload_size)
+            msg = self.request(Event.PUT, build_payload())
+            if msg is None:
+                return RMQDataError("timed out")
             err = decode_payload()
-            if msg.event != Event.PUT:
-                LOGGER.error(f"[put] got invalid response {msg}")
             if err:
                 raise RMQDataError(err)
-        except (socket.timeout, BlockingIOError) as e:
+        except (socket.timeout, TimeoutError, BlockingIOError) as e:
             return RMQDataError(e)
         except (RMQError, OSError) as e:
             LOGGER.error(e)
@@ -317,19 +353,13 @@ class RMQ:
                 return str(e)
 
         try:
-            payload = build_payload()
-            request = Msg(event=Event.ACK, payload=payload).encode()
-            self._send(request)
-            response = self._recv(11)
-            msg = Msg.from_bytes(response)
-            if msg.payload_size > 0:
-                msg.payload = self._recv(msg.payload_size)
+            msg = self.request(Event.ACK, build_payload())
             err = decode_payload()
-            if msg.event != Event.ACK:
-                LOGGER.error(f"[ack] got invalid response {msg}")
+            if msg is None:
+                return RMQDataError("timed out")
             if err:
                 raise RMQDataError(err)
-        except (socket.timeout, BlockingIOError) as e:
+        except (socket.timeout, TimeoutError, BlockingIOError) as e:
             return RMQDataError(e)
         except (RMQError, OSError) as e:
             LOGGER.error(e)
@@ -360,18 +390,11 @@ class RMQ:
 
         stats = {}
         try:
-            payload = build_payload()
-            request = Msg(event=Event.STAT, payload=payload).encode()
-            self._send(request)
-            response = self._recv(11)
-            msg = Msg.from_bytes(response)
-            if msg.payload_size > 0:
-                msg.payload = self._recv(msg.payload_size)
-            if msg.event != Event.STAT:
-                LOGGER.error(f"[stats] got invalid response {msg}")
+            msg = self.request(Event.STAT, build_payload())
+            if msg is None:
                 return stats
             return decode_payload()
-        except (socket.timeout, BlockingIOError):
+        except (socket.timeout, TimeoutError, BlockingIOError):
             return stats
         except (RMQError, OSError) as e:
             LOGGER.error(e)
