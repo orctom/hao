@@ -368,7 +368,7 @@ class RMQ:
             LOGGER.error(e)
             self.reconnect()
 
-    def stats(self, queue: str = "") -> Dict[str, Dict[str, Union[int, float]]]:
+    def stats(self, queue: str = "") -> dict:
         def build_payload():
             return struct.pack(f">I{len(queue)}s", len(queue), queue.encode('utf-8'))
         def decode_val(data: bytes):
@@ -378,8 +378,9 @@ class RMQ:
             if len(msg.payload) < 4:
                 return stats
             try:
-                n, = struct.unpack(">I", msg.payload[:4])
-                p = 4
+                mem, n = struct.unpack(">QI", msg.payload[:12])
+                stats['$mem'] = mem
+                p = 12
                 for _ in range(n):
                     key_len, val_len = struct.unpack(">II", msg.payload[p:p + 8])
                     key = msg.payload[p+8:p+8 + key_len].decode('utf-8')
