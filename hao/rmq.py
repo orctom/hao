@@ -275,7 +275,7 @@ class RMQ:
             except (socket.timeout, TimeoutError, BlockingIOError):
                 pass
             except (RMQError, OSError) as e:
-                LOGGER.error(e)
+                LOGGER.error(f"failed to receive message from RMQ: {e}")
                 self.reconnect()
             except Exception as e:
                 LOGGER.exception(e)
@@ -357,9 +357,9 @@ class RMQ:
 
         try:
             msg = self.request(Event.ACK, build_payload())
-            err = decode_payload()
             if msg is None:
                 return RMQDataError("timed out")
+            err = decode_payload()
             if err:
                 raise RMQDataError(err)
         except (socket.timeout, TimeoutError, BlockingIOError) as e:
