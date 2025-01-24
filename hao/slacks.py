@@ -62,4 +62,4 @@ def notify_exception(e: Exception, data: typing.Union[str, dict] = None, channel
         message = f"{e}\n{traceback.format_exc()}\n{text}"
     else:
         message = f"{e}\n{traceback.format_exc()}"
-    notify(message)
+    notify(message, channel)

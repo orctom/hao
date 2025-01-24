@@ -11,6 +11,7 @@ from . import (
     english,
     envs,
     exceptions,
+    feishu,
     files,
     invoker,
     jsons,
