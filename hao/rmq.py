@@ -280,7 +280,6 @@ class RMQ:
             except Exception as e:
                 LOGGER.exception(e)
 
-
     def pull(self, queue: str, ttl: int = 0) -> Optional[Message]:
         def build_payload():
             return struct.pack(f">I{len(queue)}sI", len(queue), queue.encode('utf-8'), ttl)
