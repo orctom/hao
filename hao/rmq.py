@@ -220,9 +220,12 @@ class RMQ:
     def ensure_connection(self, force=False):
         if self._conn is None or force or not self.connected:
             with self.__lock__:
+                if self.connected is True:
+                    self.close()
                 LOGGER.debug('[rmq] connecting')
                 self._conn = self._connect()
                 self.connected = True
+                LOGGER.debug('[rmq] connected')
 
         if not self._receive_thread.is_alive():
             self._receive_thread.start()
@@ -233,7 +236,6 @@ class RMQ:
 
     def reconnect(self):
         LOGGER.info('[rmq] reconnect')
-        self.close()
         while True:
             try:
                 self.ensure_connection()
@@ -253,7 +255,7 @@ class RMQ:
     def _receive_loop(self):
         while True:
             try:
-                if self._conn is None:
+                if self._conn is None or not self.connected:
                     time.sleep(1)
                     continue
                 response = self._conn.recv(47)
@@ -275,6 +277,8 @@ class RMQ:
             except (socket.timeout, TimeoutError, BlockingIOError):
                 pass
             except (RMQError, OSError) as e:
+                if self._conn is None:
+                    continue
                 LOGGER.error(f"failed to receive message from RMQ: {e}")
                 self.reconnect()
             except Exception as e:
