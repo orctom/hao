@@ -198,11 +198,13 @@ class RMQ:
         return self.__str__()
 
     def __enter__(self):
+        LOGGER.info('[rmq] enter')
         self.ensure_connection()
         return self
 
     def __exit__(self, *args):
         self.close()
+        LOGGER.info('[rmq] exit')
 
     def close(self):
         if self._conn is None:
@@ -310,7 +312,8 @@ class RMQ:
             return None
         except (RMQError, OSError) as e:
             LOGGER.error(e)
-            self.reconnect()
+            if self._conn is not None:
+                self.reconnect()
 
     def publish(self,
                 data: Union[str, dict, bytes],
