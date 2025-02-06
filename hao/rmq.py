@@ -47,6 +47,7 @@ LOGGER = logs.get_logger(__name__)
 
 
 _MAGIC = b'<RMQ>'
+_EMPTY_PAYLOAD = bytes()
 
 
 def _int_2_bytes(i: int, size: int = 1):
@@ -71,6 +72,7 @@ class Event(enum.Enum):
     PUT = _int_2_bytes(2)
     ACK = _int_2_bytes(3)
     STAT = _int_2_bytes(4)
+    HEARTBEAT = _int_2_bytes(200)
 
     @classmethod
     def has_value(cls, value):
@@ -186,10 +188,11 @@ class RMQ:
         self._conn: Optional[socket.socket] = None
         self._timeout = self.__conf.get('timeout', 30)
         self._requests: Dict[str, Request] = {}
-        self.connected = False
+        self._stopped = threading.Event()
         self.__lock__ = threading.Lock()
         self._receive_thread = threading.Thread(target=self._receive_loop, daemon=True)
-        atexit.register(self.close)
+        self._heartbeat_thread = threading.Thread(target=self._heartbeat_loop, daemon=True)
+        atexit.register(self._close)
 
     def __str__(self) -> str:
         return f"{self.__conf.get('host')}:{self.__conf.get('port', 7001)}"
@@ -206,58 +209,76 @@ class RMQ:
         self.close()
         LOGGER.info('[rmq] exit')
 
-    def close(self):
+    def _connect(self):
+        host, port = self.__conf.get('host'), self.__conf.get('port', 7001)
+        with self.__lock__:
+            LOGGER.debug('[rmq] connecting')
+            self._conn = socket.create_connection((host, port), self._timeout)
+            LOGGER.debug('[rmq] connected')
+
+    def reconnect(self):
+        LOGGER.info('[rmq] reconnect')
+        while not self._stopped.is_set():
+            try:
+                self.ensure_connection()
+                LOGGER.info('[rmq] reconnected')
+                return
+            except OSError as e:
+                self._conn = None
+                LOGGER.exception(e)
+                time.sleep(5)
+
+    def _close(self):
         if self._conn is None:
             return
         LOGGER.debug('[rmq] close')
         try:
             with self.__lock__:
                 self._conn.close()
+            LOGGER.debug('[rmq] closed')
         except Exception as e:
-            LOGGER.warning(e)
+            LOGGER.exception(e)
         finally:
             self._conn = None
-            self.connected = False
 
-    def ensure_connection(self, force=False):
-        if self._conn is None or force or not self.connected:
-            with self.__lock__:
-                if self.connected is True:
-                    self.close()
-                LOGGER.debug('[rmq] connecting')
-                self._conn = self._connect()
-                self.connected = True
-                LOGGER.debug('[rmq] connected')
+    def close(self):
+        self._stopped.set()
+        self._close()
+
+    def ensure_connection(self):
+        if self._conn is not None:
+            return
+        self._close()
+        self._connect()
 
         if not self._receive_thread.is_alive():
             self._receive_thread.start()
-
-    def _connect(self) -> socket.socket:
-        host, port = self.__conf.get('host'), self.__conf.get('port', 7001)
-        return socket.create_connection((host, port), self._timeout)
-
-    def reconnect(self):
-        LOGGER.info('[rmq] reconnect')
-        while True:
-            try:
-                self.ensure_connection()
-                return
-            except OSError as e:
-                self.connected = False
-                LOGGER.error(e)
-                time.sleep(5)
+        if not self._heartbeat_thread.is_alive():
+            self._heartbeat_thread.start()
 
     def request(self, event: Event, payload: bytes, timeout = 1) -> bytes:
         self.ensure_connection()
         msg = Msg(event=event, payload=payload)
         request = self._requests[msg.uid] = Request()
-        self._conn.sendall(msg.encode())
-        return request.get_data(timeout)
+        tries = 3
+        while not self._stopped.is_set() and tries > 0:
+            try:
+                if tries != 3:
+                    LOGGER.debug(f"retrying: {tries}")
+                self._conn.sendall(msg.encode())
+                return request.get_data(timeout)
+            except (socket.timeout, TimeoutError) as e:
+                tries -= 1
+                LOGGER.error(e)
+            except BrokenPipeError as e:
+                tries -= 1
+                LOGGER.error(e)
+                self.reconnect(True)
 
     def _receive_loop(self):
-        while True:
+        while not self._stopped.is_set():
             try:
-                if self._conn is None or not self.connected:
+                if self._conn is None:
                     time.sleep(1)
                     continue
                 response = self._conn.recv(47)
@@ -286,6 +307,18 @@ class RMQ:
             except Exception as e:
                 LOGGER.exception(e)
 
+    def _heartbeat_loop(self):
+        interval = 30
+        while not self._stopped.is_set():
+            try:
+                self._stopped.wait(interval)
+                if self._conn is None:
+                    continue
+                LOGGER.debug('[rmq] heartbeat')
+                self.request(Event.HEARTBEAT, _EMPTY_PAYLOAD)
+            except Exception as e:
+                LOGGER.error(e)
+
     def pull(self, queue: str, ttl: int = 0) -> Optional[Message]:
         def build_payload():
             return struct.pack(f">I{len(queue)}sI", len(queue), queue.encode('utf-8'), ttl)
@@ -312,8 +345,7 @@ class RMQ:
             return None
         except (RMQError, OSError) as e:
             LOGGER.error(e)
-            if self._conn is not None:
-                self.reconnect()
+            self.reconnect()
 
     def publish(self,
                 data: Union[str, dict, bytes],

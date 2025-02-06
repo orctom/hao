@@ -20,7 +20,7 @@ class PeriodicalTask(Thread):
         self.status.set()
 
     def is_stopped(self):
-        return self.status.isSet()
+        return self.status.is_set()
 
     def run(self):
         while not self.is_stopped():
