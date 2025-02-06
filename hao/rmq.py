@@ -339,12 +339,12 @@ class RMQ:
         try:
             msg = self.request(Event.PUT, build_payload())
             if msg is None:
-                return RMQDataError("timed out")
+                raise RMQDataError("timed out")
             err = decode_payload()
             if err:
                 raise RMQDataError(err)
         except (socket.timeout, TimeoutError, BlockingIOError) as e:
-            return RMQDataError(e)
+            raise RMQDataError(e)
         except (RMQError, OSError) as e:
             LOGGER.error(e)
             self.reconnect()
