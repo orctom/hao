@@ -312,9 +312,13 @@ class RMQ:
                 LOGGER.error(f"[rmq] invalid response: {e}")
                 set_response(msg.uid, error=e)
             except (RMQError, OSError) as e:
+                if self._stopped.is_set():
+                    return
                 LOGGER.error(f"failed to receive message from RMQ: {e}")
                 self.reconnect()
             except Exception as e:
+                if self._stopped.is_set():
+                    return
                 LOGGER.exception(e)
 
     def _heartbeat_loop(self):
