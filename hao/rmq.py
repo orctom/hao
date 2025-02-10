@@ -193,6 +193,7 @@ class RMQ:
         self.__lock__ = threading.Lock()
         self._receive_thread = threading.Thread(target=self._receive_loop, daemon=True)
         self._heartbeat_thread = threading.Thread(target=self._heartbeat_loop, daemon=True)
+        self._last_event = None
         atexit.register(self._close)
 
     def __str__(self) -> str:
@@ -268,6 +269,7 @@ class RMQ:
                 if tries != 3:
                     LOGGER.debug(f"retrying: {tries}")
                 self._conn.sendall(msg.encode())
+                self._last_event = time.time()
                 res = request.get(timeout)
                 self._requests.pop(msg.uid, None)
                 return res
@@ -306,6 +308,8 @@ class RMQ:
                 except Exception as e:
                     set_response(msg.uid, data=msg, error=RMQDataError(e))
                     LOGGER.exception(e)
+                finally:
+                    self._last_event = time.time()
             except (socket.timeout, TimeoutError, BlockingIOError):
                 pass
             except RMQDataError as e:
@@ -322,11 +326,13 @@ class RMQ:
                 LOGGER.exception(e)
 
     def _heartbeat_loop(self):
-        interval = 30
+        interval = 10
         while not self._stopped.is_set():
             try:
                 self._stopped.wait(interval)
-                if self._conn is None:
+                if self._conn is None or self._last_event is None:
+                    continue
+                if time.time() - self._last_event < 30:
                     continue
                 LOGGER.debug('[rmq] heartbeat')
                 self.request(Event.HEARTBEAT, _EMPTY_PAYLOAD)
