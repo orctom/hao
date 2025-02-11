@@ -222,12 +222,13 @@ class RMQ:
         LOGGER.info('[rmq] reconnect')
         while not self._stopped.is_set():
             try:
-                self.ensure_connection()
+                self._close()
+                self._connect()
                 LOGGER.info('[rmq] reconnected')
                 return
             except OSError as e:
                 self._conn = None
-                LOGGER.exception(e)
+                LOGGER.error(e)
                 time.sleep(5)
 
     def _close(self):
@@ -250,7 +251,6 @@ class RMQ:
     def ensure_connection(self):
         if self._conn is not None:
             return
-        self._close()
         self._connect()
 
         if not self._receive_thread.is_alive():
@@ -258,30 +258,33 @@ class RMQ:
         if not self._heartbeat_thread.is_alive():
             self._heartbeat_thread.start()
 
-    def request(self, event: Event, payload: bytes, timeout = 5) -> (Optional[Msg], Optional[Exception]):
+    def request(self, event: Event, payload: bytes, timeout = 5, max_retries = 3) -> (Optional[Msg], Optional[Exception]):
         self.ensure_connection()
         msg = Msg(event=event, payload=payload)
         request = self._requests[msg.uid] = Request()
-        tries = 3
+        retries = 0
         err = None
-        while not self._stopped.is_set() and tries > 0:
+        while not self._stopped.is_set() and retries <= max_retries:
             try:
-                if tries != 3:
-                    LOGGER.debug(f"retrying: {tries}")
+                if retries > 0:
+                    LOGGER.info(f"  retrying: {retries}")
                 self._conn.sendall(msg.encode())
                 self._last_event = time.time()
-                res = request.get(timeout)
+                msg_res, err_res = request.get(timeout)
+                if msg_res is None and retries < max_retries:
+                    continue
                 self._requests.pop(msg.uid, None)
-                return res
+                return msg_res, err_res
             except (socket.timeout, TimeoutError, BlockingIOError) as e:
-                tries -= 1
                 LOGGER.error(e)
                 err = e
             except OSError as e:
-                tries -= 1
                 LOGGER.error(e)
                 self.reconnect()
                 err = e
+            finally:
+                retries += 1
+
         return None, err
 
     def _receive_loop(self):
@@ -315,11 +318,9 @@ class RMQ:
             except RMQDataError as e:
                 LOGGER.error(f"[rmq] invalid response: {e}")
                 set_response(msg.uid, error=e)
-            except (RMQError, OSError) as e:
+            except (RMQError, OSError):
                 if self._stopped.is_set():
                     return
-                LOGGER.error(f"failed to receive message from RMQ: {e}")
-                self.reconnect()
             except Exception as e:
                 if self._stopped.is_set():
                     return
