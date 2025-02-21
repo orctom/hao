@@ -19,12 +19,13 @@ _HEADERS_TOKEN = {'Content-Type': 'application/json'}
 
 class Feishu(metaclass=singleton.Singleton):
     def __init__(self):
-        cfg = config.get('feishu')
+        cfg = config.get('feishu', {})
         self._secrets = cfg.get('secrets')
         self._ids = cfg.get('ids')
         self._identifier = f'[{config.HOSTNAME}-{paths.project_name()}-{paths.program_name()}]'
         self._aaccess_token = None
-        self._refresh_access_token()
+        if cfg:
+            self._refresh_access_token()
 
     def _refresh_access_token(self):
         payload = {'app_id': self._secrets.get('app_id'), 'app_secret': self._secrets.get('app_secret')}
@@ -39,6 +40,8 @@ class Feishu(metaclass=singleton.Singleton):
 
     @decorators.background
     def notify(self, message: str, topic='default'):
+        if self._ids is None:
+            return
         receive_id = self._ids.get(topic)
         if receive_id is None:
             LOGGER.debug(f"[feishu] topic not found: {topic}")
@@ -69,6 +72,8 @@ class Feishu(metaclass=singleton.Singleton):
             LOGGER.debug(e)
 
     def notify_exception(self, e: Exception, data: typing.Union[str, dict] = None, topic='default'):
+        if self._ids is None:
+            return
         if isinstance(data, dict):
             text = jsons.dumps(data)
         else:
