@@ -84,27 +84,32 @@ class Kafka(object):
 
     def get_consumer(self,
                      topic: typing.Union[str, list],
-                     enable_auto_commit=False,
-                     auto_commit_interval_ms=1_000,
-                     max_poll_records=500,
                      group_id=None,
-                     client_id=None):
+                     client_id=None,
+                     **kwargs):
         topics = [topic] if isinstance(topic, str) else topic
         group_id = group_id or self.__conf.get('group_id')
         client_id = client_id or self.__conf.get('client_id', self.__conf.get('group_id'))
         LOGGER.info(f"[kafka] consumer to topics: {topics}, group_id: {group_id}, client_id: {client_id}")
-        return KafkaConsumer(
-            *topics,
-            bootstrap_servers=self.__conf.get('hosts'),
-            group_id=group_id,
-            client_id=client_id,
-            auto_offset_reset=self.__conf.get('auto_offset_reset', 'earliest'),
-            enable_auto_commit=enable_auto_commit,
-            auto_commit_interval_ms=auto_commit_interval_ms,
-            session_timeout_ms=self.__conf.get('session_timeout_ms', 10_000),
-            max_poll_records=max_poll_records,
-            api_version=(1, 1, 0)
-        )
+        args = {
+            'bootstrap_servers': self.__conf.get('hosts'),
+            'group_id': group_id,
+            'client_id': client_id,
+            'fetch_max_wait_ms': kwargs.get('fetch_max_wait_ms') or self.__conf.get('fetch_max_wait_ms', 500),
+            'request_timeout_ms': kwargs.get('request_timeout_ms') or self.__conf.get('request_timeout_ms', 305_000),
+            'max_in_flight_requests_per_connection': kwargs.get('max_in_flight_requests_per_connection') or self.__conf.get('max_in_flight_requests_per_connection', 5),
+            'auto_offset_reset': kwargs.get('auto_offset_reset') or self.__conf.get('auto_offset_reset', 'earliest'),
+            'enable_auto_commit': kwargs.get('enable_auto_commit') or self.__conf.get('enable_auto_commit', False),
+            'auto_commit_interval_ms': kwargs.get('auto_commit_interval_ms') or self.__conf.get('auto_commit_interval_ms', 5_000),
+            'max_poll_records': kwargs.get('max_poll_records') or self.__conf.get('max_poll_records', 500),
+            'max_poll_interval_ms': kwargs.get('max_poll_interval_ms') or self.__conf.get('max_poll_interval_ms', 300_000),
+            'session_timeout_ms': kwargs.get('session_timeout_ms') or self.__conf.get('session_timeout_ms', 10_000),
+            'heartbeat_interval_ms': kwargs.get('heartbeat_interval_ms') or self.__conf.get('heartbeat_interval_ms', 3_000),
+            'consumer_timeout_ms': kwargs.get('consumer_timeout_ms') or self.__conf.get('consumer_timeout_ms', float('inf')),
+            'api_version': kwargs.get('api_version') or self.__conf.get('api_version', (1, 1, 0)),
+            'connections_max_idle_ms': kwargs.get('connections_max_idle_ms') or self.__conf.get('connections_max_idle_ms', 540_000),
+        }
+        return KafkaConsumer(*topics, **args)
 
     def get_producer(self):
         if self._producer is None:
@@ -115,13 +120,12 @@ class Kafka(object):
         return self._producer
 
     def publish(self, topic, message, key=None, headers=None, partition=None, timestamp_ms=None, flush: bool = False):
-        message_type = type(message)
-        if message_type == str:
+        if isinstance(message, str):
             payload = message.encode()
-        elif message_type == dict:
+        elif isinstance(message, dict):
             payload = jsons.dumps(message).encode()
         else:
-            LOGGER.warning(f'Unsupported message type: {message_type}: {message}')
+            LOGGER.warning(f'Unsupported message type: {type(message)}: {message}')
             return
         try:
             LOGGER.debug(f"sending payload: {payload}")
