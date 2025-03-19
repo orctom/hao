@@ -95,13 +95,20 @@ class SimpleMetrics(exits.OnExit):
         pad_size = max([len(key) for key in self._meters]) + 8
         for key, counter in self._meters.items():
             delta = counter.delta()
-            rate = delta / self._interval
             total = counter.get()
-            rate_total = total / (self._interval * self._n_cycle)
-            _rate = f"rate: {f'{rate:.1f}': >6} it/s" if rate > 0.1 else f"rate: {f'{1/rate:.0f}': >6} s/it"
-            _rate_total = f"avg: {f'{rate_total:.1f}': >6} it/s" if rate_total > 0.1 else f"avg: {f'{1/rate_total:.0f}': >6} s/it"
-            self._logger.info(f"{f'[meter-{key}]': <{pad_size}} count: {delta: >5}, {_rate}; total: {total: >8}, {_rate_total}")
+            rate = self._fmt_rate(delta, self._interval)
+            rate_total = self._fmt_rate(total, self._interval * self._n_cycle)
+            self._logger.info(f"{f'[meter-{key}]': <{pad_size}} count: {delta: >5}, rate: {rate}; total: {total: >8}, avg: {rate_total}")
             self._report_to_prometheus(key, rate)
+
+    @staticmethod
+    def _fmt_rate(n, interval, n_pad=6) -> str:
+        rate, unit, n_digits = 0.0, 'it/s', 1
+        if interval > 0:
+            rate = n / interval
+            if rate < 0.1:
+                rate, unit, n_digits = 1 / rate, 's/it', 0
+        return f"{f'{rate:.{n_digits}f}': >{n_pad}} {unit}"
 
     def _report_gauges(self):
         for key, gauge in self._gauges.items():

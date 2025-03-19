@@ -106,8 +106,8 @@ class Kafka(object):
             'session_timeout_ms': kwargs.get('session_timeout_ms') or self.__conf.get('session_timeout_ms', 10_000),
             'heartbeat_interval_ms': kwargs.get('heartbeat_interval_ms') or self.__conf.get('heartbeat_interval_ms', 3_000),
             'consumer_timeout_ms': kwargs.get('consumer_timeout_ms') or self.__conf.get('consumer_timeout_ms', float('inf')),
-            'api_version': kwargs.get('api_version') or self.__conf.get('api_version', (1, 1, 0)),
             'connections_max_idle_ms': kwargs.get('connections_max_idle_ms') or self.__conf.get('connections_max_idle_ms', 540_000),
+            'api_version': self.__conf.get('api_version'),
         }
         return KafkaConsumer(*topics, **args)
 
@@ -115,7 +115,7 @@ class Kafka(object):
         if self._producer is None:
             self._producer = KafkaProducer(
                 bootstrap_servers=self.__conf.get('hosts'),
-                api_version=(1, 1, 0)
+                api_version=self.__conf.get('api_version')
             )
         return self._producer
 
