@@ -30,7 +30,7 @@ def retry(func, exceptions=Exception, tries=2, delay=0.5, backoff=1.2, max_delay
                         raise e
                     logger.warning(f"{e}, Retrying {n_tried} of {tries} in {delays} seconds...")
                     asyncio.sleep(delays)
-                    delays = min(max_delay, delay + backoff)
+                    delays = min(max_delay, delay + backoff * n_tried)
     else:
         def wrapper(*args, **kwargs):
             n_tried, delays = 0, delay
@@ -43,7 +43,7 @@ def retry(func, exceptions=Exception, tries=2, delay=0.5, backoff=1.2, max_delay
                         raise e
                     logger.warning(f"{e}, Retrying {n_tried} of {tries} in {delays} seconds...")
                     time.sleep(delays)
-                    delays = min(max_delay, delay + backoff)
+                    delays = min(max_delay, delay + backoff * n_tried)
     return wrapper(*a, **kw)
 
 
