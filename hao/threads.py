@@ -1,5 +1,5 @@
 from threading import Event, Thread
-from typing import Callable, Optional
+from typing import Callable
 
 from . import logs
 
@@ -8,7 +8,7 @@ LOGGER = logs.get_logger(__name__)
 
 class PeriodicalTask(Thread):
 
-    def __init__(self, interval: int, function: Callable, on_error: Optional[Callable] = None):
+    def __init__(self, interval: int, function: Callable, on_error: Callable | None = None):
         super().__init__()
         self.status = Event()
         self.interval = interval

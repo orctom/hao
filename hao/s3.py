@@ -18,7 +18,6 @@ import math
 import os
 import random
 import signal
-from typing import Optional
 
 from minio import Minio
 from minio.error import MinioException
@@ -36,9 +35,9 @@ class S3:
     def __init__(self,
                  profile: str = 'default',
                  *,
-                 endpoint: Optional[str] = None,
-                 access_key: Optional[str] = None,
-                 secret_key: Optional[str] = None,
+                 endpoint: str | None = None,
+                 access_key: str | None = None,
+                 secret_key: str | None = None,
                  secure: bool = False) -> None:
         if endpoint is None or access_key is None or secret_key is None:
             conf = config.get(f"s3.{profile}")

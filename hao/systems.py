@@ -2,7 +2,6 @@ import logging
 import math
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import List, Union
 
 import psutil
 import pynvml
@@ -12,8 +11,9 @@ LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class Percent:
-    value: Union[float, int]
+    value: float | int
     formatted: str = field(init=False)
+
     def __post_init__(self):
         if self.value > 1:
             self.value = self.value / 100
@@ -124,7 +124,7 @@ class GpuDevice:
     temperature: int
     mem: Mem
     util: Percent
-    processes: List[Process]
+    processes: list[Process]
 
     def __str__(self):
         processes = ''.join([f"\n    {process}" for process in self.processes])
@@ -141,7 +141,7 @@ class GpuDevice:
 class Gpu:
     driver_version: str
     cuda_version: str
-    devices: List[GpuDevice]
+    devices: list[GpuDevice]
 
     def __str__(self):
         devices = ''.join([f"\n{device}" for device in self.devices])

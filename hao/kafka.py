@@ -56,8 +56,6 @@ for msg in consumer:
         LOGGER.exception(e)
 
 """
-import typing
-
 from kafka import KafkaConsumer, KafkaProducer
 from kafka.errors import KafkaTimeoutError, NoBrokersAvailable
 
@@ -83,7 +81,7 @@ class Kafka(object):
         return self.__str__()
 
     def get_consumer(self,
-                     topic: typing.Union[str, list],
+                     topic: str | list,
                      group_id=None,
                      client_id=None,
                      **kwargs):

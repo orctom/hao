@@ -2,7 +2,6 @@
 import ctypes
 import logging
 import os
-from typing import Optional
 
 LOGGER = logging.getLogger(__name__)
 
@@ -58,23 +57,23 @@ def cuda_version():
         return None
 
 
-def get_str(key: str, default: str = None) -> Optional[str]:
+def get_str(key: str, default: str = None) -> str | None:
     return os.getenv(key) or default
 
 
-def get_int(key: str, default: int = None) -> Optional[int]:
+def get_int(key: str, default: int = None) -> int | None:
     return get_of_type(key, int, default)
 
 
-def get_float(key: str, default: float = None) -> Optional[float]:
+def get_float(key: str, default: float = None) -> float | None:
     return get_of_type(key, float, default)
 
 
-def get_bool(key: str, default: str = None) -> Optional[bool]:
+def get_bool(key: str, default: str = None) -> bool | None:
     return get_of_type(key, bool, default)
 
 
-def get_complex(key: str, default: complex = None) -> Optional[complex]:
+def get_complex(key: str, default: complex = None) -> complex | None:
     return get_of_type(key, complex, default)
 
 

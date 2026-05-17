@@ -22,7 +22,7 @@ with SQLite() as db:
 
 import sqlite3
 from collections import namedtuple
-from typing import Literal, Optional, Union
+from typing import Literal
 
 from . import config, logs, paths
 
@@ -49,9 +49,9 @@ class SQLite:
     }
 
     def __init__(self,
-                 profile: Optional[str] = 'default',
+                 profile: str = 'default',
                  *,
-                 path: Optional[str] = None,
+                 path: str | None = None,
                  cursor: Literal['tuple', 'dict', 'namedtuple'] = 'tuple') -> None:
         self.profile = profile
         self.path = path
@@ -74,7 +74,7 @@ class SQLite:
         except Exception:
             pass
 
-    def execute(self, sql, params: Optional[Union[list, tuple]] = None, *, commit: bool = False) -> sqlite3.Cursor:
+    def execute(self, sql, params: list | tuple | None = None, *, commit: bool = False) -> sqlite3.Cursor:
         cursor = self.conn.execute(sql, params or ())
         try:
             if commit:
@@ -83,7 +83,7 @@ class SQLite:
         finally:
             cursor.close()
 
-    def executemany(self, sql, params: Optional[Union[list, tuple]] = None, *, commit: bool = False) -> sqlite3.Cursor:
+    def executemany(self, sql, params: list | tuple | None = None, *, commit: bool = False) -> sqlite3.Cursor:
         cursor = self.conn.executemany(sql, params or ())
         try:
             if commit:
@@ -92,7 +92,7 @@ class SQLite:
         finally:
             cursor.close()
 
-    def fetchone(self, sql: str, params: Optional[Union[list, tuple]] = None, *, commit: bool = False):
+    def fetchone(self, sql: str, params: list | tuple | None = None, *, commit: bool = False):
         cursor = self.conn.execute(sql, params or ())
         try:
             if commit:
@@ -101,7 +101,7 @@ class SQLite:
         finally:
             cursor.close()
 
-    def fetchall(self, sql: str, params: Optional[Union[list, tuple]] = None, *, commit: bool = False):
+    def fetchall(self, sql: str, params: list | tuple | None = None, *, commit: bool = False):
         cursor = self.conn.execute(sql, params or ())
         try:
             if commit:
@@ -110,7 +110,7 @@ class SQLite:
         finally:
             cursor.close()
 
-    def fetch(self, sql: str, params: Optional[Union[list, tuple]] = None, batch=2000, *, commit: bool = False):
+    def fetch(self, sql: str, params: list | tuple | None = None, batch=2000, *, commit: bool = False):
         cursor = self.conn.execute(sql, params or ())
         try:
             if commit:

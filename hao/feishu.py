@@ -5,7 +5,6 @@ import traceback
 from collections import defaultdict
 from datetime import datetime
 from threading import Timer
-from typing import List, Union
 
 import requests
 
@@ -50,7 +49,7 @@ class Feishu(metaclass=singleton.Singleton):
         for topic, msgs in messages.items():
             self._send(msgs, topic)
 
-    def _send(self, messages: List[str], topic: str):
+    def _send(self, messages: list[str], topic: str):
         receive_id = self._ids.get(topic)
         if receive_id is None:
             LOGGER.info(f"[feishu] topic not found: {topic}")
@@ -102,7 +101,7 @@ class Feishu(metaclass=singleton.Singleton):
         finally:
             self._last = now
 
-    def notify_exception(self, e: Exception, data: Union[str, dict] = None, topic='default'):
+    def notify_exception(self, e: Exception, data: str | dict | None = None, topic='default'):
         if self._ids is None:
             return
         if isinstance(data, dict):
@@ -125,5 +124,5 @@ def notify(message: str, topic='default'):
     Feishu().notify(message, topic)
 
 
-def notify_exception(e: Exception, data: Union[str, dict] = None, topic='default'):
+def notify_exception(e: Exception, data: str | dict | None = None, topic='default'):
     Feishu().notify_exception(e, data, topic)

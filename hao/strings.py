@@ -7,7 +7,7 @@ import os
 import string
 import unicodedata
 from difflib import SequenceMatcher
-from typing import List, Optional, Pattern
+from typing import Pattern
 
 import regex
 
@@ -115,7 +115,7 @@ def normalize_obj(obj,
     return {k: normalize_obj(v) for k, v in obj.items()}
 
 
-def normalize_chars(text) -> Optional[str]:
+def normalize_chars(text) -> str | None:
     if text is None:
         return None
     for p, sub in RE_NORMALIZE:
@@ -123,25 +123,25 @@ def normalize_chars(text) -> Optional[str]:
     return text
 
 
-def remove_controls(text: str, trn: bool = False) -> Optional[str]:
+def remove_controls(text: str, trn: bool = False) -> str | None:
     if text is None:
         return None
     return ''.join([ch for ch in text if not is_char_control(ch, trn=trn)])
 
 
-def remove_specials(text: str) -> Optional[str]:
+def remove_specials(text: str) -> str | None:
     if text is None:
         return None
     return unicodedata.normalize('NFD', text)
 
 
-def remove_emojis(text: str) -> Optional[str]:
+def remove_emojis(text: str) -> str | None:
     if text is None:
         return None
     return P_EMOJI.sub('', text)
 
 
-def remove_unicodes(text: str) -> Optional[str]:
+def remove_unicodes(text: str) -> str | None:
     if text is None:
         return None
     try:
@@ -152,7 +152,7 @@ def remove_unicodes(text: str) -> Optional[str]:
     return text
 
 
-def fix_encoding(text: str, encoding: str) -> Optional[str]:
+def fix_encoding(text: str, encoding: str) -> str | None:
     if text is None:
         return None
     try:
@@ -246,7 +246,7 @@ def sim(a, b):
     return SequenceMatcher(None, a, b).ratio()
 
 
-def any_sim(items: List[str], item: str, threshold=0.75):
+def any_sim(items: list[str], item: str, threshold=0.75):
     if items is None or len(items) == 0 or item is None:
         return False
     for _item in items:

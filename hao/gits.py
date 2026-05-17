@@ -1,10 +1,9 @@
 from pathlib import Path
-from typing import Optional
 
 from . import paths
 
 
-def get_commit(path: Optional[str] = None):
+def get_commit(path: str | None = None):
     try:
         path = path or paths.root_path()
         path_git = Path(path, '.git')

@@ -1,6 +1,5 @@
 import threading
 import time
-from typing import List, Optional
 
 from .dates import pretty_time_delta
 
@@ -51,7 +50,7 @@ class Spinner(threading.Thread):
         '_________________',
     ]
 
-    def __init__(self, msg: str, *, ps='>', done: str = '✔️', interval=0.1, frames: Optional[List[str]] = None):
+    def __init__(self, msg: str, *, ps='>', done: str = '✔️', interval=0.1, frames: list[str] | None = None):
         super().__init__()
         self.msg = msg
         self.ps = ps

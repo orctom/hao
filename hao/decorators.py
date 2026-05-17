@@ -166,3 +166,47 @@ def timeout(func: Callable, seconds=5, timeout_exception=TimeoutError, message=N
             else:
                 return func(*args, **kwargs)
     return wrapper(*a, **kw)
+
+
+@decorator
+def timeout_and_retry(
+    func: Callable,
+    timeout=120,
+    exceptions: tuple[Exception] | None = None,
+    max_retries=3,
+    interval=10,
+    delay=5,
+    *args,
+    **kwargs
+):
+    def handle(_, __):
+        msg = f"[{func.__qualname__}] timed out {attempt} times ({timeout}s each)"
+        raise TimeoutError(msg)
+
+    for attempt in range(1, max_retries + 1):
+        if attempt > 1:
+            LOGGER.info(f"[{func.__qualname__}] attempt: {attempt}, invoking...")
+        try:
+            wait = interval + (attempt - 1) * delay
+            old = signal.signal(signal.SIGALRM, handle)
+            signal.alarm(timeout)
+            try:
+                return func(*args, **kwargs)
+            except TimeoutError as e:
+                if attempt == max_retries:
+                    raise e
+                LOGGER.info(f"[{func.__qualname__}] attempt: {attempt}, timeout ({timeout}s), retry in {wait}s")
+            except Exception as e:
+                if attempt == max_retries:
+                    raise e
+                if exceptions and not isinstance(e, exceptions):
+                    raise e
+                LOGGER.info(f"[{func.__qualname__}] attempt: {attempt}, error: {e}, retry in {wait}s")
+            finally:
+                signal.signal(signal.SIGALRM, old)
+                signal.alarm(0)
+
+            time.sleep(wait)
+        except ValueError:
+            LOGGER.warning(f"[{func.__qualname__}] SIGALRM not supported in current thread, running without timeout")
+            return func(*args, **kwargs)

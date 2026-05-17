@@ -2,7 +2,6 @@
 import json
 import logging
 import traceback
-import typing
 from datetime import datetime
 
 import requests
@@ -48,7 +47,7 @@ def notify(message: str, channel='default'):
         LOGGER.debug(e)
 
 
-def notify_exception(e: Exception, data: typing.Union[str, dict] = None, channel='default'):
+def notify_exception(e: Exception, data: str | dict | None = None, channel='default'):
     token = slack_token(channel)
     if isinstance(data, dict):
         text = jsons.dumps(data)

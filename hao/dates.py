@@ -3,7 +3,6 @@ import calendar
 import datetime
 import os
 import time
-from typing import Union
 
 import dateparser
 import regex
@@ -143,7 +142,7 @@ def normalize_chinese(text: str):
     return f"{year}年{month}月{day}日"
 
 
-def formatted(date: Union[str, int, datetime.date, datetime.datetime], fmt=FORMAT_DATE_TIME):
+def formatted(date: str | int | datetime.date | datetime.datetime, fmt=FORMAT_DATE_TIME):
     if date is None:
         return None
     if isinstance(date, (str, int)):

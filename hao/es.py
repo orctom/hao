@@ -56,7 +56,6 @@ es.bulk(actions)
 """
 import html
 from dataclasses import asdict, dataclass, field
-from typing import List, Optional, Union
 
 from elasticsearch import Elasticsearch, NotFoundError, helpers
 
@@ -78,8 +77,8 @@ class Highlight:
     fragmenter: str = field(default='span')
     fragment_size: int = field(default=200)
     number_of_fragments: int = field(default=5)
-    pre_tags: List[str] = field(default_factory=lambda: ['<mark>'])
-    post_tags: List[str] = field(default_factory=lambda: ['</mark>'])
+    pre_tags: list[str] = field(default_factory=lambda: ['<mark>'])
+    post_tags: list[str] = field(default_factory=lambda: ['</mark>'])
     order: str = field(default='score')
 
 
@@ -97,7 +96,7 @@ class ES:
     def __repr__(self) -> str:
         return self.__str__()
 
-    def get_by_id(self, _id, index: str, params: Optional[dict] = None, **kwargs):
+    def get_by_id(self, _id, index: str, params: dict | None = None, **kwargs):
         assert _id is not None, '_id required'
         assert index is not None, 'index required'
 
@@ -120,7 +119,7 @@ class ES:
         except NotFoundError:
             return None
 
-    def find_by_ids(self, ids: List[str], index: str, **params) -> list:
+    def find_by_ids(self, ids: list[str], index: str, **params) -> list:
         query = {"query": {"ids" : {"values": ids}}}
         return list(self.search(query, index, **params))
 
@@ -143,9 +142,9 @@ class ES:
                query: dict,
                index: str,
                size=500,
-               highlight: Optional[dict] = None,
-               highlight_fields: Optional[Union[dict, list]] = None,
-               scroll: Optional[str] = None,
+               highlight: dict | None = None,
+               highlight_fields: dict | list | None = None,
+               scroll: str | None = None,
                timeout=60,
                **params):
         assert query is not None and len(query) > 0, 'query required, and should not be empty'
@@ -160,8 +159,8 @@ class ES:
                 query: dict,
                 index: str,
                 size=500,
-                highlight: Optional[dict] = None,
-                highlight_fields: Optional[Union[dict, list]] = None,
+                highlight: dict | None = None,
+                highlight_fields: dict | list = None,
                 timeout=60,
                 **params):
         pre_tags, post_tags = None, None
@@ -200,7 +199,7 @@ class ES:
                 pass
 
     @staticmethod
-    def _html_escape(item: dict, pre_tags: List[str], post_tags: List[str]):
+    def _html_escape(item: dict, pre_tags: list[str], post_tags: list[str]):
         def convert(text):
             for pre_tag in pre_tags:
                 text = text.replace(pre_tag, f"lll-{regexes.remove_non_char(pre_tag)}-lll")
