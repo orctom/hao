@@ -25,7 +25,7 @@ def get_event_loop():
             return asyncio.get_event_loop()
 
 
-def run_async(coroutine: Coroutine, fire_and_forget: bool = False):
+def run(coroutine: Coroutine, fire_and_forget: bool = False):
     if not asyncio.iscoroutine(coroutine):
         raise TypeError(f"coroutine expected, but got {type(coroutine).__name__}")
 
