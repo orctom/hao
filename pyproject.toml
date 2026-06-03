@@ -52,6 +52,12 @@ redis = [
 sql = [
     "sqlalchemy",
 ]
+openai = [
+    "openai",
+    "httpx",
+    "httpcore",
+    "pydantic",
+]
 sys = [
     "psutil",
     "nvidia-ml-py",

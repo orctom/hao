@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Coroutine
 
 _GLOBAL_EXECUTOR = ThreadPoolExecutor(
-    max_workers=max(1, os.cpu_count()),
+    max_workers=max(1, os.cpu_count() // 2),
     thread_name_prefix='AsyncExecutor'
 )
 
