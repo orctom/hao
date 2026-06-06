@@ -42,6 +42,7 @@ class LLM():
         self.model = conf.get('model')
         self.base_url = conf.get('base_url')
         self.api_key = conf.get('api_key', 'empty')
+        self.extra_body = conf.get('extra_body')
         LOGGER.debug(f"LLM: [{self.model}] ({self.base_url})")
 
     def __repr__(self):
@@ -65,7 +66,6 @@ class LLM():
         tools=None,
         frequency_penalty: float | None = None,
         presence_penalty: float | None = None,
-        thinking: bool = False,
         steps: bool | None = None,
         response_model: str | None = None,
     ):
@@ -81,7 +81,7 @@ class LLM():
             presence_penalty=presence_penalty or omit,
             n=1,
             seed=0,
-            extra_body={"chat_template_kwargs": {"enable_thinking": thinking}},
+            extra_body=self.extra_body,
         ) as streams:
             for event in streams:
                 if event.type == 'content.delta':
@@ -98,7 +98,6 @@ class LLM():
         messages,
         max_tokens,
         tools=None,
-        thinking: bool = False,
         steps: bool | None = None,
         response_model: str | None = None,
         frequency_penalty: float | None = None,
@@ -110,7 +109,6 @@ class LLM():
             tools=tools,
             frequency_penalty=frequency_penalty,
             presence_penalty=presence_penalty,
-            thinking=thinking,
             steps=steps,
             response_model=response_model,
         )
@@ -194,7 +192,6 @@ class LLM():
         functions: dict[str, callable] = None,
         max_tokens: int | None = None,
         max_words: int | None = None,
-        thinking: bool = False,
         steps: bool | None = None,
         response_model: str | None = None,
         frequency_penalty: float | None = None,
@@ -207,7 +204,6 @@ class LLM():
                 messages,
                 tools=tools,
                 max_tokens=max_tokens,
-                thinking=thinking,
                 steps=steps,
                 response_model=response_model,
                 frequency_penalty=frequency_penalty,
@@ -251,7 +247,6 @@ class LLM():
         functions: dict[str, callable] = None,
         max_tokens: int | None = None,
         max_words: int | None = None,
-        thinking: bool = False,
         response_model: str | None = None,
         steps: bool = False,
         timeout: int = 600,
@@ -286,7 +281,6 @@ class LLM():
                         max_words=max_words,
                         frequency_penalty=frequency_penalty,
                         presence_penalty=presence_penalty,
-                        thinking=thinking,
                         steps=steps,
                         response_model=response_model,
                     )
@@ -321,7 +315,6 @@ class LLM():
                     max_words=max_words,
                     frequency_penalty=frequency_penalty,
                     presence_penalty=presence_penalty,
-                    thinking=thinking,
                     steps=steps,
                     response_model=response_model,
                 )
@@ -333,7 +326,6 @@ class LLM():
         tools=None,
         frequency_penalty: float | None = None,
         presence_penalty: float | None = None,
-        thinking: bool = False,
         steps: bool | None = None,
         response_model: str | None = None,
     ):
@@ -349,7 +341,7 @@ class LLM():
             presence_penalty=presence_penalty or omit,
             n=1,
             seed=0,
-            extra_body={"chat_template_kwargs": {"enable_thinking": thinking}},
+            extra_body=self.extra_body,
         ) as streams:
             async for event in streams:
                 if event.type == 'content.delta':
@@ -366,7 +358,6 @@ class LLM():
         messages,
         max_tokens,
         tools=None,
-        thinking: bool = False,
         steps: bool | None = None,
         response_model: str | None = None,
         frequency_penalty: float | None = None,
@@ -378,7 +369,6 @@ class LLM():
             tools=tools,
             frequency_penalty=frequency_penalty,
             presence_penalty=presence_penalty,
-            thinking=thinking,
             steps=steps,
             response_model=response_model,
         )
@@ -418,7 +408,6 @@ class LLM():
         functions: dict[str, callable] = None,
         max_tokens: int | None = None,
         max_words: int | None = None,
-        thinking: bool = False,
         steps: bool | None = None,
         response_model: str | None = None,
         frequency_penalty: float | None = None,
@@ -431,7 +420,6 @@ class LLM():
                 messages,
                 tools=tools,
                 max_tokens=max_tokens,
-                thinking=thinking,
                 steps=steps,
                 response_model=response_model,
                 frequency_penalty=frequency_penalty,
@@ -475,7 +463,6 @@ class LLM():
         functions: dict[str, callable] = None,
         max_tokens: int | None = None,
         max_words: int | None = None,
-        thinking: bool = False,
         response_model: str | None = None,
         steps: bool = False,
         timeout: int = 600,
@@ -505,7 +492,6 @@ class LLM():
                         max_words=max_words,
                         frequency_penalty=frequency_penalty,
                         presence_penalty=presence_penalty,
-                        thinking=thinking,
                         steps=steps,
                         response_model=response_model,
                     ),
