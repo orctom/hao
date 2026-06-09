@@ -5,6 +5,7 @@ import signal
 import time
 
 import httpx
+import json_repair
 from httpcore import ReadTimeout as HttpcoreReadTimeout
 from httpcore import TimeoutException as HttpcoreTimeoutException
 from httpx import TimeoutException as HttpxTimeoutException
@@ -14,7 +15,7 @@ from openai.types.chat import ChatCompletionMessage
 from openai.types.chat.parsed_chat_completion import ParsedChatCompletionMessage
 from pydantic import ValidationError
 
-from . import config, jsons
+from . import config
 
 LOGGER = logging.getLogger(__name__)
 
@@ -175,7 +176,7 @@ class LLM():
         if not to_json:
             return text
         try:
-            return jsons.loads(text)
+            return json_repair.loads(text)
         except Exception as e:
             LOGGER.error(f"invalid json: {repr(text)}")
             raise InvalidJsonError(e)
