@@ -57,6 +57,7 @@ openai = [
     "httpx",
     "httpcore",
     "pydantic",
+    "json-repair",
 ]
 sys = [
     "psutil",
