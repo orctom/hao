@@ -3,11 +3,11 @@
 ####################################################
 ###########         dependency          ############
 ####################################################
-# Option 1: requires mysql client installed
-pip install mysqlclient dbutils>=3.0.0
+# Option 1: asyncmy (recommended)
+pip install asyncmy
 
-# Option 2: green pure python client, slower than `mysqlclient`
-pip install pymysql dbutils>=3.0.0
+# Option 2: aiomysql (fallback)
+pip install aiomysql
 
 ####################################################
 ###########         config.yml          ############
@@ -31,30 +31,32 @@ mysql:
 ###########          usage              ############
 ####################################################
 from hao.mysql import MySQL
-with MySQL() as db:
-    records = db.fetchall('select * from t_dummy_table')
+async with MySQL() as db:
+    records = await db.fetchall('select * from t_dummy_table')
 
-with MySQL('profile-name', cursor='dict') as db:
+async with MySQL('profile-name', cursor='dict') as db:
     ...
 """
 
 from typing import Literal
 
-from dbutils.pooled_db import PooledDB
-
 from . import config, logs
 
-try:
-    import pymysql as mysqlclient
-    from pymysql.connections import Connection
-    from pymysql.cursors import Cursor, DictCursor, SSCursor, SSDictCursor
-except ImportError:
-    import MySQLdb as mysqlclient
-    from MySQLdb.connections import Connection
-    from MySQLdb.cursors import Cursor, DictCursor, SSCursor, SSDictCursor
-
-
 LOGGER = logs.get_logger(__name__)
+
+try:
+    from asyncmy import Connection
+    from asyncmy.cursors import Cursor, DictCursor, SSCursor, SSDictCursor
+    from asyncmy.pool import Pool
+    _MYSQL_CLIENT = 'asyncmy'
+except ImportError:
+    try:
+        from aiomysql import Connection
+        from aiomysql.cursors import Cursor, DictCursor, SSCursor, SSDictCursor
+        from aiomysql.pool import Pool
+        _MYSQL_CLIENT = 'aiomysql'
+    except ImportError:
+        raise ImportError("Either asyncmy or aiomysql is required")
 
 
 class MySQL:
@@ -85,19 +87,13 @@ class MySQL:
         conf = {**self.__conf}
         LOGGER.debug(f"connecting [{self.profile}], host: {conf.get('host')}, db: {conf.get('db')}")
 
-        pool = PooledDB(
-            mysqlclient,
-            mincached=conf.pop('mincached', 1),
-            maxcached=conf.pop('maxcached', 20),
-            maxshared=conf.pop('maxshared', 0),
-            maxconnections=conf.pop('maxconnections', 20),
-            blocking=conf.pop('blocking', False),
-            maxusage=conf.pop('maxusage', None),
-            setsession=conf.pop('setsession', None),
-            reset=conf.pop('reset', True),
-            failures=conf.pop('failures', None),
-            ping=conf.pop('ping', 1),
-            autocommit=conf.pop('autocommit', False),
+        db = conf.pop('db', None)
+        if db:
+            conf['db'] = db
+
+        pool = Pool(
+            minsize=conf.pop('mincached', 1),
+            maxsize=conf.pop('maxcached', 20),
             **conf
         )
         MySQL._POOLS[self.profile] = pool
@@ -108,64 +104,64 @@ class MySQL:
     def __repr__(self) -> str:
         return self.__str__()
 
-    def __enter__(self):
-        self._conn = self.connect()
-        self._cursor = self._conn.cursor(self._cursor_class)
+    async def __aenter__(self):
+        self._conn = await self.connect()
+        self._cursor = await self._conn.cursor(self._cursor_class)
         return self
 
-    def connect(self) -> Connection:
-        return self._POOLS.get(self.profile).connection()
+    async def connect(self) -> Connection:
+        return await MySQL._POOLS.get(self.profile).acquire()
 
-    def cursor(self, cursor: Literal['default', 'ss', 'dict', 'ss-dict'] = 'default') -> Cursor:
-        self._conn.ping()
-        return self._conn.cursor(self._CURSORS.get(cursor))
+    async def cursor(self, cursor: Literal['default', 'ss', 'dict', 'ss-dict'] = 'default'):
+        await self._conn.ping()
+        return await self._conn.cursor(self._CURSORS.get(cursor))
 
-    def execute(self, sql: str, params: list | tuple | None = None, *, commit: bool = False) -> Cursor:
-        self._conn.ping()
-        self._cursor.execute(sql, params)
+    async def execute(self, sql: str, params: list | tuple | None = None, *, commit: bool = False) -> Cursor:
+        await self._conn.ping()
+        await self._cursor.execute(sql, params)
         if commit:
-            self.commit()
+            await self.commit()
         return self._cursor
 
-    def executemany(self, sql: str, params: list | tuple | None = None, *, commit: bool = False) -> Cursor:
-        self._conn.ping()
-        self._cursor.executemany(sql, params)
+    async def executemany(self, sql: str, params: list | tuple | None = None, *, commit: bool = False) -> Cursor:
+        await self._conn.ping()
+        await self._cursor.executemany(sql, params)
         if commit:
-            self.commit()
+            await self.commit()
         return self._cursor
 
-    def fetchone(self, sql: str, params: list | tuple | None = None, *, commit: bool = False):
-        self._conn.ping()
-        self._cursor.execute(sql, params)
+    async def fetchone(self, sql: str, params: list | tuple | None = None, *, commit: bool = False):
+        await self._conn.ping()
+        await self._cursor.execute(sql, params)
         if commit:
-            self.commit()
-        return self._cursor.fetchone()
+            await self.commit()
+        return await self._cursor.fetchone()
 
-    def fetchall(self, sql: str, params: list | tuple | None = None, *, commit: bool = False):
-        self._conn.ping()
-        self._cursor.execute(sql, params)
+    async def fetchall(self, sql: str, params: list | tuple | None = None, *, commit: bool = False):
+        await self._conn.ping()
+        await self._cursor.execute(sql, params)
         if commit:
-            self.commit()
-        return self._cursor.fetchall()
+            await self.commit()
+        return await self._cursor.fetchall()
 
-    def fetch(self, sql: str, params: list | tuple | None = None, batch=2000, *, commit: bool = False):
-        self._conn.ping()
-        self._cursor.execute(sql, params)
+    async def fetch(self, sql: str, params: list | tuple | None = None, batch=2000, *, commit: bool = False):
+        await self._conn.ping()
+        await self._cursor.execute(sql, params)
         if commit:
-            self.commit()
+            await self.commit()
         while True:
-            records = self._cursor.fetchmany(size=batch)
+            records = await self._cursor.fetchmany(size=batch)
             if not records:
                 break
             for record in records:
                 yield record
 
-    def commit(self):
-        self._conn.commit()
+    async def commit(self):
+        await self._conn.commit()
 
-    def rollback(self):
-        self._conn.rollback()
+    async def rollback(self):
+        await self._conn.rollback()
 
-    def __exit__(self, _type, _value, _trace):
-        self._cursor.close()
-        self._conn.close()
+    async def __aexit__(self, _type, _value, _trace):
+        await self._cursor.close()
+        await MySQL._POOLS.get(self.profile).release(self._conn)

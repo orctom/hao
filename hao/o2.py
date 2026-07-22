@@ -5,9 +5,9 @@ import logging
 import traceback
 from datetime import datetime
 
-import requests
+import aiohttp
 
-from . import config, decorators, paths, versions
+from . import config, paths, versions
 
 LOGGER = logging.getLogger(__name__)
 
@@ -26,9 +26,17 @@ if _O2 is not None:
     _PROGRAM_NAME = paths.program_name()
 _VERSION = versions.get_version() or 'dev'
 
+_session: aiohttp.ClientSession | None = None
 
-@decorators.background
-def notify(message: str | dict):
+
+async def _get_session() -> aiohttp.ClientSession:
+    global _session
+    if _session is None or _session.closed:
+        _session = aiohttp.ClientSession()
+    return _session
+
+
+async def notify(message: str | dict):
     if message is None:
         return
 
@@ -47,16 +55,17 @@ def notify(message: str | dict):
             'program_name': _PROGRAM_NAME,
             'version': _VERSION,
         })
-        response = requests.post(_ENDPOINT, headers=_HEADERS, data=json.dumps(message))
-        LOGGER.debug(response.text)
+        session = await _get_session()
+        async with session.post(_ENDPOINT, headers=_HEADERS, data=json.dumps(message)) as response:
+            LOGGER.debug(await response.text())
     except Exception as e:
         LOGGER.debug(e)
 
 
-def notify_exception(e: Exception, message: str | dict = None):
+async def notify_exception(e: Exception, message: str | dict = None):
     if message is None:
         message = {}
     elif isinstance(message, str):
         message = {'msg': message}
     message['exception'] = f"{e}\n{traceback.format_exc()}"
-    notify(message)
+    await notify(message)

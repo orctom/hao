@@ -2,9 +2,10 @@
 import threading
 from collections.abc import Callable, defaultdict
 
-import requests
+import aiohttp
 
-from . import config, exits, logs, threads
+from . import config, exits, logs
+from .periodicals import PeriodicalTask
 
 LOGGER = logs.get_logger(__name__)
 
@@ -48,10 +49,16 @@ class SimpleMetrics(exits.OnExit):
         self._interval = interval
         self._meters: dict[str, SimpleCounter] = defaultdict(SimpleCounter)
         self._gauges = {}
-        self._reporter = threads.PeriodicalTask(interval, self._report)
+        self._reporter = PeriodicalTask(interval, self._report)
         self._n_cycle = 0
         self.prometheus_gateway = config.get('prometheus.gateway')
         self.prometheus_key = config.get('prometheus.key')
+        self._session: aiohttp.ClientSession | None = None
+
+    async def _get_session(self) -> aiohttp.ClientSession:
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession()
+        return self._session
 
     def start(self):
         if self._reporter.is_alive():
@@ -68,9 +75,9 @@ class SimpleMetrics(exits.OnExit):
         self._meters: dict[str, SimpleCounter] = defaultdict(SimpleCounter)
         self._n_cycle = 0
 
-    def on_exit(self):
+    async def on_exit(self):
         for key in self._meters:
-            self._remove_from_prometheus(key)
+            await self._remove_from_prometheus(key)
 
     def mark(self, key):
         self._meters[str(key)].increment()
@@ -80,14 +87,14 @@ class SimpleMetrics(exits.OnExit):
             return
         self._gauges[key] = gauge
 
-    def _report(self):
+    async def _report(self):
         try:
-            self._report_meters()
+            await self._report_meters()
             self._report_gauges()
         except Exception as e:
             self._logger.error(e)
 
-    def _report_meters(self):
+    async def _report_meters(self):
         self._n_cycle += 1
         if len(self._meters) == 0:
             return
@@ -98,7 +105,7 @@ class SimpleMetrics(exits.OnExit):
             rate = self._fmt_rate(delta, self._interval)
             rate_total = self._fmt_rate(total, self._interval * self._n_cycle)
             self._logger.info(f"{f'[meter-{key}]': <{pad_size}} count: {delta: >5}, rate: {rate}; total: {total: >8}, avg: {rate_total}")
-            self._report_to_prometheus(key, rate)
+            await self._report_to_prometheus(key, rate)
 
     @staticmethod
     def _fmt_rate(n, interval, n_pad=6) -> str:
@@ -118,20 +125,24 @@ class SimpleMetrics(exits.OnExit):
             except Exception as e:
                 self._logger.warning(e)
 
-    def _report_to_prometheus(self, job_name, value):
+    async def _report_to_prometheus(self, job_name, value):
         if self.prometheus_gateway and self.prometheus_key:
             url = f"{self.prometheus_gateway}/metrics/job/{job_name}/instance/{config.HOSTNAME}"
             data = f'''# TYPE {self.prometheus_key} gauge\n{self.prometheus_key} {value}\n'''.encode()
             try:
-                requests.put(url, data=data, timeout=5)
+                session = await self._get_session()
+                async with session.put(url, data=data, timeout=5):
+                    pass
             except Exception as e:
                 LOGGER.info(e)
 
-    def _remove_from_prometheus(self, job_name):
+    async def _remove_from_prometheus(self, job_name):
         if self.prometheus_gateway and self.prometheus_key:
             self._logger.info(f"[meter-{job_name}] removing from prometheus")
             url = f"{self.prometheus_gateway}/metrics/job/{job_name}/instance/{config.HOSTNAME}"
             try:
-                requests.delete(url, timeout=5)
+                session = await self._get_session()
+                async with session.delete(url, timeout=5):
+                    pass
             except Exception as e:
                 LOGGER.info(e)

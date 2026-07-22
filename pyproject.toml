@@ -11,14 +11,13 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
     "PyYAML",
-    "requests",
     "charset-normalizer",
     "dateparser",
     "regex",
     "tqdm",
     "decorator",
-    "urllib3>=1.26.5",
-    "minio",
+    "miniopy-async",
+    "aiohttp",
 ]
 
 [project.urls]
@@ -27,27 +26,26 @@ repository = "https://github.com/orctom/hao"
 
 [project.optional-dependencies]
 es = [
-    "elasticsearch<8",
+    "elasticsearch>=8",
 ]
 mongo = [
-    "pymongo",
+    "motor",
 ]
 kafka = [
-    "kafka-python",
+    "aiokafka",
 ]
 mysql = [
-    "pymysql",
-    "dbutils>=3.0.0",
+    "asyncmy",
+    "aiomysql",
 ]
 pg = [
-    "psycopg[binary]",
-    "dbutils>=3.0.0",
+    "psycopg[pool]",
 ]
 rabbit = [
-    "kombu",
+    "aio-pika",
 ]
 redis = [
-    "redis",
+    "redis>=4.0",
 ]
 sql = [
     "sqlalchemy",
@@ -65,17 +63,23 @@ sys = [
 ]
 dev = [
     "ruff",
-    "pytest>=7.2.0",
-    "elasticsearch<8",
-    "pymongo",
-    "kafka-python",
-    "pymysql",
-    "dbutils>=3.0.0",
-    "psycopg[binary]",
-    "kombu",
-    "redis",
+    "elasticsearch>=8",
+    "motor",
+    "aiokafka",
+    "asyncmy",
+    "aiomysql",
+    "psycopg[pool]",
+    "aio-pika",
+    "redis>=4.0",
     "sqlalchemy",
     "jieba",
+    "openai",
+    "httpx",
+    "httpcore",
+    "pydantic",
+    "json-repair",
+    "psutil",
+    "nvidia-ml-py",
 ]
 
 [build-system]

@@ -1,4 +1,4 @@
-__version__ = '3.9.0'
+__version__ = '4.0.0'
 
 from . import (
     asyncs,
@@ -23,7 +23,6 @@ from . import (
     regexes,
     s3,
     singleton,
-    slacks,
     spinner,
     stopwatch,
     strings,

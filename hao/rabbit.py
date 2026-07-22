@@ -3,7 +3,7 @@
 ####################################################
 ###########         dependency          ############
 ####################################################
-pip install kombu>=4.6.0
+pip install aio-pika>=8.0
 
 ####################################################
 ###########         config.yml          ############
@@ -47,26 +47,23 @@ from hao.rabbit import Rabbit
 rabbit = Rabbit()
 queue_name = 'dummy'
 
-# queue size
-print(rabbit.queue_size(queue_name))
+queue size
+print(await rabbit.queue_size(queue_name))
 
-# publish, accepts string, dict, list
+publish, accepts string, dict, list
 for i in range(0, 10):
-    rabbit.publish(queue_name, f'hello-{i}')
-print(rabbit.queue_size(queue_name))
+    await rabbit.publish(queue_name, f'hello-{i}')
+print(await rabbit.queue_size(queue_name))
 
-# consume
-for msg in rabbit.consume(queue_name, timeout=1):
+consume
+async for msg in rabbit.consume(queue_name, timeout=1):
     print(msg)
 """
-import atexit
-import threading
-from collections.abc import Generator
+import asyncio
 
-from amqp import UnexpectedFrame
-from kombu import Connection
-from kombu.simple import SimpleQueue
-from kombu.transport.pyamqp import Message
+import aio_pika
+from aio_pika import Message, Queue
+from aio_pika.abc import AbstractChannel, AbstractConnection, AbstractQueue
 
 from . import config, jsons, logs
 
@@ -83,11 +80,11 @@ class Rabbit(object):
         self.__conf = config.get(f"rabbit.{self.profile}", {})
         assert len(self.__conf) > 0, f'rabbit profile not configured `rabbit.{self.profile}`'
         self.prefetch = prefetch
-        self._conn: Connection | None = None
-        self._queues = {}
+        self._conn: AbstractConnection | None = None
+        self._channel: AbstractChannel | None = None
+        self._queues: dict[str, AbstractQueue] = {}
         self._queue_options = {}
-        self.__lock__ = threading.Lock()
-        atexit.register(self.close)
+        self.__lock__ = asyncio.Lock()
 
     def __str__(self) -> str:
         return f"{self.__conf.get('user')}:***@{self.__conf.get('host')}:{self.__conf.get('port', 5672)}/{self.__conf.get('vhost', '')}"
@@ -95,85 +92,86 @@ class Rabbit(object):
     def __repr__(self) -> str:
         return self.__str__()
 
-    def __enter__(self):
-        self.ensure_connection()
+    async def __aenter__(self):
+        await self.ensure_connection()
         return self
 
-    def __exit__(self, *args):
-        self.close()
+    async def __aexit__(self, *args):
+        await self.close()
 
-    def close(self):
+    async def close(self):
         if self._conn is None:
             return
         LOGGER.debug('[rabbit] close')
         try:
-            with self.__lock__:
-                self._conn.release()
+            async with self.__lock__:
+                if self._channel:
+                    await self._channel.close()
+                await self._conn.close()
         except Exception as e:
             LOGGER.warning(e)
         finally:
             self._conn = None
+            self._channel = None
 
-    def ensure_connection(self, force=False):
+    async def ensure_connection(self, force=False):
         if self._conn is None or force:
-            with self.__lock__:
+            async with self.__lock__:
+                if self._conn is not None and not force:
+                    return
                 LOGGER.debug('[rabbit] connecting')
-                self._conn = self._connect()
+                await self._connect()
                 self._queues.clear()
 
-    def _connect(self):
+    async def _connect(self):
         self._queue_options = self.__conf.get('queues')
         n_queue_options = len(self._queue_options)
         if n_queue_options == 0:
             raise ValueError(f'no queues configured, expecting: `rabbit.{self.profile}.queues`')
 
-        return Connection(
-            self.__conf.get('host', 'localhost'),
-            self.__conf.get('user', 'rabbit'),
-            self.__conf.get('password', 'rabbit'),
-            self.__conf.get('vhost', '/'),
-            self.__conf.get('port', 5672),
-            connect_timeout=self.__conf.get('timeout', 10),
+        self._conn = await aio_pika.connect_robust(
+            host=self.__conf.get('host', 'localhost'),
+            port=self.__conf.get('port', 5672),
+            login=self.__conf.get('user', 'rabbit'),
+            password=self.__conf.get('password', 'rabbit'),
+            virtualhost=self.__conf.get('vhost', '/'),
+            timeout=self.__conf.get('timeout', 10),
             heartbeat=self.__conf.get('heartbeat', 0),
-            login_method=self.__conf.get('login_method', 'PLAIN')
         )
+        self._channel = await self._conn.channel()
+        await self._channel.set_qos(prefetch_count=self.prefetch)
 
-    def reconnect(self):
+    async def reconnect(self):
         LOGGER.info('[rabbit] reconnect')
-        self.close()
-        self.ensure_connection()
+        await self.close()
+        await self.ensure_connection()
 
-    def get_queue(self, queue_id: str = None) -> tuple[SimpleQueue | None, str]:
-        self.ensure_connection()
+    async def get_queue(self, queue_id: str = None) -> tuple[AbstractQueue | None, str]:
+        await self.ensure_connection()
         if queue_id is None:
             queue_id = list(self._queue_options)[0]
         elif queue_id not in self._queue_options:
             raise ValueError(f'[rabbit] invalid queue_id: {queue_id}')
-        with self.__lock__:
+        async with self.__lock__:
             queue = self._queues.get(queue_id)
             if queue is not None:
                 return queue, queue_id
-            queue = self._simple_queue(queue_id)
+            queue = await self._simple_queue(queue_id)
             self._queues[queue_id] = queue
             return queue, queue_id
 
-    def _simple_queue(self, queue_id) -> SimpleQueue:
+    async def _simple_queue(self, queue_id) -> AbstractQueue:
         options = self._queue_options.get(queue_id, {})
-        channel = self._get_channel(self.prefetch)
         queue_name = options.get('name', queue_id)
         LOGGER.debug(f'[rabbit] queue id: {queue_id} -> queue name: {queue_name}')
-        return self._conn.SimpleQueue(
+        queue_opts = options.get('opts', {})
+        queue_args = options.get('args', {})
+        return await self._channel.declare_queue(
             queue_name,
-            queue_opts=options.get('opts'),
-            queue_args=options.get('args'),
-            exchange_opts=options.get('exchange_opts'),
-            channel=channel
+            durable=True,
+            **queue_opts,
+            arguments=queue_args,
         )
-
-    def _get_channel(self, prefetch):
-        channel = self._conn.channel()
-        channel.basic_qos(prefetch_size=0, prefetch_count=prefetch, a_global=False)
-        return channel
 
     def _is_support_priority(self, queue_id):
         options = self._queue_options.get(queue_id)
@@ -182,22 +180,20 @@ class Rabbit(object):
         max_priority = options.get('opts', {}).get('max_priority')
         if max_priority is None or max_priority == 0:
             return False
-
         return True
 
-    def publish(self,
-                message: str | dict | list,
-                queue_id: str = None,
-                prior: bool = False,
-                retry: bool = True,
-                verbose: bool = True,
-                **kwargs):
+    async def publish(self,
+                      message: str | dict | list,
+                      queue_id: str = None,
+                      prior: bool = False,
+                      verbose: bool = True,
+                      **kwargs):
         if message is None:
             if verbose:
                 LOGGER.warning(f"[rabbit] empty message: {message}")
             return
 
-        queue, queue_id = self.get_queue(queue_id)
+        queue, queue_id = await self.get_queue(queue_id)
         if queue is None:
             if verbose:
                 LOGGER.warning(f"[rabbit] queue_id not in: rabbit.{self.profile}.queues")
@@ -208,46 +204,46 @@ class Rabbit(object):
             if isinstance(message, list):
                 for msg in message:
                     msg = msg if isinstance(msg, str) else jsons.dumps(msg)
-                    queue.put(msg, retry=retry, retry_policy=RETRY_POLICY, priority=priority, **kwargs)
+                    await queue.publish(Message(msg.encode(), priority=priority), **kwargs)
                 if verbose:
                     LOGGER.info(f'[rabbit] [{queue_id}] added: {len(message)} tasks, prior: {prior}, priority: {priority}')
             else:
                 msg = message if isinstance(message, str) else jsons.dumps(message)
-                queue.put(msg, retry=retry, retry_policy=RETRY_POLICY, priority=priority, **kwargs)
-
+                await queue.publish(Message(msg.encode(), priority=priority), **kwargs)
                 if verbose:
                     LOGGER.info(f'[rabbit] [{queue_id}] added: {msg}, prior: {prior}, priority: {priority}')
-        except AttributeError as e:
-            self.ensure_connection(True)
+        except Exception as e:
+            LOGGER.exception(e)
+            await self.reconnect()
             raise e
-        except (BrokenPipeError, ConnectionResetError, OSError):
-            self.reconnect()
 
-    def pull(self, queue_id: str = None, timeout=5, block=True) -> Message | None:
-        queue, queue_id = self.get_queue(queue_id)
+    async def pull(self, queue_id: str = None, timeout=5) -> Message | None:
+        queue, queue_id = await self.get_queue(queue_id)
         if queue is None:
             return None
         try:
-            return queue.get(block=block, timeout=timeout)
-        except (queue.Empty, UnexpectedFrame, AttributeError):
+            return await queue.get(timeout=timeout)
+        except asyncio.TimeoutError:
             pass
-        except (BrokenPipeError, ConnectionResetError, OSError):
-            self.reconnect()
+        except Exception as e:
+            LOGGER.exception(e)
+            await self.reconnect()
 
-    def consume(self, queue_id: str = None, timeout=1, block=True) -> Generator[Message, None, None]:
-        queue, queue_id = self.get_queue(queue_id)
+    async def consume(self, queue_id: str = None, timeout=1):
+        queue, queue_id = await self.get_queue(queue_id)
         if queue is None:
-            return None
+            return
         try:
-            msg = queue.get(block=block, timeout=timeout)
+            msg = await queue.get(timeout=timeout)
             while msg is not None:
                 yield msg
-                msg = queue.get(block=block, timeout=timeout)
-        except (queue.Empty, UnexpectedFrame, AttributeError):
+                msg = await queue.get(timeout=timeout)
+        except asyncio.TimeoutError:
             pass
-        except (BrokenPipeError, ConnectionResetError, OSError):
-            self.reconnect()
+        except Exception as e:
+            LOGGER.exception(e)
+            await self.reconnect()
 
-    def queue_size(self, queue_id: str = None) -> int:
-        queue, queue_id = self.get_queue(queue_id)
-        return queue.qsize() if queue else -1
+    async def queue_size(self, queue_id: str = None) -> int:
+        queue, queue_id = await self.get_queue(queue_id)
+        return queue.declaration_result.message_count if queue else -1

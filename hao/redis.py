@@ -3,7 +3,7 @@
 ####################################################
 ###########         dependency          ############
 ####################################################
-pip install redis
+pip install redis>=4.0
 
 ####################################################
 ###########         config.yml          ############
@@ -24,12 +24,12 @@ redis:
 ####################################################
 from hao.redis import Redis
 redis = Redis()
-print(redis.scard('bidding-non-product-set'))
+print(await redis.scard('bidding-non-product-set'))
 
 redis_gpu1 = Redis('gpu1')
-print(redis_gpu1.scard('bidding-non-product-set'))
+print(await redis_gpu1.scard('bidding-non-product-set'))
 """
-import redis as r
+import redis.asyncio as r
 
 from . import config
 
@@ -63,11 +63,11 @@ class Redis(r.Redis):
     def __repr__(self) -> str:
         return self.__str__()
 
-    def bf_add(self, key, *values):
-        self.execute_command('BF.MADD', key, *values)
+    async def bf_add(self, key, *values):
+        await self.execute_command('BF.MADD', key, *values)
 
-    def bf_exists(self, key, *values):
-        results = list(map(lambda i: i == 1, self.execute_command('BF.MEXISTS', key, *values)))
+    async def bf_exists(self, key, *values):
+        results = list(map(lambda i: i == 1, await self.execute_command('BF.MEXISTS', key, *values)))
         return results if len(results) > 1 else results[0]
 
     @staticmethod

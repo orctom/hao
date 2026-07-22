@@ -11,6 +11,7 @@ _GLOBAL_EXECUTOR = ThreadPoolExecutor(
     thread_name_prefix='AsyncExecutor'
 )
 
+
 def is_in_main_thread():
     return threading.current_thread().__class__.__name__ == '_MainThread'
 

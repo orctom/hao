@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import logging
-import time
 import traceback
 from collections import defaultdict
 from datetime import datetime
-from threading import Timer
 
-import requests
+import aiohttp
 
 from . import config, jsons, paths, singleton, versions
 
@@ -28,28 +27,36 @@ class Feishu(metaclass=singleton.Singleton):
         self._messages = defaultdict(list)
         self._send_timer = None
         self._last = None
+        self._session: aiohttp.ClientSession | None = None
+        self._token_task: asyncio.Task | None = None
         if cfg:
-            self._refresh_access_token()
+            asyncio.create_task(self._refresh_access_token())
 
-    def _refresh_access_token(self):
+    async def _get_session(self) -> aiohttp.ClientSession:
+        if self._session is None or self._session.closed:
+            self._session = aiohttp.ClientSession()
+        return self._session
+
+    async def _refresh_access_token(self):
         payload = {'app_id': self._secrets.get('app_id'), 'app_secret': self._secrets.get('app_secret')}
-        response = requests.post(_URL_TOKEN, headers=_HEADERS_TOKEN, json=payload)
-        response.raise_for_status()
-        data = response.json()
-        expire, self._aaccess_token = data.get('expire'), data.get('tenant_access_token')
-        LOGGER.info(f"[feishu] token refreshed: {self._aaccess_token}, expire: {expire}")
-        t = Timer(expire - 10, self._refresh_access_token)
-        t.daemon = True
-        t.start()
+        session = await self._get_session()
+        async with session.post(_URL_TOKEN, headers=_HEADERS_TOKEN, json=payload) as response:
+            response.raise_for_status()
+            data = await response.json()
+            expire, self._aaccess_token = data.get('expire'), data.get('tenant_access_token')
+            LOGGER.info(f"[feishu] token refreshed: {self._aaccess_token}, expire: {expire}")
 
-    def _send_messages(self):
+        await asyncio.sleep(expire - 10)
+        await self._refresh_access_token()
+
+    async def _send_messages(self):
         if len(self._messages) == 0:
             return
         messages, self._messages = self._messages, defaultdict(list)
         for topic, msgs in messages.items():
-            self._send(msgs, topic)
+            await self._send(msgs, topic)
 
-    def _send(self, messages: list[str], topic: str):
+    async def _send(self, messages: list[str], topic: str):
         receive_id = self._ids.get(topic)
         if receive_id is None:
             LOGGER.info(f"[feishu] topic not found: {topic}")
@@ -75,33 +82,33 @@ class Feishu(metaclass=singleton.Singleton):
                 'msg_type': 'post',
                 'receive_id': receive_id,
             }
-            response = requests.post(_URL_NOTIFY, json=data, headers=headers)
-            response.raise_for_status()
+            session = await self._get_session()
+            async with session.post(_URL_NOTIFY, json=data, headers=headers) as response:
+                response.raise_for_status()
         except Exception as e:
             LOGGER.exception(e)
 
-    def notify(self, message: str, topic='default'):
+    async def notify(self, message: str, topic='default'):
         if self._ids is None:
             return
 
-        now = time.time()
+        now = datetime.now().timestamp()
         try:
             self._messages[topic].append(message)
             if self._last is None or now - self._last >= 5:
-                self._send_messages()
+                await self._send_messages()
                 return
 
-            if self._send_timer is not None and self._send_timer.is_alive():
+            if self._send_timer is not None and not self._send_timer.done():
                 return
 
-            timer = Timer(5, self._send_messages)
-            timer.daemon = True
-            timer.start()
-            self._send_timer = timer
+            self._send_timer = asyncio.create_task(asyncio.sleep(5, loop=None))
+            await self._send_timer
+            await self._send_messages()
         finally:
             self._last = now
 
-    def notify_exception(self, e: Exception, data: str | dict | None = None, topic='default'):
+    async def notify_exception(self, e: Exception, data: str | dict | None = None, topic='default'):
         if self._ids is None:
             return
         if isinstance(data, dict):
@@ -117,12 +124,12 @@ class Feishu(metaclass=singleton.Singleton):
             message = f"{e}\n{traceback.format_exc()}\n{text}"
         else:
             message = f"{e}\n{traceback.format_exc()}"
-        self.notify(message, topic)
+        await self.notify(message, topic)
 
 
-def notify(message: str, topic='default'):
-    Feishu().notify(message, topic)
+async def notify(message: str, topic='default'):
+    await Feishu().notify(message, topic)
 
 
-def notify_exception(e: Exception, data: str | dict | None = None, topic='default'):
-    Feishu().notify_exception(e, data, topic)
+async def notify_exception(e: Exception, data: str | dict | None = None, topic='default'):
+    await Feishu().notify_exception(e, data, topic)

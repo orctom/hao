@@ -19,8 +19,8 @@ import os
 import random
 import signal
 
-from minio import Minio
-from minio.error import MinioException
+from miniopy_async import Minio
+from miniopy_async.error import MinioException
 from tqdm import tqdm
 
 from . import config, paths, strings
@@ -69,7 +69,7 @@ class S3:
             raise ValueError(f"`endpoint`, `access_key` and `secret_key` are required, but not satisfied ({config_file})")
         return S3(endpoint=endpoint, access_key=access_key, secret_key=secret_key, secure=secure)
 
-    def download(self, path_s3: str, path_local: str, overwrite: bool = False):
+    async def download(self, path_s3: str, path_local: str, overwrite: bool = False):
         assert path_s3 is not None
         assert path_local is not None
         path_local = paths.get(path_local)
@@ -78,6 +78,7 @@ class S3:
 
         response = None
         stop = False
+
         def handle_stop(signum, frame):
             nonlocal stop
             stop = True
@@ -88,7 +89,7 @@ class S3:
             splits = path_s3.split(os.path.sep)
             bucket_name = splits[0]
             object_name = os.path.sep.join(splits[1:])
-            response = self.client.get_object(bucket_name, object_name)
+            response = await self.client.get_object(bucket_name, object_name)
             total_length = int(response.headers.get('content-length'))
             filename = os.path.basename(object_name)
             filesize_kb = total_length / 1024
@@ -97,7 +98,7 @@ class S3:
             bar = tqdm(total=math.ceil(filesize_kb), unit='k', ascii=' ―', colour=color, desc=desc)
             paths.make_parent_dirs(path_local)
             with open(path_local, 'wb') as f:
-                for d in response.stream(1024 * 1024):
+                async for d in response.stream(1024 * 1024):
                     if stop:
                         raise KeyboardInterrupt()
                     size = f.write(d)
@@ -115,7 +116,7 @@ class S3:
                 response.release_conn()
 
 
-def init(key='s3.init', overwrite: bool = False):
+async def init(key='s3.init', overwrite: bool = False):
     """
     Download from s3 to local according to `s3.init` in config yml, which should be
         - a dict
@@ -145,9 +146,9 @@ def init(key='s3.init', overwrite: bool = False):
             - model.product
 
         python:
-        hao.s3.init()                   # same as spanner.s3.init('s3.init')
-        hao.s3.init('s3.init')          # download `model.general` and `model.product`
-        hao.s3.init('model.general')    # download `model.general`
+        await hao.s3.init()                   # same as spanner.s3.init('s3.init')
+        await hao.s3.init('s3.init')          # download `model.general` and `model.product`
+        await hao.s3.init('model.general')    # download `model.general`
     """
 
     s3 = S3.from_s3config()
@@ -164,9 +165,9 @@ def init(key='s3.init', overwrite: bool = False):
     if isinstance(items, list):
         for item in items:
             item = config.get(item)
-            s3.download(item.get('s3'), item.get('local'), overwrite)
+            await s3.download(item.get('s3'), item.get('local'), overwrite)
     elif isinstance(items, dict):
-        s3.download(items.get('s3'), items.get('local'), overwrite)
+        await s3.download(items.get('s3'), items.get('local'), overwrite)
     else:
         LOGGER.error(f"[s3] '{key}' not supported type")
 

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-# https://github.com/dpkp/kafka-python
+# https://github.com/aio-libs/aiokafka
 """
 ####################################################
 ###########         dependency          ############
 ####################################################
-pip install kafka-python
+pip install aiokafka
 
 ####################################################
 ###########         config.yml          ############
@@ -25,21 +25,22 @@ kafka:
     group_id: group_id
     client_id: client_id
 
+
 ####################################################
 ###########          usage              ############
 ####################################################
 from hao.kafka import Kafka
-from kafka.errors import CommitFailedError
+from aiokafka.errors import CommitFailedError
 kafka = Kafka()
 kafka = Kafka('some-other')
 topic = 'test-hao'
 
-# publish
-kafka.publish(topic, 'this is a message')
+publish
+await kafka.publish(topic, 'this is a message')
 
-# consume
+consume
 consumer = kafka.get_consumer(topic)
-for msg in consumer:
+async for msg in consumer:
     topic = msg.topic
     try:
         payload = msg.value.decode('utf-8')
@@ -49,15 +50,15 @@ for msg in consumer:
         except json.JSONDecodeError:
             data = payload
         LOGGER.info(data)
-        consumer.commit()
+        await consumer.commit()
     except CommitFailedError as e:
         LOGGER.error(e)
     except Exception as e:
         LOGGER.exception(e)
 
 """
-from kafka import KafkaConsumer, KafkaProducer
-from kafka.errors import KafkaTimeoutError, NoBrokersAvailable
+from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
+from aiokafka.errors import KafkaTimeoutError
 
 from . import config, jsons, logs
 
@@ -69,13 +70,13 @@ class Kafka(object):
     def __init__(self, profile='default') -> None:
         super().__init__()
         self.profile = profile
-        self.__conf = config.get(f"kafka.{self.profile}")
-        if self.__conf is None:
+        self._conf = config.get(f"kafka.{self.profile}")
+        if self._conf is None:
             raise ValueError(f'no config found for kafka, expecting: `kafka.{self.profile}`')
         self._producer = None
 
     def __str__(self) -> str:
-        return f"hosts: {self.__conf.get('hosts')}, group_id: {self.__conf.get('group_id')}"
+        return f"hosts: {self._conf.get('hosts')}, group_id: {self._conf.get('group_id')}"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -86,38 +87,38 @@ class Kafka(object):
                      client_id=None,
                      **kwargs):
         topics = [topic] if isinstance(topic, str) else topic
-        group_id = group_id or self.__conf.get('group_id')
-        client_id = client_id or self.__conf.get('client_id', self.__conf.get('group_id'))
+        group_id = group_id or self._conf.get('group_id')
+        client_id = client_id or self._conf.get('client_id', self._conf.get('group_id'))
         LOGGER.info(f"[kafka] consumer to topics: {topics}, group_id: {group_id}, client_id: {client_id}")
         args = {
-            'bootstrap_servers': self.__conf.get('hosts'),
+            'bootstrap_servers': ','.join(self._conf.get('hosts')),
             'group_id': group_id,
             'client_id': client_id,
-            'fetch_max_wait_ms': kwargs.get('fetch_max_wait_ms') or self.__conf.get('fetch_max_wait_ms', 500),
-            'request_timeout_ms': kwargs.get('request_timeout_ms') or self.__conf.get('request_timeout_ms', 305_000),
-            'max_in_flight_requests_per_connection': kwargs.get('max_in_flight_requests_per_connection') or self.__conf.get('max_in_flight_requests_per_connection', 5),
-            'auto_offset_reset': kwargs.get('auto_offset_reset') or self.__conf.get('auto_offset_reset', 'earliest'),
-            'enable_auto_commit': kwargs.get('enable_auto_commit') or self.__conf.get('enable_auto_commit', False),
-            'auto_commit_interval_ms': kwargs.get('auto_commit_interval_ms') or self.__conf.get('auto_commit_interval_ms', 5_000),
-            'max_poll_records': kwargs.get('max_poll_records') or self.__conf.get('max_poll_records', 500),
-            'max_poll_interval_ms': kwargs.get('max_poll_interval_ms') or self.__conf.get('max_poll_interval_ms', 300_000),
-            'session_timeout_ms': kwargs.get('session_timeout_ms') or self.__conf.get('session_timeout_ms', 10_000),
-            'heartbeat_interval_ms': kwargs.get('heartbeat_interval_ms') or self.__conf.get('heartbeat_interval_ms', 3_000),
-            'consumer_timeout_ms': kwargs.get('consumer_timeout_ms') or self.__conf.get('consumer_timeout_ms', float('inf')),
-            'connections_max_idle_ms': kwargs.get('connections_max_idle_ms') or self.__conf.get('connections_max_idle_ms', 540_000),
-            'api_version': self.__conf.get('api_version'),
+            'fetch_max_wait_ms': kwargs.get('fetch_max_wait_ms') or self._conf.get('fetch_max_wait_ms', 500),
+            'request_timeout_ms': kwargs.get('request_timeout_ms') or self._conf.get('request_timeout_ms', 305_000),
+            'max_in_flight_requests_per_connection': kwargs.get('max_in_flight_requests_per_connection') or self._conf.get('max_in_flight_requests_per_connection', 5),
+            'auto_offset_reset': kwargs.get('auto_offset_reset') or self._conf.get('auto_offset_reset', 'earliest'),
+            'enable_auto_commit': kwargs.get('enable_auto_commit') or self._conf.get('enable_auto_commit', False),
+            'auto_commit_interval_ms': kwargs.get('auto_commit_interval_ms') or self._conf.get('auto_commit_interval_ms', 5_000),
+            'max_poll_records': kwargs.get('max_poll_records') or self._conf.get('max_poll_records', 500),
+            'max_poll_interval_ms': kwargs.get('max_poll_interval_ms') or self._conf.get('max_poll_interval_ms', 300_000),
+            'session_timeout_ms': kwargs.get('session_timeout_ms') or self._conf.get('session_timeout_ms', 10_000),
+            'heartbeat_interval_ms': kwargs.get('heartbeat_interval_ms') or self._conf.get('heartbeat_interval_ms', 3_000),
+            'connections_max_idle_ms': kwargs.get('connections_max_idle_ms') or self._conf.get('connections_max_idle_ms', 540_000),
+            'api_version': self._conf.get('api_version'),
         }
-        return KafkaConsumer(*topics, **args)
+        return AIOKafkaConsumer(*topics, **args)
 
-    def get_producer(self):
+    async def get_producer(self):
         if self._producer is None:
-            self._producer = KafkaProducer(
-                bootstrap_servers=self.__conf.get('hosts'),
-                api_version=self.__conf.get('api_version')
+            self._producer = AIOKafkaProducer(
+                bootstrap_servers=','.join(self._conf.get('hosts')),
+                api_version=self._conf.get('api_version')
             )
+            await self._producer.start()
         return self._producer
 
-    def publish(self, topic, message, key=None, headers=None, partition=None, timestamp_ms=None, flush: bool = False):
+    async def publish(self, topic, message, key=None, headers=None, partition=None, timestamp_ms=None):
         if isinstance(message, str):
             payload = message.encode()
         elif isinstance(message, dict):
@@ -127,14 +128,16 @@ class Kafka(object):
             return
         try:
             LOGGER.debug(f"sending payload: {payload}")
-            producer = self.get_producer()
-            future = producer.send(topic, payload, key, headers, partition, timestamp_ms)
-            if flush:
-                producer.flush(10)
-            return future
-        except (KafkaTimeoutError, NoBrokersAvailable) as err:
+            producer = await self.get_producer()
+            await producer.send_and_wait(topic, payload, key, headers, partition, timestamp_ms)
+        except KafkaTimeoutError as err:
             LOGGER.error(f'Failed to send data to {topic}, payload: {payload}')
             LOGGER.error(err)
 
-    def flush(self, timeout=10):
-        self.get_producer().flush(timeout)
+    async def flush(self, timeout=10):
+        producer = await self.get_producer()
+        await producer.flush(timeout=timeout)
+
+    async def close(self):
+        if self._producer is not None:
+            await self._producer.stop()
