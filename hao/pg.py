@@ -14,13 +14,13 @@ pg:
     port: 5432
     user: username
     password: password
-    dbname: default_db_name
+    db: default_db_name
   some-other:
     host: some-other-host
     port: 5432
     user: username
     password: password
-    dbname: default_db_name
+    db: default_db_name
 
 
 ####################################################
@@ -73,7 +73,7 @@ class PG:
             return
 
         conf = {**self._conf}
-        LOGGER.debug(f"connecting [{self.profile}], host: {conf.get('host')}, db: {conf.get('dbname')}")
+        LOGGER.debug(f"connecting [{self.profile}], host: {conf.get('host')}, db: {conf.get('db')}")
 
         min_size = conf.pop('min_size', 1)
         max_size = conf.pop('max_size', 2)
@@ -91,7 +91,7 @@ class PG:
         PG._POOLS[self.profile] = pool
 
     def __str__(self) -> str:
-        return f"profile: [{self.profile}], host: {self._conf.get('host')}, db: {self._conf.get('dbname')}"
+        return f"profile: [{self.profile}], host: {self._conf.get('host')}, db: {self._conf.get('db')}"
 
     def __repr__(self) -> str:
         return self.__str__()

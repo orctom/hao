@@ -38,6 +38,9 @@ mysql = [
     "asyncmy",
     "aiomysql",
 ]
+sqlite = [
+    "aiosqlite",
+]
 pg = [
     "psycopg[pool]",
 ]
@@ -63,6 +66,7 @@ sys = [
 ]
 dev = [
     "ruff",
+    "aiosqlite",
     "elasticsearch>=8",
     "motor",
     "aiokafka",

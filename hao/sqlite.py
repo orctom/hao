@@ -2,6 +2,11 @@
 """
 
 ####################################################
+###########         dependency          ############
+####################################################
+pip install aiosqlite
+
+####################################################
 ###########         config.yml          ############
 ####################################################
 sqlite:
@@ -15,14 +20,15 @@ sqlite:
 ###########          usage              ############
 ####################################################
 from hao.sqlite import SQLite
-with SQLite() as db:
-    records = db.execute('select * from t_dummy_table').fetchall()
+async with SQLite() as db:
+    records = await db.fetchall('select * from t_dummy_table')
 
 """
 
-import sqlite3
 from collections import namedtuple
 from typing import Literal
+
+import aiosqlite
 
 from . import config, logs, paths
 
@@ -56,84 +62,84 @@ class SQLite:
         self.profile = profile
         self.path = path
         self._path = paths.get(path or config.get(f"sqlite.{profile}.path"))
-        self.conn: sqlite3.Connection = None
+        self.conn: aiosqlite.Connection = None
         self._row_factory = self._CURSORS.get(cursor)
 
-    def connect(self):
-        self.conn = sqlite3.connect(self._path)
+    async def connect(self):
+        self.conn = await aiosqlite.connect(self._path)
         self.conn.row_factory = self._row_factory
         return self
 
-    def __enter__(self):
-        self.connect()
+    async def __aenter__(self):
+        await self.connect()
         return self
 
-    def __exit__(self, _type, _value, _trace):
+    async def __aexit__(self, _type, _value, _trace):
         try:
-            self.conn.close()
+            await self.conn.close()
         except Exception:
             pass
 
-    def execute(self, sql, params: list | tuple | None = None, *, commit: bool = False) -> sqlite3.Cursor:
-        cursor = self.conn.execute(sql, params or ())
+    async def execute(self, sql, params: list | tuple | None = None, *, commit: bool = False):
+        cursor = await self.conn.execute(sql, params or ())
         try:
             if commit:
-                self.commit()
+                await self.commit()
             return cursor.rowcount
         finally:
-            cursor.close()
+            await cursor.close()
 
-    def executemany(self, sql, params: list | tuple | None = None, *, commit: bool = False) -> sqlite3.Cursor:
-        cursor = self.conn.executemany(sql, params or ())
+    async def executemany(self, sql, params: list | tuple | None = None, *, commit: bool = False):
+        cursor = await self.conn.executemany(sql, params or ())
         try:
             if commit:
-                self.commit()
+                await self.commit()
             return cursor.rowcount
         finally:
-            cursor.close()
+            await cursor.close()
 
-    def fetchone(self, sql: str, params: list | tuple | None = None, *, commit: bool = False):
-        cursor = self.conn.execute(sql, params or ())
+    async def fetchone(self, sql: str, params: list | tuple | None = None, *, commit: bool = False):
+        cursor = await self.conn.execute(sql, params or ())
         try:
             if commit:
-                self.commit()
-            return cursor.fetchone()
+                await self.commit()
+            return await cursor.fetchone()
         finally:
-            cursor.close()
+            await cursor.close()
 
-    def fetchall(self, sql: str, params: list | tuple | None = None, *, commit: bool = False):
-        cursor = self.conn.execute(sql, params or ())
+    async def fetchall(self, sql: str, params: list | tuple | None = None, *, commit: bool = False):
+        cursor = await self.conn.execute(sql, params or ())
         try:
             if commit:
-                self.commit()
-            return cursor.fetchall()
+                await self.commit()
+            return await cursor.fetchall()
         finally:
-            cursor.close()
+            await cursor.close()
 
-    def fetch(self, sql: str, params: list | tuple | None = None, batch=2000, *, commit: bool = False):
-        cursor = self.conn.execute(sql, params or ())
+    async def fetch(self, sql: str, params: list | tuple | None = None, batch=2000, *, commit: bool = False):
+        cursor = await self.conn.execute(sql, params or ())
         try:
             if commit:
-                self.commit()
+                await self.commit()
             while True:
-                records = cursor.fetchmany(size=batch)
+                records = await cursor.fetchmany(size=batch)
                 if not records:
                     break
                 for record in records:
                     yield record
         finally:
-            cursor.close()
+            await cursor.close()
 
-    def commit(self):
-        return self.conn.commit()
+    async def commit(self):
+        return await self.conn.commit()
 
-    def rollback(self):
-        return self.conn.rollback()
+    async def rollback(self):
+        return await self.conn.rollback()
 
-    def list_tables(self):
+    async def list_tables(self):
         sql = "SELECT name, sql FROM sqlite_master WHERE type='table'"
-        return self.fetchall(sql)
+        return await self.fetchall(sql)
 
-    def show_table(self, table):
+    async def show_table(self, table):
         sql = f"pragma table_info('{table}')"
-        return self.fetchall(sql)
+        return await self.fetchall(sql)

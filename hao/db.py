@@ -3,7 +3,7 @@
 ####################################################
 ###########         dependency          ############
 ####################################################
-pip install sqlalchemy
+pip install "sqlalchemy[asyncio]"
 
 ####################################################
 ###########         config.yml          ############
@@ -11,34 +11,44 @@ pip install sqlalchemy
 # https://docs.sqlalchemy.org/en/14/core/engines.html
 db:
   default:
-    url: postgresql://user:password@host:port/db
+    url: postgresql+asyncpg://user:password@host:port/db
     hide_parameters: false
     echo: true
   db2:
-    url: mysql://scott:tiger@hostname/dbname
+    url: mysql+asyncmy://scott:tiger@hostname/dbname
     pool_size: 100
 
 
 ####################################################
 ###########          usage              ############
 ####################################################
-from hao.pg import PG
-session = DB().session()
-try:
-    session.add(some_object)
-    session.add(some_other_object)
-    session.commit()
-finally:
-    session.close()
+from hao.db import DB
 
-with DB('db2').ctx_session() as session:
+async with DB().ctx_session() as session:
     session.add(some_object)
     session.add(some_other_object)
 # commits transaction, closes session
     ...
+
+session = await DB().session()
+try:
+    session.add(some_object)
+    session.add(some_other_object)
+    await session.commit()
+finally:
+    await session.close()
 """
-from sqlalchemy import Connection, engine_from_config
-from sqlalchemy.orm import Session, scoped_session, sessionmaker
+import asyncio
+from contextlib import asynccontextmanager
+
+from sqlalchemy.ext.asyncio import (
+    AsyncConnection,
+    AsyncEngine,
+    AsyncSession,
+    async_engine_from_config,
+    async_scoped_session,
+    async_sessionmaker,
+)
 
 from . import config, jsons, singleton
 
@@ -65,20 +75,22 @@ class DB(metaclass=singleton.Multiton):
     def __repr__(self) -> str:
         return self.__str__()
 
-    def _create_engine(self):
-        return engine_from_config(self.__conf, prefix='')
+    def _create_engine(self) -> AsyncEngine:
+        return async_engine_from_config(self.__conf, prefix='')
 
     def _create_session(self):
-        return sessionmaker(self.engine)
+        return async_sessionmaker(self.engine, expire_on_commit=False)
 
-    def session(self) -> Session:
+    async def session(self) -> AsyncSession:
         return self._session()
 
-    def ctx_session(self) -> Session:
-        return self._session.begin()
+    @asynccontextmanager
+    async def ctx_session(self):
+        async with self._session.begin() as session:
+            yield session
 
-    def scoped_session(self) -> Session:
-        return scoped_session(self._session)
+    async def scoped_session(self) -> AsyncSession:
+        return async_scoped_session(self._session, scopefunc=lambda: id(asyncio.get_running_loop()))
 
-    def connection(self) -> Connection:
-        return self.engine.connect()
+    async def connection(self) -> AsyncConnection:
+        return await self.engine.connect()
