@@ -2,13 +2,64 @@
 import logging
 import os
 import sys
+import time
 from datetime import datetime
 from logging import handlers as logging_handlers
 
+import regex
+
 from . import args, config, invoker, paths
 
+
+class LogFormatter(logging.Formatter):
+    """
+    增强logging Formatter，datefmt支持多语言毫秒占位符：
+        %L     -> 3位毫秒 (Ruby)
+        %SSS   -> 3位毫秒 (Java)
+        %fff   -> 3位毫秒 (C#)
+        %v     -> 3位毫秒 (PHP Carbon)
+        %f     -> 6位微秒 (Python)
+    """
+    # 占位符映射：pattern -> lambda(record) 返回字符串
+    _PLACEHOLDERS = [
+        (regex.compile(r"%L"), lambda r: f"{int(r.msecs):03d}"),
+        (regex.compile(r"%SSS"), lambda r: f"{int(r.msecs):03d}"),
+        (regex.compile(r"%fff"), lambda r: f"{int(r.msecs):03d}"),
+        (regex.compile(r"%v"), lambda r: f"{int(r.msecs):03d}"),
+        (regex.compile(r"%f"), lambda r: f"{int(r.msecs * 1000):06d}"),
+    ]
+
+    def formatTime(self, record, datefmt=None):
+        ct = self.converter(record.created)
+        if datefmt:
+            # 步骤1：先把自定义占位符替换成临时标记，避免strftime报错
+            tmp_fmt = datefmt
+            placeholder_map = {}
+            for idx, (pat, _) in enumerate(self._PLACEHOLDERS):
+                token = f"\x01__PH{idx}__\x02"
+                tmp_fmt = pat.sub(token, tmp_fmt)
+                placeholder_map[token] = pat
+
+            # 步骤2：原生strftime处理标准时间格式
+            s = time.strftime(tmp_fmt, ct)
+
+            # 步骤3：回填真实毫秒/微秒值
+            for idx, (pat, getter) in enumerate(self._PLACEHOLDERS):
+                token = f"\x01__PH{idx}__\x02"
+                if token in s:
+                    val = getter(record)
+                    s = s.replace(token, val)
+        else:
+            # datefmt=None 走父类原有默认逻辑 default_time_format + default_msec_format
+            s = time.strftime(self.default_time_format, ct)
+            if self.default_msec_format:
+                s = self.default_msec_format % (s, record.msecs)
+        return s
+
+
 LOGGER_FORMAT = config.get('logger.format', '%(asctime)s %(levelname)-7s %(name)s:%(lineno)-4d - %(message)s')
-LOGGER_FORMATTER = logging.Formatter(LOGGER_FORMAT)
+LOGGER_DATE_FORMAT = config.get('logger.date_format', '%Y-%m-%d %H:%M:%S,%fff')
+LOGGER_FORMATTER = LogFormatter(LOGGER_FORMAT, LOGGER_DATE_FORMAT)
 LOGGER_DIR = config.get_path('logger.dir', 'data/logs')
 
 
