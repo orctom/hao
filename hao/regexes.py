@@ -51,3 +51,7 @@ def remove_html_tags(text: str):
 
 def remove_non_char(text: str):
     return P_NON_CHAR.sub('', text) if text else None
+
+
+def test(text: str, pattern: regex.Pattern) -> bool:
+    return pattern.search(text) is not None if text else False

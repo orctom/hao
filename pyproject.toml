@@ -18,6 +18,7 @@ dependencies = [
     "decorator",
     "miniopy-async",
     "aiohttp",
+    "RestrictedPython",
 ]
 
 [project.urls]
@@ -63,6 +64,16 @@ openai = [
 sys = [
     "psutil",
     "nvidia-ml-py",
+]
+img = [
+    "opencv-contrib-python-headless",
+    "numpy",
+    "pillow",
+]
+trace = [
+    "opentelemetry-api",
+    "opentelemetry-sdk",
+    "opentelemetry-exporter-otlp-proto-grpc",
 ]
 dev = [
     "ruff",
