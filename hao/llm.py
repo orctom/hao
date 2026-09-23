@@ -3,6 +3,8 @@ import json
 import logging
 import signal
 import time
+from collections.abc import Callable
+from typing import Annotated, get_args, get_origin
 
 import httpx
 import json_repair
@@ -98,6 +100,45 @@ def has_periodical_pattern(arr: list[str], min_step: int = 1, max_step: int = 8,
     return False
 
 
+def get_tool_definition(fn: Callable) -> dict:
+    """
+    example tool function
+    def price_with_tax(
+        price: Annotated[float, "不含税金额，如果有“万元”或者“万”要转换成纯数字"],
+        tax_rate: Annotated[float, "税率，百分比要转换成小数"],
+    ) -> int:
+        '''根据“不含税金额”和“税率，计算含税金额'''
+        return price * (1 + tax_rate)
+
+    """
+    name, desc, annotations = fn.__name__, fn.__doc__, fn.__annotations__
+    params = {}
+    for param_name, hint in annotations.items():
+        if param_name in ("return", "self"):
+            continue
+        if get_origin(hint) is Annotated:
+            param_type, param_doc = get_args(hint)
+        else:
+            param_type, param_doc = hint, ""
+        param_type = param_type.__name__ if isinstance(param_type, type) else param_type
+        param_doc = param_doc.strip()
+        params[param_name] = {'type': param_type, 'description': param_doc}
+
+    return {
+        'type': 'function',
+        'function': {
+            "name": name,
+            "description": desc or name.replace('_', ' '),
+            "parameters": {
+                "type": "object",
+                "properties": params,
+                "required": list(params.keys()),
+                "additionalProperties": False,
+            }
+        }
+    }
+
+
 class LLM():
     def __init__(self, profile: str = 'default'):
         super().__init__()
@@ -129,6 +170,8 @@ class LLM():
         messages,
         max_tokens,
         tools=None,
+        temperature: float = .0,
+        top_p: float = 0.3,
         frequency_penalty: float | None = None,
         presence_penalty: float | None = None,
         thinking: bool = False,
@@ -142,8 +185,8 @@ class LLM():
             tools=tools or omit,
             max_completion_tokens=max_tokens,
             response_format=response_model or omit,
-            temperature=.0,
-            top_p=0.3,
+            temperature=temperature,
+            top_p=top_p,
             frequency_penalty=frequency_penalty or omit,
             presence_penalty=presence_penalty or omit,
             n=1,
@@ -158,7 +201,7 @@ class LLM():
                         chunks.pop(0)
                     chunks.append(event.delta)
                     i += 1
-                    if i >= 2000 and has_periodical_pattern(chunks):
+                    if i >= 200 and has_periodical_pattern(chunks):
                         raise PeriodicalChunksError()
                     if steps is True:
                         print(event.delta, flush=True, end='')
@@ -179,6 +222,8 @@ class LLM():
         steps: bool | None = None,
         include_usage: bool = False,
         response_model: str | None = None,
+        temperature: float = .0,
+        top_p: float = .3,
         frequency_penalty: float | None = None,
         presence_penalty: float | None = None,
     ):
@@ -186,6 +231,8 @@ class LLM():
             messages,
             max_tokens,
             tools=tools,
+            temperature=temperature,
+            top_p=top_p,
             frequency_penalty=frequency_penalty,
             presence_penalty=presence_penalty,
             thinking=thinking,
@@ -222,7 +269,7 @@ class LLM():
         history: list[dict] | None = None,
         system: str | None = '',
         images: list[str] | None = None,
-        functions: dict[str, callable] | None = None,
+        functions: dict[str, Callable] | None = None,
         max_words: int | None = None,
     ) -> list[dict]:
         if max_words:
@@ -269,28 +316,32 @@ class LLM():
         system: str | None = '',
         images: list[str] | None = None,
         to_json: bool | None = None,
-        tools=None,
-        functions: dict[str, callable] = None,
+        tools: list[Callable] | None = None,
         max_tokens: int | None = None,
         max_words: int | None = None,
         thinking: bool = False,
         steps: bool | None = None,
         include_usage: bool = False,
         response_model: str | None = None,
+        temperature: float = .0,
+        top_p: float = .3,
         frequency_penalty: float | None = None,
         presence_penalty: float | None = None,
     ) -> str | dict | list:
+        functions = {fn.__name__: fn for fn in tools}
         messages = self._build_messages(prompt, history, system, images, functions, max_words)
 
         def do_completion():
             return self.completion(
                 messages,
-                tools=tools,
+                tools=[get_tool_definition(fn) for fn in tools],
                 max_tokens=max_tokens,
                 thinking=thinking,
                 steps=steps,
                 include_usage=include_usage,
                 response_model=response_model,
+                temperature=temperature,
+                top_p=top_p,
                 frequency_penalty=frequency_penalty,
                 presence_penalty=presence_penalty,
             )
@@ -311,9 +362,9 @@ class LLM():
                         'name': tool.function.name,
                         'content': str(fn_result),
                     })
-                    LOGGER.info(f"[llm] calling function: {tool.function.name} -> {fn_result}")
+                    LOGGER.info(f"[llm] calling tool: {tool.function.name} -> {fn_result}")
                     msg = do_completion()
-                    LOGGER.info(f"[llm] function result: {msg.content}")
+                    LOGGER.info(f"[llm] tool result: {msg.content}")
                 except Exception as e:
                     LOGGER.error(e)
                     msg = do_completion()
@@ -328,8 +379,7 @@ class LLM():
         system: str | None = '',
         images: list[str] | None = None,
         to_json: bool | None = None,
-        tools=None,
-        functions: dict[str, callable] = None,
+        tools: list[Callable] | None = None,
         max_tokens: int | None = None,
         max_words: int | None = None,
         thinking: bool = False,
@@ -345,7 +395,7 @@ class LLM():
         def handle(_, __):
             raise TimeoutError(f"[llm] timed out, retried {retry} times ({timeout}s each)")
 
-        steps, frequency_penalty, presence_penalty = False, None, None
+        steps, temperature, top_p, frequency_penalty = False, .0, .3, None
         for retry in range(retry_max + 1):
             if retry > 0:
                 LOGGER.info(f"[llm] retry: {retry}, invoking...")
@@ -363,11 +413,11 @@ class LLM():
                         images=images,
                         to_json=to_json,
                         tools=tools,
-                        functions=functions,
                         max_tokens=max_tokens,
                         max_words=max_words,
+                        temperature=temperature,
+                        top_p=top_p,
                         frequency_penalty=frequency_penalty,
-                        presence_penalty=presence_penalty,
                         thinking=thinking,
                         steps=steps,
                         include_usage=include_usage,
@@ -394,7 +444,7 @@ class LLM():
                     LOGGER.info(f"[llm] retried: {retry}, error: {e}, retry in {wait}s")
                     time.sleep(wait)
                 finally:
-                    steps, frequency_penalty, presence_penalty = True, 0, 0
+                    steps, temperature, top_p, frequency_penalty = True, .3, .7, .2
                     signal.signal(signal.SIGALRM, old)
                     signal.alarm(0)
             except ValueError:
@@ -406,11 +456,11 @@ class LLM():
                     images=images,
                     to_json=to_json,
                     tools=tools,
-                    functions=functions,
                     max_tokens=max_tokens,
                     max_words=max_words,
+                    temperature=temperature,
+                    top_p=top_p,
                     frequency_penalty=frequency_penalty,
-                    presence_penalty=presence_penalty,
                     thinking=thinking,
                     steps=steps,
                     include_usage=include_usage,
@@ -422,6 +472,8 @@ class LLM():
         messages,
         max_tokens,
         tools=None,
+        temperature: float = .0,
+        top_p: float = 0.3,
         frequency_penalty: float | None = None,
         presence_penalty: float | None = None,
         thinking: bool = False,
@@ -435,8 +487,8 @@ class LLM():
             tools=tools or omit,
             max_completion_tokens=max_tokens,
             response_format=response_model or omit,
-            temperature=.0,
-            top_p=0.3,
+            temperature=temperature,
+            top_p=top_p,
             frequency_penalty=frequency_penalty or omit,
             presence_penalty=presence_penalty or omit,
             n=1,
@@ -451,7 +503,7 @@ class LLM():
                         chunks.pop(0)
                     chunks.append(event.delta)
                     i += 1
-                    if i >= 2000 and has_periodical_pattern(chunks):
+                    if i >= 200 and has_periodical_pattern(chunks):
                         raise PeriodicalChunksError()
                     if steps is True:
                         print(event.delta, flush=True, end='')
@@ -472,6 +524,8 @@ class LLM():
         steps: bool | None = None,
         include_usage: bool = False,
         response_model: str | None = None,
+        temperature: float = .0,
+        top_p: float = 0.3,
         frequency_penalty: float | None = None,
         presence_penalty: float | None = None,
     ):
@@ -479,6 +533,8 @@ class LLM():
             messages,
             max_tokens,
             tools=tools,
+            temperature=temperature,
+            top_p=top_p,
             frequency_penalty=frequency_penalty,
             presence_penalty=presence_penalty,
             thinking=thinking,
@@ -518,28 +574,32 @@ class LLM():
         system: str | None = '',
         images: list[str] | None = None,
         to_json: bool | None = None,
-        tools=None,
-        functions: dict[str, callable] = None,
+        tools: list[Callable] | None = None,
         max_tokens: int | None = None,
         max_words: int | None = None,
         thinking: bool = False,
         steps: bool | None = None,
         include_usage: bool = False,
         response_model: str | None = None,
+        temperature: float = .0,
+        top_p: float = 0.3,
         frequency_penalty: float | None = None,
         presence_penalty: float | None = None,
     ) -> str | dict | list:
+        functions = {fn.__name__: fn for fn in tools}
         messages = self._build_messages(prompt, history, system, images, functions, max_words)
 
         async def do_completion():
             return await self.acompletion(
                 messages,
-                tools=tools,
+                tools=[get_tool_definition(fn) for fn in tools],
                 max_tokens=max_tokens,
                 thinking=thinking,
                 steps=steps,
                 include_usage=include_usage,
                 response_model=response_model,
+                temperature=temperature,
+                top_p=top_p,
                 frequency_penalty=frequency_penalty,
                 presence_penalty=presence_penalty,
             )
@@ -560,9 +620,9 @@ class LLM():
                         'name': tool.function.name,
                         'content': str(fn_result),
                     })
-                    LOGGER.info(f"[llm] calling function: {tool.function.name} -> {fn_result}")
+                    LOGGER.info(f"[llm] calling tool: {tool.function.name} -> {fn_result}")
                     msg = await do_completion()
-                    LOGGER.info(f"[llm] function result: {msg.content}")
+                    LOGGER.info(f"[llm] tool result: {msg.content}")
                 except Exception as e:
                     LOGGER.error(e)
                     msg = await do_completion()
@@ -577,8 +637,7 @@ class LLM():
         system: str | None = '',
         images: list[str] | None = None,
         to_json: bool | None = None,
-        tools=None,
-        functions: dict[str, callable] = None,
+        tools: list[Callable] | None = None,
         max_tokens: int | None = None,
         max_words: int | None = None,
         thinking: bool = False,
@@ -591,7 +650,7 @@ class LLM():
         retry_interval: int = 30,
         retry_delay: int = 30,
     ) -> str | dict | list:
-        steps, frequency_penalty, presence_penalty = False, None, None
+        steps, temperature, top_p, frequency_penalty = False, .0, .3, None
         for retry in range(retry_max + 1):
             if retry > 0:
                 LOGGER.info(f"[llm] retry: {retry}, invoking...")
@@ -607,11 +666,11 @@ class LLM():
                         images=images,
                         to_json=to_json,
                         tools=tools,
-                        functions=functions,
                         max_tokens=max_tokens,
                         max_words=max_words,
+                        temperature=temperature,
+                        top_p=top_p,
                         frequency_penalty=frequency_penalty,
-                        presence_penalty=presence_penalty,
                         thinking=thinking,
                         steps=steps,
                         include_usage=include_usage,
@@ -641,4 +700,4 @@ class LLM():
                 LOGGER.info(f"[llm] retried: {retry}, error: {e}, retry in {wait}s")
                 await asyncio.sleep(wait)
             finally:
-                steps, frequency_penalty, presence_penalty = True, 0, 0
+                steps, temperature, top_p, frequency_penalty = True, .3, .7, .2
